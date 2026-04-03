@@ -7,27 +7,18 @@ import { DollarSign } from 'lucide-react';
 import { toast } from 'sonner';
 
 export default function Auth() {
-  const { signIn, signUp } = useAuth();
-  const [isLogin, setIsLogin] = useState(true);
+  const { signIn } = useAuth();
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
 
-  const toEmail = (u: string) => `${u.toLowerCase().trim()}@fintracker.local`;
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!username.trim()) { toast.error('Please enter a username'); return; }
+    if (!username.trim()) { toast.error('Please enter your username'); return; }
     setLoading(true);
     try {
-      const email = toEmail(username);
-      if (isLogin) {
-        await signIn(email, password);
-        toast.success('Welcome back!');
-      } else {
-        await signUp(email, password);
-        toast.success('Account created! You can now sign in.');
-      }
+      await signIn(`${username.toLowerCase().trim()}@fintracker.local`, password);
+      toast.success('Welcome back!');
     } catch (err: any) {
       toast.error(err.message);
     } finally {
@@ -36,7 +27,7 @@ export default function Auth() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background p-4">
+    <div className="min-h-[100dvh] flex items-center justify-center bg-background p-4">
       <Card className="w-full max-w-sm">
         <CardHeader className="text-center space-y-4">
           <div className="mx-auto w-14 h-14 rounded-2xl bg-primary flex items-center justify-center">
@@ -44,9 +35,7 @@ export default function Auth() {
           </div>
           <div>
             <CardTitle className="text-2xl">FinTracker</CardTitle>
-            <CardDescription>
-              {isLogin ? 'Sign in to your account' : 'Create a new admin account'}
-            </CardDescription>
+            <CardDescription>Sign in to your account</CardDescription>
           </div>
         </CardHeader>
         <CardContent>
@@ -67,22 +56,12 @@ export default function Auth() {
               onChange={(e) => setPassword(e.target.value)}
               required
               minLength={6}
-              autoComplete={isLogin ? 'current-password' : 'new-password'}
+              autoComplete="current-password"
             />
             <Button type="submit" className="w-full" disabled={loading}>
-              {loading ? 'Loading...' : isLogin ? 'Sign In' : 'Create Account'}
+              {loading ? 'Signing in...' : 'Sign In'}
             </Button>
           </form>
-          <p className="mt-4 text-center text-sm text-muted-foreground">
-            {isLogin ? "Don't have an account?" : 'Already have an account?'}{' '}
-            <button
-              type="button"
-              className="text-primary font-medium hover:underline"
-              onClick={() => setIsLogin(!isLogin)}
-            >
-              {isLogin ? 'Sign Up' : 'Sign In'}
-            </button>
-          </p>
         </CardContent>
       </Card>
     </div>
