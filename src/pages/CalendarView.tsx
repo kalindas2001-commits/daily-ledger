@@ -70,7 +70,7 @@ export default function CalendarView() {
                   key={dateStr}
                   onClick={() => setSelectedDate(dateStr)}
                   className={cn(
-                    'relative p-1 rounded-lg text-left transition-colors min-h-[72px] hover:bg-muted',
+                    'relative p-1 rounded-lg text-left transition-colors min-h-[56px] sm:min-h-[72px] hover:bg-muted',
                     isToday(day) && 'ring-2 ring-primary',
                     isProfit && 'bg-income/10',
                     isLoss && 'bg-expense/10'
