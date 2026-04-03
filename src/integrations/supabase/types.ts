@@ -14,7 +14,102 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      categories: {
+        Row: {
+          created_at: string | null
+          id: string
+          name: string
+          type: Database["public"]["Enums"]["transaction_type"]
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          name: string
+          type: Database["public"]["Enums"]["transaction_type"]
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          name?: string
+          type?: Database["public"]["Enums"]["transaction_type"]
+          user_id?: string
+        }
+        Relationships: []
+      }
+      daily_summaries: {
+        Row: {
+          id: string
+          net_balance: number | null
+          summary_date: string
+          total_expense: number | null
+          total_income: number | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          id?: string
+          net_balance?: number | null
+          summary_date: string
+          total_expense?: number | null
+          total_income?: number | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          id?: string
+          net_balance?: number | null
+          summary_date?: string
+          total_expense?: number | null
+          total_income?: number | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      transactions: {
+        Row: {
+          category: string
+          created_at: string | null
+          description: string | null
+          id: string
+          payment_method: string | null
+          quantity: number | null
+          total_amount: number | null
+          transaction_date: string
+          type: Database["public"]["Enums"]["transaction_type"]
+          unit_price: number
+          user_id: string
+        }
+        Insert: {
+          category: string
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          payment_method?: string | null
+          quantity?: number | null
+          total_amount?: number | null
+          transaction_date: string
+          type: Database["public"]["Enums"]["transaction_type"]
+          unit_price: number
+          user_id: string
+        }
+        Update: {
+          category?: string
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          payment_method?: string | null
+          quantity?: number | null
+          total_amount?: number | null
+          transaction_date?: string
+          type?: Database["public"]["Enums"]["transaction_type"]
+          unit_price?: number
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
@@ -23,7 +118,7 @@ export type Database = {
       [_ in never]: never
     }
     Enums: {
-      [_ in never]: never
+      transaction_type: "INCOME" | "EXPENSE"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -150,6 +245,8 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      transaction_type: ["INCOME", "EXPENSE"],
+    },
   },
 } as const
