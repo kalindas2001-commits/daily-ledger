@@ -112,4 +112,7 @@
   .bg-expense\/10 {
     background-color: hsl(var(--expense) / 0.1);
   }
+  .safe-bottom {
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
 }
