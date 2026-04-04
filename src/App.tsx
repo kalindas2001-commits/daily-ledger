@@ -10,6 +10,10 @@ import AddTransaction from "./pages/AddTransaction";
 import CalendarView from "./pages/CalendarView";
 import TransactionsList from "./pages/TransactionsList";
 import ExportPage from "./pages/ExportPage";
+import Categories from "./pages/Categories";
+import RecurringTransactions from "./pages/RecurringTransactions";
+import BudgetsPage from "./pages/Budgets";
+import BackupRestore from "./pages/BackupRestore";
 import AppLayout from "./components/AppLayout";
 import NotFound from "./pages/NotFound";
 
@@ -37,6 +41,10 @@ function AppRoutes() {
         <Route path="/calendar" element={<CalendarView />} />
         <Route path="/transactions" element={<TransactionsList />} />
         <Route path="/export" element={<ExportPage />} />
+        <Route path="/categories" element={<Categories />} />
+        <Route path="/recurring" element={<RecurringTransactions />} />
+        <Route path="/budgets" element={<BudgetsPage />} />
+        <Route path="/backup" element={<BackupRestore />} />
         <Route path="*" element={<NotFound />} />
       </Routes>
     </AppLayout>
