@@ -29,7 +29,7 @@ export default function CalendarView() {
   const startDay = getDay(startOfMonth(currentMonth));
   const blanks = (startDay === 0 ? 6 : startDay - 1); // Monday start
 
-  const fmt = (n: number) => n.toLocaleString('en-US', { maximumFractionDigits: 0 });
+  const fmt = (n: number) => Number(n).toLocaleString('en-RW', { maximumFractionDigits: 0 });
 
   return (
     <div className="space-y-4">
