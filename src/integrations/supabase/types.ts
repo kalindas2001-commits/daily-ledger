@@ -14,6 +14,36 @@ export type Database = {
   }
   public: {
     Tables: {
+      budgets: {
+        Row: {
+          alert_threshold: number | null
+          category: string
+          created_at: string | null
+          id: string
+          monthly_limit: number
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          alert_threshold?: number | null
+          category: string
+          created_at?: string | null
+          id?: string
+          monthly_limit: number
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          alert_threshold?: number | null
+          category?: string
+          created_at?: string | null
+          id?: string
+          monthly_limit?: number
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       categories: {
         Row: {
           created_at: string | null
@@ -63,6 +93,54 @@ export type Database = {
           summary_date?: string
           total_expense?: number | null
           total_income?: number | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      recurring_transactions: {
+        Row: {
+          category: string
+          created_at: string | null
+          description: string | null
+          frequency: string
+          id: string
+          is_active: boolean | null
+          next_run_date: string
+          payment_method: string | null
+          quantity: number | null
+          type: Database["public"]["Enums"]["transaction_type"]
+          unit_price: number
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          category: string
+          created_at?: string | null
+          description?: string | null
+          frequency: string
+          id?: string
+          is_active?: boolean | null
+          next_run_date: string
+          payment_method?: string | null
+          quantity?: number | null
+          type: Database["public"]["Enums"]["transaction_type"]
+          unit_price: number
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          category?: string
+          created_at?: string | null
+          description?: string | null
+          frequency?: string
+          id?: string
+          is_active?: boolean | null
+          next_run_date?: string
+          payment_method?: string | null
+          quantity?: number | null
+          type?: Database["public"]["Enums"]["transaction_type"]
+          unit_price?: number
           updated_at?: string | null
           user_id?: string
         }
