@@ -31,18 +31,13 @@ export default function ExportPage() {
     return { income, expense, net: income - expense };
   }, [transactions]);
 
-  const fmt = (n: number) => n.toLocaleString('en-US', { minimumFractionDigits: 2 });
+  const fmt = (n: number) => Number(n).toLocaleString('en-RW', { minimumFractionDigits: 0 });
 
   const exportTransactionsPDF = () => {
-    if (!transactions || transactions.length === 0) {
-      toast.error('No transactions to export');
-      return;
-    }
-
+    if (!transactions || transactions.length === 0) { toast.error('No transactions to export'); return; }
     const doc = new jsPDF();
     const pageW = doc.internal.pageSize.getWidth();
 
-    // Header
     doc.setFillColor(13, 150, 104);
     doc.rect(0, 0, pageW, 38, 'F');
     doc.setTextColor(255, 255, 255);
@@ -54,58 +49,38 @@ export default function ExportPage() {
     doc.text('Transaction Report', 14, 26);
     doc.text(`${format(from, 'MMM d, yyyy')} – ${format(to, 'MMM d, yyyy')}`, 14, 33);
 
-    // Summary boxes
     doc.setTextColor(0, 0, 0);
     const boxY = 46;
     const boxW = (pageW - 42) / 3;
 
-    // Income box
     doc.setFillColor(236, 253, 245);
     doc.roundedRect(14, boxY, boxW, 24, 3, 3, 'F');
-    doc.setFontSize(8);
-    doc.setTextColor(100);
+    doc.setFontSize(8); doc.setTextColor(100);
     doc.text('Total Income', 14 + boxW / 2, boxY + 9, { align: 'center' });
-    doc.setFontSize(13);
-    doc.setTextColor(13, 150, 104);
-    doc.setFont('helvetica', 'bold');
-    doc.text(fmt(totals.income), 14 + boxW / 2, boxY + 19, { align: 'center' });
+    doc.setFontSize(13); doc.setTextColor(13, 150, 104); doc.setFont('helvetica', 'bold');
+    doc.text(`${fmt(totals.income)} RWF`, 14 + boxW / 2, boxY + 19, { align: 'center' });
 
-    // Expense box
     doc.setFillColor(254, 242, 242);
     doc.roundedRect(14 + boxW + 7, boxY, boxW, 24, 3, 3, 'F');
-    doc.setFontSize(8);
-    doc.setTextColor(100);
-    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(8); doc.setTextColor(100); doc.setFont('helvetica', 'normal');
     doc.text('Total Expense', 14 + boxW + 7 + boxW / 2, boxY + 9, { align: 'center' });
-    doc.setFontSize(13);
-    doc.setTextColor(220, 38, 38);
-    doc.setFont('helvetica', 'bold');
-    doc.text(fmt(totals.expense), 14 + boxW + 7 + boxW / 2, boxY + 19, { align: 'center' });
+    doc.setFontSize(13); doc.setTextColor(220, 38, 38); doc.setFont('helvetica', 'bold');
+    doc.text(`${fmt(totals.expense)} RWF`, 14 + boxW + 7 + boxW / 2, boxY + 19, { align: 'center' });
 
-    // Net box
     const netColor = totals.net >= 0 ? [13, 150, 104] : [220, 38, 38];
     const netBg = totals.net >= 0 ? [236, 253, 245] : [254, 242, 242];
     doc.setFillColor(netBg[0], netBg[1], netBg[2]);
     doc.roundedRect(14 + (boxW + 7) * 2, boxY, boxW, 24, 3, 3, 'F');
-    doc.setFontSize(8);
-    doc.setTextColor(100);
-    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(8); doc.setTextColor(100); doc.setFont('helvetica', 'normal');
     doc.text('Net Balance', 14 + (boxW + 7) * 2 + boxW / 2, boxY + 9, { align: 'center' });
-    doc.setFontSize(13);
-    doc.setTextColor(netColor[0], netColor[1], netColor[2]);
-    doc.setFont('helvetica', 'bold');
-    doc.text(fmt(totals.net), 14 + (boxW + 7) * 2 + boxW / 2, boxY + 19, { align: 'center' });
+    doc.setFontSize(13); doc.setTextColor(netColor[0], netColor[1], netColor[2]); doc.setFont('helvetica', 'bold');
+    doc.text(`${fmt(totals.net)} RWF`, 14 + (boxW + 7) * 2 + boxW / 2, boxY + 19, { align: 'center' });
 
-    // Table
     const tableData = transactions.map((tx) => [
       format(new Date(tx.transaction_date), 'MMM d, yyyy'),
-      tx.type,
-      tx.category,
-      tx.description || '-',
-      String(tx.quantity ?? 1),
-      fmt(tx.unit_price),
-      fmt(tx.total_amount ?? 0),
-      tx.payment_method || '-',
+      tx.type, tx.category, tx.description || '-',
+      String(tx.quantity ?? 1), `${fmt(tx.unit_price)} RWF`,
+      `${fmt(tx.total_amount ?? 0)} RWF`, tx.payment_method || '-',
     ]);
 
     autoTable(doc, {
@@ -116,11 +91,7 @@ export default function ExportPage() {
       bodyStyles: { fontSize: 7.5 },
       alternateRowStyles: { fillColor: [248, 250, 252] },
       styles: { cellPadding: 3, lineWidth: 0.1 },
-      columnStyles: {
-        4: { halign: 'center' },
-        5: { halign: 'right' },
-        6: { halign: 'right' },
-      },
+      columnStyles: { 4: { halign: 'center' }, 5: { halign: 'right' }, 6: { halign: 'right' } },
       didParseCell: (data) => {
         if (data.section === 'body' && data.column.index === 1) {
           data.cell.styles.textColor = data.cell.raw === 'INCOME' ? [13, 150, 104] : [220, 38, 38];
@@ -129,15 +100,12 @@ export default function ExportPage() {
       },
     });
 
-    // Footer
     const pageCount = doc.getNumberOfPages();
     for (let i = 1; i <= pageCount; i++) {
       doc.setPage(i);
       const pageH = doc.internal.pageSize.getHeight();
-      doc.setFontSize(7);
-      doc.setTextColor(150);
-      doc.setFont('helvetica', 'normal');
-      doc.text(`Generated by J.LucTRACKER · rossets.rw · info@rossets.rw`, 14, pageH - 8);
+      doc.setFontSize(7); doc.setTextColor(150); doc.setFont('helvetica', 'normal');
+      doc.text('Generated by J.LucTRACKER · rossets.rw · info@rossets.rw', 14, pageH - 8);
       doc.text(`Page ${i} of ${pageCount}`, pageW - 14, pageH - 8, { align: 'right' });
     }
 
@@ -146,31 +114,22 @@ export default function ExportPage() {
   };
 
   const exportDailyReportPDF = () => {
-    if (!summaries || summaries.length === 0) {
-      toast.error('No daily data to export');
-      return;
-    }
-
+    if (!summaries || summaries.length === 0) { toast.error('No daily data to export'); return; }
     const doc = new jsPDF();
     const pageW = doc.internal.pageSize.getWidth();
 
-    // Header
     doc.setFillColor(13, 150, 104);
     doc.rect(0, 0, pageW, 38, 'F');
     doc.setTextColor(255, 255, 255);
-    doc.setFontSize(20);
-    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(20); doc.setFont('helvetica', 'bold');
     doc.text('J.LucTRACKER', 14, 18);
-    doc.setFontSize(10);
-    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(10); doc.setFont('helvetica', 'normal');
     doc.text('Daily Summary Report', 14, 26);
     doc.text(`${format(from, 'MMM d, yyyy')} – ${format(to, 'MMM d, yyyy')}`, 14, 33);
 
     const tableData = summaries.map((s) => [
       format(new Date(s.summary_date), 'EEE, MMM d, yyyy'),
-      fmt(s.total_income ?? 0),
-      fmt(s.total_expense ?? 0),
-      fmt(s.net_balance ?? 0),
+      `${fmt(s.total_income ?? 0)} RWF`, `${fmt(s.total_expense ?? 0)} RWF`, `${fmt(s.net_balance ?? 0)} RWF`,
     ]);
 
     autoTable(doc, {
@@ -188,22 +147,19 @@ export default function ExportPage() {
       },
       didParseCell: (data) => {
         if (data.section === 'body' && data.column.index === 3) {
-          const val = parseFloat(String(data.cell.raw).replace(/,/g, ''));
+          const val = parseFloat(String(data.cell.raw).replace(/[^0-9.-]/g, ''));
           data.cell.styles.textColor = val >= 0 ? [13, 150, 104] : [220, 38, 38];
           data.cell.styles.fontStyle = 'bold';
         }
       },
     });
 
-    // Footer
     const pageCount = doc.getNumberOfPages();
     for (let i = 1; i <= pageCount; i++) {
       doc.setPage(i);
       const pageH = doc.internal.pageSize.getHeight();
-      doc.setFontSize(7);
-      doc.setTextColor(150);
-      doc.setFont('helvetica', 'normal');
-      doc.text(`Generated by J.LucTRACKER · rossets.rw · info@rossets.rw`, 14, pageH - 8);
+      doc.setFontSize(7); doc.setTextColor(150); doc.setFont('helvetica', 'normal');
+      doc.text('Generated by J.LucTRACKER · rossets.rw · info@rossets.rw', 14, pageH - 8);
       doc.text(`Page ${i} of ${pageCount}`, pageW - 14, pageH - 8, { align: 'right' });
     }
 
@@ -213,7 +169,6 @@ export default function ExportPage() {
 
   return (
     <div className="max-w-2xl mx-auto space-y-6">
-      {/* Date Range */}
       <Card>
         <CardHeader>
           <CardTitle className="text-base">Select Date Range</CardTitle>
@@ -227,31 +182,29 @@ export default function ExportPage() {
         </CardContent>
       </Card>
 
-      {/* Stats preview */}
       {transactions && (
         <div className="grid grid-cols-3 gap-3">
           <Card className="bg-income/5 border-income/20">
             <CardContent className="p-4 text-center">
               <p className="text-xs text-muted-foreground">Income</p>
-              <p className="text-lg font-bold text-income">{fmt(totals.income)}</p>
+              <p className="text-base sm:text-lg font-bold text-income">{fmt(totals.income)} RWF</p>
             </CardContent>
           </Card>
           <Card className="bg-expense/5 border-expense/20">
             <CardContent className="p-4 text-center">
               <p className="text-xs text-muted-foreground">Expense</p>
-              <p className="text-lg font-bold text-expense">{fmt(totals.expense)}</p>
+              <p className="text-base sm:text-lg font-bold text-expense">{fmt(totals.expense)} RWF</p>
             </CardContent>
           </Card>
           <Card className={totals.net >= 0 ? 'bg-income/5 border-income/20' : 'bg-expense/5 border-expense/20'}>
             <CardContent className="p-4 text-center">
               <p className="text-xs text-muted-foreground">Net</p>
-              <p className={cn('text-lg font-bold', totals.net >= 0 ? 'text-income' : 'text-expense')}>{fmt(totals.net)}</p>
+              <p className={cn('text-base sm:text-lg font-bold', totals.net >= 0 ? 'text-income' : 'text-expense')}>{fmt(totals.net)} RWF</p>
             </CardContent>
           </Card>
         </div>
       )}
 
-      {/* Export buttons */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <Card className="hover:shadow-md transition-shadow cursor-pointer" onClick={exportTransactionsPDF}>
           <CardContent className="p-6 flex items-center gap-4">
@@ -260,9 +213,7 @@ export default function ExportPage() {
             </div>
             <div>
               <p className="font-semibold text-sm">Transactions PDF</p>
-              <p className="text-xs text-muted-foreground mt-0.5">
-                {txLoading ? 'Loading...' : `${transactions?.length ?? 0} records`}
-              </p>
+              <p className="text-xs text-muted-foreground mt-0.5">{txLoading ? 'Loading...' : `${transactions?.length ?? 0} records`}</p>
             </div>
           </CardContent>
         </Card>
@@ -273,9 +224,7 @@ export default function ExportPage() {
             </div>
             <div>
               <p className="font-semibold text-sm">Daily Report PDF</p>
-              <p className="text-xs text-muted-foreground mt-0.5">
-                {sumLoading ? 'Loading...' : `${summaries?.length ?? 0} days`}
-              </p>
+              <p className="text-xs text-muted-foreground mt-0.5">{sumLoading ? 'Loading...' : `${summaries?.length ?? 0} days`}</p>
             </div>
           </CardContent>
         </Card>
@@ -291,8 +240,7 @@ function DatePicker({ label, date, onChange }: { label: string; date: Date; onCh
       <Popover>
         <PopoverTrigger asChild>
           <Button variant="outline" className="w-full justify-start text-left font-normal">
-            <CalendarIcon className="mr-2 h-4 w-4" />
-            {format(date, 'PPP')}
+            <CalendarIcon className="mr-2 h-4 w-4" />{format(date, 'PPP')}
           </Button>
         </PopoverTrigger>
         <PopoverContent className="w-auto p-0" align="start">

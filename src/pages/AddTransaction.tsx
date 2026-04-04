@@ -54,6 +54,8 @@ export default function AddTransaction() {
     }
   };
 
+  const fmt = (n: number) => n.toLocaleString('en-RW', { minimumFractionDigits: 0 });
+
   return (
     <div className="max-w-lg mx-auto">
       <Card>
@@ -65,19 +67,10 @@ export default function AddTransaction() {
             {/* Type Toggle */}
             <div className="flex rounded-lg overflow-hidden border">
               {(['INCOME', 'EXPENSE'] as const).map((t) => (
-                <button
-                  key={t}
-                  type="button"
-                  onClick={() => { setType(t); setCategory(''); }}
-                  className={cn(
-                    'flex-1 py-2.5 text-sm font-medium transition-colors',
-                    type === t
-                      ? t === 'INCOME' ? 'bg-income text-primary-foreground' : 'bg-expense text-primary-foreground'
-                      : 'bg-secondary text-secondary-foreground'
-                  )}
-                >
-                  {t}
-                </button>
+                <button key={t} type="button" onClick={() => { setType(t); setCategory(''); }}
+                  className={cn('flex-1 py-2.5 text-sm font-medium transition-colors',
+                    type === t ? (t === 'INCOME' ? 'bg-income text-primary-foreground' : 'bg-expense text-primary-foreground') : 'bg-secondary text-secondary-foreground'
+                  )}>{t}</button>
               ))}
             </div>
 
@@ -87,8 +80,7 @@ export default function AddTransaction() {
               <Popover>
                 <PopoverTrigger asChild>
                   <Button variant="outline" className={cn('w-full justify-start text-left font-normal', !date && 'text-muted-foreground')}>
-                    <CalendarIcon className="mr-2 h-4 w-4" />
-                    {format(date, 'PPP')}
+                    <CalendarIcon className="mr-2 h-4 w-4" />{format(date, 'PPP')}
                   </Button>
                 </PopoverTrigger>
                 <PopoverContent className="w-auto p-0" align="start">
@@ -102,11 +94,7 @@ export default function AddTransaction() {
               <Label>Category</Label>
               <Select value={category} onValueChange={setCategory}>
                 <SelectTrigger><SelectValue placeholder="Select category" /></SelectTrigger>
-                <SelectContent>
-                  {filteredCategories.map((c) => (
-                    <SelectItem key={c.id} value={c.name}>{c.name}</SelectItem>
-                  ))}
-                </SelectContent>
+                <SelectContent>{filteredCategories.map((c) => <SelectItem key={c.id} value={c.name}>{c.name}</SelectItem>)}</SelectContent>
               </Select>
             </div>
 
@@ -117,8 +105,8 @@ export default function AddTransaction() {
                 <Input type="number" min={1} value={quantity} onChange={(e) => setQuantity(Math.max(1, +e.target.value))} />
               </div>
               <div className="space-y-2">
-                <Label>Unit Price</Label>
-                <Input type="number" min={0} step="0.01" value={unitPrice || ''} onChange={(e) => setUnitPrice(+e.target.value)} />
+                <Label>Unit Price (RWF)</Label>
+                <Input type="number" min={0} step="1" value={unitPrice || ''} onChange={(e) => setUnitPrice(+e.target.value)} />
               </div>
             </div>
 
@@ -126,7 +114,7 @@ export default function AddTransaction() {
             <div className="rounded-lg bg-muted p-4 text-center">
               <p className="text-sm text-muted-foreground">Total Amount</p>
               <p className={cn('text-3xl font-bold', type === 'INCOME' ? 'text-income' : 'text-expense')}>
-                {total.toLocaleString('en-US', { minimumFractionDigits: 2 })}
+                {fmt(total)} RWF
               </p>
             </div>
 
@@ -135,11 +123,7 @@ export default function AddTransaction() {
               <Label>Payment Method</Label>
               <Select value={paymentMethod} onValueChange={setPaymentMethod}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  {PAYMENT_METHODS.map((m) => (
-                    <SelectItem key={m} value={m}>{m}</SelectItem>
-                  ))}
-                </SelectContent>
+                <SelectContent>{PAYMENT_METHODS.map((m) => <SelectItem key={m} value={m}>{m}</SelectItem>)}</SelectContent>
               </Select>
             </div>
 
