@@ -1,7 +1,7 @@
 {
-  "name": "FinTracker",
-  "short_name": "FinTracker",
-  "description": "Daily financial tracking and analytics",
+  "name": "J.LucTRACKER",
+  "short_name": "J.LucTRACKER",
+  "description": "Daily financial tracking and analytics by rossets.rw",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#f5f7fa",

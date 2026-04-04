@@ -9,6 +9,7 @@ import Dashboard from "./pages/Dashboard";
 import AddTransaction from "./pages/AddTransaction";
 import CalendarView from "./pages/CalendarView";
 import TransactionsList from "./pages/TransactionsList";
+import ExportPage from "./pages/ExportPage";
 import AppLayout from "./components/AppLayout";
 import NotFound from "./pages/NotFound";
 
@@ -19,7 +20,8 @@ function AppRoutes() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
+      <div className="min-h-screen flex flex-col items-center justify-center bg-background gap-3">
+        <img src="/icon-192.png" alt="J.LucTRACKER" className="w-12 h-12 rounded-xl animate-pulse" />
         <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin" />
       </div>
     );
@@ -34,6 +36,7 @@ function AppRoutes() {
         <Route path="/add" element={<AddTransaction />} />
         <Route path="/calendar" element={<CalendarView />} />
         <Route path="/transactions" element={<TransactionsList />} />
+        <Route path="/export" element={<ExportPage />} />
         <Route path="*" element={<NotFound />} />
       </Routes>
     </AppLayout>
