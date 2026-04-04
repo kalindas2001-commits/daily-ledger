@@ -2,22 +2,39 @@ import { useState, useMemo } from 'react';
 import { format } from 'date-fns';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
-import { Trash2, Search } from 'lucide-react';
-import { useTransactions, useDeleteTransaction, useCategories } from '@/hooks/useTransactions';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import { Textarea } from '@/components/ui/textarea';
+import { Trash2, Search, Pencil } from 'lucide-react';
+import { useTransactions, useDeleteTransaction, useUpdateTransaction, useCategories } from '@/hooks/useTransactions';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
+
+const PAYMENT_METHODS = ['Cash', 'Mobile Money', 'Bank Transfer', 'Card'];
 
 export default function TransactionsList() {
   const { data: transactions, isLoading } = useTransactions();
   const { data: categories } = useCategories();
   const deleteTx = useDeleteTransaction();
+  const updateTx = useUpdateTransaction();
 
   const [search, setSearch] = useState('');
   const [filterType, setFilterType] = useState<string>('ALL');
   const [filterCategory, setFilterCategory] = useState<string>('ALL');
   const [filterPayment, setFilterPayment] = useState<string>('ALL');
+
+  // Edit dialog state
+  const [editOpen, setEditOpen] = useState(false);
+  const [editId, setEditId] = useState('');
+  const [editType, setEditType] = useState<'INCOME' | 'EXPENSE'>('EXPENSE');
+  const [editDate, setEditDate] = useState('');
+  const [editCategory, setEditCategory] = useState('');
+  const [editDescription, setEditDescription] = useState('');
+  const [editQuantity, setEditQuantity] = useState(1);
+  const [editUnitPrice, setEditUnitPrice] = useState(0);
+  const [editPayment, setEditPayment] = useState('Cash');
 
   const filtered = useMemo(() => {
     if (!transactions) return [];
@@ -27,11 +44,7 @@ export default function TransactionsList() {
       if (filterPayment !== 'ALL' && tx.payment_method !== filterPayment) return false;
       if (search) {
         const q = search.toLowerCase();
-        return (
-          tx.category.toLowerCase().includes(q) ||
-          tx.description?.toLowerCase().includes(q) ||
-          tx.id.toLowerCase().includes(q)
-        );
+        return tx.category.toLowerCase().includes(q) || tx.description?.toLowerCase().includes(q) || tx.id.toLowerCase().includes(q);
       }
       return true;
     });
@@ -42,20 +55,45 @@ export default function TransactionsList() {
     return Array.from(set) as string[];
   }, [transactions]);
 
-  const handleDelete = async (id: string) => {
-    try {
-      await deleteTx.mutateAsync(id);
-      toast.success('Transaction deleted');
-    } catch (err: any) {
-      toast.error(err.message);
-    }
+  const openEdit = (tx: any) => {
+    setEditId(tx.id);
+    setEditType(tx.type);
+    setEditDate(tx.transaction_date);
+    setEditCategory(tx.category);
+    setEditDescription(tx.description || '');
+    setEditQuantity(tx.quantity ?? 1);
+    setEditUnitPrice(tx.unit_price);
+    setEditPayment(tx.payment_method || 'Cash');
+    setEditOpen(true);
   };
 
-  const fmt = (n: number) => n.toLocaleString('en-US', { minimumFractionDigits: 2 });
+  const handleUpdate = async () => {
+    try {
+      await updateTx.mutateAsync({
+        id: editId,
+        type: editType,
+        transaction_date: editDate,
+        category: editCategory,
+        description: editDescription || undefined,
+        quantity: editQuantity,
+        unit_price: editUnitPrice,
+        payment_method: editPayment,
+      });
+      toast.success('Transaction updated');
+      setEditOpen(false);
+    } catch (err: any) { toast.error(err.message); }
+  };
+
+  const handleDelete = async (id: string) => {
+    try { await deleteTx.mutateAsync(id); toast.success('Transaction deleted'); }
+    catch (err: any) { toast.error(err.message); }
+  };
+
+  const fmt = (n: number) => Number(n).toLocaleString('en-RW', { minimumFractionDigits: 0 });
+  const editFilteredCats = categories?.filter((c) => c.type === editType) ?? [];
 
   return (
     <div className="space-y-4">
-      {/* Filters */}
       <Card>
         <CardContent className="p-4">
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
@@ -89,7 +127,6 @@ export default function TransactionsList() {
         </CardContent>
       </Card>
 
-      {/* Transactions */}
       <Card>
         <CardHeader>
           <CardTitle className="text-base flex items-center justify-between">
@@ -116,21 +153,19 @@ export default function TransactionsList() {
                       </p>
                     </div>
                   </div>
-                  <div className="flex items-center gap-3 shrink-0">
+                  <div className="flex items-center gap-2 shrink-0">
                     <div className="text-right">
                       <p className={cn('text-sm font-semibold', tx.type === 'INCOME' ? 'text-income' : 'text-expense')}>
-                        {tx.type === 'INCOME' ? '+' : '-'}{fmt(tx.total_amount ?? 0)}
+                        {tx.type === 'INCOME' ? '+' : '-'}{fmt(tx.total_amount ?? 0)} RWF
                       </p>
                       {(tx.quantity ?? 1) > 1 && (
                         <p className="text-xs text-muted-foreground">{tx.quantity} × {fmt(tx.unit_price)}</p>
                       )}
                     </div>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="sm:opacity-0 sm:group-hover:opacity-100 text-destructive"
-                      onClick={() => handleDelete(tx.id)}
-                    >
+                    <Button variant="ghost" size="icon" className="sm:opacity-0 sm:group-hover:opacity-100 h-8 w-8" onClick={() => openEdit(tx)}>
+                      <Pencil className="w-3.5 h-3.5" />
+                    </Button>
+                    <Button variant="ghost" size="icon" className="sm:opacity-0 sm:group-hover:opacity-100 text-destructive h-8 w-8" onClick={() => handleDelete(tx.id)}>
                       <Trash2 className="w-4 h-4" />
                     </Button>
                   </div>
@@ -140,6 +175,47 @@ export default function TransactionsList() {
           )}
         </CardContent>
       </Card>
+
+      {/* Edit Dialog */}
+      <Dialog open={editOpen} onOpenChange={setEditOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader><DialogTitle>Edit Transaction</DialogTitle></DialogHeader>
+          <div className="space-y-4">
+            <div className="flex rounded-lg overflow-hidden border">
+              {(['INCOME', 'EXPENSE'] as const).map((t) => (
+                <button key={t} type="button" onClick={() => { setEditType(t); setEditCategory(''); }}
+                  className={cn('flex-1 py-2 text-sm font-medium transition-colors',
+                    editType === t ? (t === 'INCOME' ? 'bg-income text-primary-foreground' : 'bg-expense text-primary-foreground') : 'bg-secondary text-secondary-foreground'
+                  )}>{t}</button>
+              ))}
+            </div>
+            <div className="space-y-1"><Label>Date</Label><Input type="date" value={editDate} onChange={(e) => setEditDate(e.target.value)} /></div>
+            <Select value={editCategory} onValueChange={setEditCategory}>
+              <SelectTrigger><SelectValue placeholder="Category" /></SelectTrigger>
+              <SelectContent>{editFilteredCats.map((c) => <SelectItem key={c.id} value={c.name}>{c.name}</SelectItem>)}</SelectContent>
+            </Select>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1"><Label>Quantity</Label><Input type="number" min={1} value={editQuantity} onChange={(e) => setEditQuantity(Math.max(1, +e.target.value))} /></div>
+              <div className="space-y-1"><Label>Unit Price (RWF)</Label><Input type="number" min={0} value={editUnitPrice || ''} onChange={(e) => setEditUnitPrice(+e.target.value)} /></div>
+            </div>
+            <div className="rounded-lg bg-muted p-3 text-center">
+              <p className="text-xs text-muted-foreground">Total</p>
+              <p className={cn('text-xl font-bold', editType === 'INCOME' ? 'text-income' : 'text-expense')}>
+                {(editQuantity * editUnitPrice).toLocaleString('en-RW')} RWF
+              </p>
+            </div>
+            <Select value={editPayment} onValueChange={setEditPayment}>
+              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectContent>{PAYMENT_METHODS.map((m) => <SelectItem key={m} value={m}>{m}</SelectItem>)}</SelectContent>
+            </Select>
+            <Textarea placeholder="Description (optional)" value={editDescription} onChange={(e) => setEditDescription(e.target.value)} />
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setEditOpen(false)}>Cancel</Button>
+            <Button onClick={handleUpdate} disabled={updateTx.isPending}>Save Changes</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
