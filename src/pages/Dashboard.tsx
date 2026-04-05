@@ -1,14 +1,14 @@
 import { useState, useMemo } from 'react';
-import { format, startOfMonth, endOfMonth, startOfWeek, endOfWeek, subDays, subMonths } from 'date-fns';
+import { format, startOfMonth, endOfMonth, startOfWeek, endOfWeek, subMonths, differenceInDays } from 'date-fns';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { TrendingUp, TrendingDown, DollarSign, BarChart3 } from 'lucide-react';
+import { TrendingUp, TrendingDown, DollarSign, BarChart3, Flame, PiggyBank, AlertTriangle, Lightbulb } from 'lucide-react';
 import { useTransactions, useDailySummaries, useBudgets } from '@/hooks/useTransactions';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend } from 'recharts';
 import { Progress } from '@/components/ui/progress';
 import { cn } from '@/lib/utils';
 
-const PIE_COLORS = ['hsl(160, 84%, 39%)', 'hsl(38, 92%, 50%)', 'hsl(200, 70%, 50%)', 'hsl(280, 60%, 50%)', 'hsl(0, 72%, 51%)', 'hsl(120, 50%, 40%)'];
+const PIE_COLORS = ['hsl(160, 84%, 39%)', 'hsl(38, 92%, 50%)', 'hsl(200, 70%, 50%)', 'hsl(280, 60%, 50%)', 'hsl(0, 72%, 51%)', 'hsl(120, 50%, 40%)', 'hsl(340, 65%, 50%)', 'hsl(60, 70%, 45%)'];
 
 type RangeKey = 'today' | 'week' | 'month' | '3months' | '6months' | 'year';
 
@@ -33,7 +33,6 @@ export default function Dashboard() {
   const { data: summaries } = useDailySummaries(range.from, range.to);
   const { data: budgets } = useBudgets();
 
-  // Current month transactions for budget tracking
   const now = new Date();
   const monthFrom = format(startOfMonth(now), 'yyyy-MM-dd');
   const monthTo = format(endOfMonth(now), 'yyyy-MM-dd');
@@ -50,11 +49,20 @@ export default function Dashboard() {
     return { income, expense };
   }, [txData]);
 
-  const categoryData = useMemo(() => {
+  const categoryExpenseData = useMemo(() => {
     if (!txData) return [];
     const map: Record<string, number> = {};
     for (const tx of txData) {
       if (tx.type === 'EXPENSE') map[tx.category] = (map[tx.category] ?? 0) + (tx.total_amount ?? 0);
+    }
+    return Object.entries(map).map(([name, value]) => ({ name, value })).sort((a, b) => b.value - a.value);
+  }, [txData]);
+
+  const categoryIncomeData = useMemo(() => {
+    if (!txData) return [];
+    const map: Record<string, number> = {};
+    for (const tx of txData) {
+      if (tx.type === 'INCOME') map[tx.category] = (map[tx.category] ?? 0) + (tx.total_amount ?? 0);
     }
     return Object.entries(map).map(([name, value]) => ({ name, value })).sort((a, b) => b.value - a.value);
   }, [txData]);
@@ -78,10 +86,58 @@ export default function Dashboard() {
       .map((b) => {
         const spent = spendMap[b.category] ?? 0;
         const pct = Number(b.monthly_limit) > 0 ? (spent / Number(b.monthly_limit)) * 100 : 0;
-        return { ...b, spent, pct: Math.min(pct, 100) };
+        return { ...b, spent, pct: Math.min(pct, 100), exceeded: pct >= 100 };
       })
       .filter((b) => b.pct >= (b.alert_threshold ?? 80));
   }, [budgets, monthTx]);
+
+  // Analytics insights
+  const insights = useMemo(() => {
+    if (!txData || txData.length === 0) return [];
+    const result: { icon: any; text: string; type: 'info' | 'warning' | 'success' }[] = [];
+    const days = differenceInDays(new Date(range.to), new Date(range.from)) + 1;
+
+    // Burn rate
+    const burnRate = days > 0 ? stats.expense / days : 0;
+    if (burnRate > 0) {
+      result.push({ icon: Flame, text: `Daily burn rate: ${fmt(Math.round(burnRate))} RWF/day`, type: 'info' });
+    }
+
+    // Savings rate
+    if (stats.income > 0) {
+      const savingsRate = ((stats.income - stats.expense) / stats.income * 100).toFixed(1);
+      const sr = parseFloat(savingsRate);
+      result.push({
+        icon: PiggyBank,
+        text: `Savings rate: ${savingsRate}%${sr < 0 ? ' (overspending!)' : sr > 30 ? ' (excellent!)' : ''}`,
+        type: sr < 0 ? 'warning' : sr > 20 ? 'success' : 'info'
+      });
+    }
+
+    // Top expense category
+    if (categoryExpenseData.length > 0 && stats.expense > 0) {
+      const top = categoryExpenseData[0];
+      const pct = ((top.value / stats.expense) * 100).toFixed(0);
+      result.push({ icon: Lightbulb, text: `${top.name} is ${pct}% of total expenses (${fmt(top.value)} RWF)`, type: 'info' });
+    }
+
+    // Category concentration warning
+    if (categoryExpenseData.length > 0 && stats.expense > 0) {
+      const topPct = (categoryExpenseData[0].value / stats.expense) * 100;
+      if (topPct > 60) {
+        result.push({ icon: AlertTriangle, text: `High concentration: ${categoryExpenseData[0].name} dominates spending at ${topPct.toFixed(0)}%`, type: 'warning' });
+      }
+    }
+
+    // Runway
+    if (burnRate > 0 && stats.income > stats.expense) {
+      const balance = stats.income - stats.expense;
+      const runway = Math.round(balance / burnRate);
+      result.push({ icon: TrendingUp, text: `Current surplus covers ${runway} more days at this spend rate`, type: 'success' });
+    }
+
+    return result;
+  }, [txData, stats, categoryExpenseData, range]);
 
   const fmt = (n: number) => Number(n).toLocaleString('en-RW', { minimumFractionDigits: 0 });
   const net = stats.income - stats.expense;
@@ -111,18 +167,45 @@ export default function Dashboard() {
         <KPICard title="Transactions" value={String(txData?.length ?? 0)} icon={BarChart3} variant="income" />
       </div>
 
+      {/* Analytics Insights */}
+      {insights.length > 0 && (
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm flex items-center gap-2">
+              <Lightbulb className="w-4 h-4 text-accent" /> Smart Insights
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-2">
+            {insights.map((insight, i) => (
+              <div key={i} className={cn(
+                'flex items-center gap-3 p-3 rounded-lg text-sm',
+                insight.type === 'warning' ? 'bg-accent/10 text-accent' : insight.type === 'success' ? 'bg-income/10 text-income' : 'bg-muted text-foreground'
+              )}>
+                <insight.icon className="w-4 h-4 shrink-0" />
+                <span>{insight.text}</span>
+              </div>
+            ))}
+          </CardContent>
+        </Card>
+      )}
+
       {/* Budget alerts */}
       {budgetAlerts.length > 0 && (
         <Card className="border-accent/50">
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm text-accent">⚠ Budget Alerts</CardTitle>
+            <CardTitle className="text-sm text-accent flex items-center gap-2">
+              <AlertTriangle className="w-4 h-4" /> Budget Alerts
+            </CardTitle>
           </CardHeader>
           <CardContent className="space-y-3">
             {budgetAlerts.map((b) => (
               <div key={b.id} className="space-y-1">
                 <div className="flex justify-between text-xs">
                   <span className="font-medium">{b.category}</span>
-                  <span className="text-muted-foreground">{fmt(b.spent)} / {fmt(Number(b.monthly_limit))} RWF</span>
+                  <span className={cn('font-semibold', b.exceeded ? 'text-destructive' : 'text-muted-foreground')}>
+                    {fmt(b.spent)} / {fmt(Number(b.monthly_limit))} RWF
+                    {b.exceeded && ' — EXCEEDED!'}
+                  </span>
                 </div>
                 <Progress value={b.pct} className={cn('h-2', b.pct >= 100 ? '[&>div]:bg-destructive' : '[&>div]:bg-accent')} />
               </div>
@@ -153,20 +236,20 @@ export default function Dashboard() {
           </CardContent>
         </Card>
 
-        {/* Pie chart */}
+        {/* Expense pie chart */}
         <Card>
           <CardHeader>
             <CardTitle className="text-base">Expense Breakdown</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="h-72 flex items-center justify-center">
-              {categoryData.length === 0 ? (
+            <div className="h-56 flex items-center justify-center">
+              {categoryExpenseData.length === 0 ? (
                 <p className="text-muted-foreground text-sm">No expenses yet</p>
               ) : (
                 <ResponsiveContainer width="100%" height="100%">
                   <PieChart>
-                    <Pie data={categoryData} cx="50%" cy="50%" innerRadius={50} outerRadius={90} paddingAngle={2} dataKey="value">
-                      {categoryData.map((_, i) => <Cell key={i} fill={PIE_COLORS[i % PIE_COLORS.length]} />)}
+                    <Pie data={categoryExpenseData} cx="50%" cy="50%" innerRadius={40} outerRadius={80} paddingAngle={2} dataKey="value">
+                      {categoryExpenseData.map((_, i) => <Cell key={i} fill={PIE_COLORS[i % PIE_COLORS.length]} />)}
                     </Pie>
                     <Tooltip formatter={(v: number) => `${fmt(v)} RWF`} />
                   </PieChart>
@@ -174,7 +257,7 @@ export default function Dashboard() {
               )}
             </div>
             <div className="mt-2 space-y-1">
-              {categoryData.slice(0, 5).map((c, i) => (
+              {categoryExpenseData.slice(0, 5).map((c, i) => (
                 <div key={c.name} className="flex items-center justify-between text-sm">
                   <div className="flex items-center gap-2">
                     <div className="w-3 h-3 rounded-full" style={{ background: PIE_COLORS[i % PIE_COLORS.length] }} />
@@ -187,6 +270,40 @@ export default function Dashboard() {
           </CardContent>
         </Card>
       </div>
+
+      {/* Income breakdown */}
+      {categoryIncomeData.length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base">Income Breakdown</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="h-56 flex items-center justify-center">
+                <ResponsiveContainer width="100%" height="100%">
+                  <PieChart>
+                    <Pie data={categoryIncomeData} cx="50%" cy="50%" innerRadius={40} outerRadius={80} paddingAngle={2} dataKey="value">
+                      {categoryIncomeData.map((_, i) => <Cell key={i} fill={PIE_COLORS[(i + 2) % PIE_COLORS.length]} />)}
+                    </Pie>
+                    <Tooltip formatter={(v: number) => `${fmt(v)} RWF`} />
+                  </PieChart>
+                </ResponsiveContainer>
+              </div>
+              <div className="space-y-2 flex flex-col justify-center">
+                {categoryIncomeData.map((c, i) => (
+                  <div key={c.name} className="flex items-center justify-between text-sm">
+                    <div className="flex items-center gap-2">
+                      <div className="w-3 h-3 rounded-full" style={{ background: PIE_COLORS[(i + 2) % PIE_COLORS.length] }} />
+                      <span className="text-muted-foreground">{c.name}</span>
+                    </div>
+                    <span className="font-medium text-income">{fmt(c.value)} RWF</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 }
