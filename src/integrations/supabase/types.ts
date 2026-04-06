@@ -68,6 +68,33 @@ export type Database = {
         }
         Relationships: []
       }
+      daily_notes: {
+        Row: {
+          created_at: string | null
+          id: string
+          note: string
+          note_date: string
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          note: string
+          note_date: string
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          note?: string
+          note_date?: string
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       daily_summaries: {
         Row: {
           id: string
@@ -93,6 +120,48 @@ export type Database = {
           summary_date?: string
           total_expense?: number | null
           total_income?: number | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      loans: {
+        Row: {
+          amount: number
+          created_at: string | null
+          description: string | null
+          id: string
+          loan_date: string
+          paid_date: string | null
+          person_name: string
+          status: Database["public"]["Enums"]["loan_status"]
+          type: Database["public"]["Enums"]["loan_type"]
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          amount: number
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          loan_date?: string
+          paid_date?: string | null
+          person_name: string
+          status?: Database["public"]["Enums"]["loan_status"]
+          type: Database["public"]["Enums"]["loan_type"]
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          loan_date?: string
+          paid_date?: string | null
+          person_name?: string
+          status?: Database["public"]["Enums"]["loan_status"]
+          type?: Database["public"]["Enums"]["loan_type"]
           updated_at?: string | null
           user_id?: string
         }
@@ -196,6 +265,8 @@ export type Database = {
       [_ in never]: never
     }
     Enums: {
+      loan_status: "PENDING" | "PAID"
+      loan_type: "GIVEN" | "RECEIVED"
       transaction_type: "INCOME" | "EXPENSE"
     }
     CompositeTypes: {
@@ -324,6 +395,8 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
+      loan_status: ["PENDING", "PAID"],
+      loan_type: ["GIVEN", "RECEIVED"],
       transaction_type: ["INCOME", "EXPENSE"],
     },
   },
