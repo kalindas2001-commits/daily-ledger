@@ -2,8 +2,9 @@ import { useState, useMemo } from 'react';
 import { format, startOfMonth, endOfMonth, startOfWeek, endOfWeek, subMonths, differenceInDays } from 'date-fns';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { TrendingUp, TrendingDown, DollarSign, BarChart3, Flame, PiggyBank, AlertTriangle, Lightbulb } from 'lucide-react';
+import { TrendingUp, TrendingDown, DollarSign, BarChart3, Flame, PiggyBank, AlertTriangle, Lightbulb, HandCoins, Wallet } from 'lucide-react';
 import { useTransactions, useDailySummaries, useBudgets } from '@/hooks/useTransactions';
+import { useLoans } from '@/hooks/useLoans';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend } from 'recharts';
 import { Progress } from '@/components/ui/progress';
 import { cn } from '@/lib/utils';
@@ -32,6 +33,7 @@ export default function Dashboard() {
   const { data: txData } = useTransactions({ from: range.from, to: range.to });
   const { data: summaries } = useDailySummaries(range.from, range.to);
   const { data: budgets } = useBudgets();
+  const { data: loans } = useLoans();
 
   const now = new Date();
   const monthFrom = format(startOfMonth(now), 'yyyy-MM-dd');
@@ -142,6 +144,13 @@ export default function Dashboard() {
   const fmt = (n: number) => Number(n).toLocaleString('en-RW', { minimumFractionDigits: 0 });
   const net = stats.income - stats.expense;
 
+  const loanSummary = useMemo(() => {
+    if (!loans) return { oweMe: 0, iOwe: 0 };
+    const oweMe = loans.filter(l => l.type === 'GIVEN' && l.status === 'PENDING').reduce((s, l) => s + Number(l.amount), 0);
+    const iOwe = loans.filter(l => l.type === 'RECEIVED' && l.status === 'PENDING').reduce((s, l) => s + Number(l.amount), 0);
+    return { oweMe, iOwe };
+  }, [loans]);
+
   return (
     <div className="space-y-6">
       {/* Range selector */}
@@ -160,11 +169,13 @@ export default function Dashboard() {
       </div>
 
       {/* KPI Cards */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+      <div className="grid grid-cols-2 lg:grid-cols-3 gap-3">
         <KPICard title="Income" value={`${fmt(stats.income)} RWF`} icon={TrendingUp} variant="income" />
         <KPICard title="Expense" value={`${fmt(stats.expense)} RWF`} icon={TrendingDown} variant="expense" />
         <KPICard title="Net Balance" value={`${fmt(net)} RWF`} icon={DollarSign} variant={net >= 0 ? 'income' : 'expense'} />
         <KPICard title="Transactions" value={String(txData?.length ?? 0)} icon={BarChart3} variant="income" />
+        <KPICard title="People Owe Me" value={`${fmt(loanSummary.oweMe)} RWF`} icon={HandCoins} variant="expense" />
+        <KPICard title="I Owe People" value={`${fmt(loanSummary.iOwe)} RWF`} icon={Wallet} variant="income" />
       </div>
 
       {/* Analytics Insights */}
