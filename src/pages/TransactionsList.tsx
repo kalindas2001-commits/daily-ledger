@@ -129,9 +129,12 @@ export default function TransactionsList() {
 
       <Card>
         <CardHeader>
-          <CardTitle className="text-base flex items-center justify-between">
-            <span>Transactions</span>
-            <span className="text-sm text-muted-foreground font-normal">{filtered.length} records</span>
+          <CardTitle className="text-base flex items-center justify-between flex-wrap gap-2">
+            <span>Transactions ({filtered.length})</span>
+            <div className="flex items-center gap-3 text-sm font-normal">
+              <span className="text-income">+{fmt(filtered.filter(t => t.type === 'INCOME').reduce((s, t) => s + (t.total_amount ?? 0), 0))} RWF</span>
+              <span className="text-expense">-{fmt(filtered.filter(t => t.type === 'EXPENSE').reduce((s, t) => s + (t.total_amount ?? 0), 0))} RWF</span>
+            </div>
           </CardTitle>
         </CardHeader>
         <CardContent>
