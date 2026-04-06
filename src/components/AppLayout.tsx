@@ -18,6 +18,8 @@ import {
   Database,
   Moon,
   Sun,
+  HandCoins,
+  StickyNote,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
@@ -30,6 +32,8 @@ const mainNav = [
 ];
 
 const moreNav = [
+  { path: '/loans', label: 'Loans', icon: HandCoins },
+  { path: '/notes', label: 'Notes', icon: StickyNote },
   { path: '/categories', label: 'Categories', icon: Tag },
   { path: '/recurring', label: 'Recurring', icon: Repeat },
   { path: '/budgets', label: 'Budgets', icon: Target },
