@@ -93,8 +93,8 @@ export default function Dashboard() {
       .filter((b) => b.pct >= (b.alert_threshold ?? 80));
   }, [budgets, monthTx]);
 
+  const fmt = (n: number) => Number(n).toLocaleString('en-RW', { minimumFractionDigits: 0 });
   // Analytics insights
-    const fmt = (n: number) => Number(n).toLocaleString('en-RW', { minimumFractionDigits: 0 });
   const insights = useMemo(() => {
     if (!txData || txData.length === 0) return [];
     const result: { icon: any; text: string; type: 'info' | 'warning' | 'success' }[] = [];
