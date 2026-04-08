@@ -94,6 +94,7 @@ export default function Dashboard() {
   }, [budgets, monthTx]);
 
   // Analytics insights
+    const fmt = (n: number) => Number(n).toLocaleString('en-RW', { minimumFractionDigits: 0 });
   const insights = useMemo(() => {
     if (!txData || txData.length === 0) return [];
     const result: { icon: any; text: string; type: 'info' | 'warning' | 'success' }[] = [];
@@ -141,7 +142,6 @@ export default function Dashboard() {
     return result;
   }, [txData, stats, categoryExpenseData, range]);
 
-  const fmt = (n: number) => Number(n).toLocaleString('en-RW', { minimumFractionDigits: 0 });
   const net = stats.income - stats.expense;
 
   const loanSummary = useMemo(() => {
