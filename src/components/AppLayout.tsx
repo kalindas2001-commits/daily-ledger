@@ -77,7 +77,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
           })}
 
           <p className="px-3 pt-4 pb-1 text-[10px] font-semibold uppercase tracking-wider text-sidebar-foreground/40">Manage</p>
-          {moreNav.map((item) => {
+          {moreNavWithAdmin.map((item) => {
             const active = location.pathname === item.path;
             return (
               <Link key={item.path} to={item.path}
@@ -120,7 +120,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
             </div>
             <nav className="p-3 space-y-0.5 overflow-y-auto max-h-[calc(100dvh-180px)]">
               <p className="px-3 pt-2 pb-1 text-[10px] font-semibold uppercase tracking-wider text-sidebar-foreground/40">Manage</p>
-              {moreNav.map((item) => {
+              {moreNavWithAdmin.map((item) => {
                 const active = location.pathname === item.path;
                 return (
                   <Link key={item.path} to={item.path} onClick={() => setMobileOpen(false)}
