@@ -159,6 +159,9 @@ export default function Admin() {
         ))}
       </div>
 
+      {/* Drill-down analytics with filters */}
+      <AdminAnalytics />
+
       {/* Users table */}
       <Card>
         <CardHeader><CardTitle className="text-base">Users ({users.length})</CardTitle></CardHeader>
