@@ -158,7 +158,10 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
           <button className="lg:hidden p-1.5 rounded-lg hover:bg-muted transition-colors" onClick={() => setMobileOpen(true)}>
             <Menu className="w-5 h-5" />
           </button>
-          <h1 className="text-base sm:text-lg font-semibold truncate">{currentLabel}</h1>
+          <h1 className="text-base sm:text-lg font-semibold truncate flex-1">{currentLabel}</h1>
+          <Link to="/profile" className="p-1.5 rounded-full hover:bg-muted transition-colors" aria-label="Profile">
+            <UserCircle2 className="w-6 h-6 text-muted-foreground" />
+          </Link>
         </header>
         <div className="flex-1 overflow-y-auto p-4 sm:p-6 animate-fade-in">{children}</div>
 
