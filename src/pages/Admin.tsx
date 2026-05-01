@@ -14,6 +14,7 @@ import {
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from '@/components/ui/dialog';
 import { Users, Shield, TrendingUp, TrendingDown, Wallet, HandCoins, UserPlus, Ban, Check, RefreshCw } from 'lucide-react';
 import { toast } from 'sonner';
+import AdminAnalytics from '@/components/AdminAnalytics';
 
 interface AdminUser {
   id: string;
