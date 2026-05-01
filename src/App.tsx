@@ -52,9 +52,11 @@ function AppRoutes() {
         <Route path="/loans" element={<Loans />} />
         <Route path="/notes" element={<DailyNotes />} />
         <Route path="/admin" element={<Admin />} />
+        <Route path="/profile" element={<Profile />} />
         <Route path="/backup" element={<BackupRestore />} />
         <Route path="*" element={<NotFound />} />
       </Routes>
+      <WhatsNewDialog />
     </AppLayout>
   );
 }
