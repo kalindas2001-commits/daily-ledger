@@ -17,7 +17,9 @@ import BackupRestore from "./pages/BackupRestore";
 import Loans from "./pages/Loans";
 import DailyNotes from "./pages/DailyNotes";
 import Admin from "./pages/Admin";
+import Profile from "./pages/Profile";
 import AppLayout from "./components/AppLayout";
+import WhatsNewDialog from "./components/WhatsNewDialog";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -50,9 +52,11 @@ function AppRoutes() {
         <Route path="/loans" element={<Loans />} />
         <Route path="/notes" element={<DailyNotes />} />
         <Route path="/admin" element={<Admin />} />
+        <Route path="/profile" element={<Profile />} />
         <Route path="/backup" element={<BackupRestore />} />
         <Route path="*" element={<NotFound />} />
       </Routes>
+      <WhatsNewDialog />
     </AppLayout>
   );
 }

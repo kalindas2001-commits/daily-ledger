@@ -283,6 +283,21 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      admin_filtered_transactions: {
+        Args: {
+          _category?: string
+          _end_date?: string
+          _start_date?: string
+          _type?: string
+        }
+        Returns: {
+          category: string
+          total_amount: number
+          transaction_date: string
+          type: Database["public"]["Enums"]["transaction_type"]
+          user_id: string
+        }[]
+      }
       admin_global_stats: {
         Args: never
         Returns: {
