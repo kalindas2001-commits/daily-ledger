@@ -40,6 +40,7 @@ const moreNav = [
   { path: '/recurring', label: 'Recurring', icon: Repeat },
   { path: '/budgets', label: 'Budgets', icon: Target },
   { path: '/backup', label: 'Backup', icon: Database },
+  { path: '/profile', label: 'Profile', icon: UserCircle2 },
 ];
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
