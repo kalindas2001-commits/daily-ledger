@@ -16,6 +16,7 @@ import BudgetsPage from "./pages/Budgets";
 import BackupRestore from "./pages/BackupRestore";
 import Loans from "./pages/Loans";
 import DailyNotes from "./pages/DailyNotes";
+import Admin from "./pages/Admin";
 import AppLayout from "./components/AppLayout";
 import NotFound from "./pages/NotFound";
 
@@ -48,6 +49,7 @@ function AppRoutes() {
         <Route path="/budgets" element={<BudgetsPage />} />
         <Route path="/loans" element={<Loans />} />
         <Route path="/notes" element={<DailyNotes />} />
+        <Route path="/admin" element={<Admin />} />
         <Route path="/backup" element={<BackupRestore />} />
         <Route path="*" element={<NotFound />} />
       </Routes>

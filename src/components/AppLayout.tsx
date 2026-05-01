@@ -20,6 +20,7 @@ import {
   Sun,
   HandCoins,
   StickyNote,
+  Shield,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
