@@ -42,12 +42,15 @@ const moreNav = [
 ];
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
-  const { signOut } = useAuth();
+  const { signOut, isAdmin } = useAuth();
   const { theme, toggle } = useTheme();
   const location = useLocation();
   const [mobileOpen, setMobileOpen] = useState(false);
 
-  const allNav = [...mainNav, ...moreNav];
+  const moreNavWithAdmin = isAdmin
+    ? [...moreNav, { path: '/admin', label: 'Admin', icon: Shield }]
+    : moreNav;
+  const allNav = [...mainNav, ...moreNavWithAdmin];
   const currentLabel = allNav.find((i) => i.path === location.pathname)?.label ?? 'CungaCash';
 
   return (
