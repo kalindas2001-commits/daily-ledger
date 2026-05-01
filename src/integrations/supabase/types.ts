@@ -257,14 +257,72 @@ export type Database = {
         }
         Relationships: []
       }
+      user_roles: {
+        Row: {
+          created_at: string
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      admin_global_stats: {
+        Args: never
+        Returns: {
+          net_balance: number
+          total_expense: number
+          total_income: number
+          total_loans_pending: number
+          total_transactions: number
+          total_users: number
+        }[]
+      }
+      admin_list_users: {
+        Args: never
+        Returns: {
+          created_at: string
+          email: string
+          id: string
+          is_admin: boolean
+          is_disabled: boolean
+          last_sign_in_at: string
+          total_expense: number
+          total_income: number
+          tx_count: number
+          username: string
+        }[]
+      }
+      admin_set_user_disabled: {
+        Args: { _disabled: boolean; _target_user: string }
+        Returns: undefined
+      }
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
     }
     Enums: {
+      app_role: "admin" | "user"
       loan_status: "PENDING" | "PAID"
       loan_type: "GIVEN" | "RECEIVED"
       transaction_type: "INCOME" | "EXPENSE"
@@ -395,6 +453,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
+      app_role: ["admin", "user"],
       loan_status: ["PENDING", "PAID"],
       loan_type: ["GIVEN", "RECEIVED"],
       transaction_type: ["INCOME", "EXPENSE"],
