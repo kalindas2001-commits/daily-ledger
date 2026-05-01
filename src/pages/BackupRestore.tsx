@@ -26,7 +26,7 @@ export default function BackupRestore() {
       const backup = {
         version: 1,
         exported_at: new Date().toISOString(),
-        app: 'J.LucTRACKER',
+        app: 'CungaCash',
         data: {
           transactions: txRes.data ?? [],
           categories: catRes.data ?? [],
@@ -58,7 +58,7 @@ export default function BackupRestore() {
       const text = await file.text();
       const backup = JSON.parse(text);
 
-      if (!backup.data || backup.app !== 'J.LucTRACKER') {
+      if (!backup.data || backup.app !== 'CungaCash') {
         toast.error('Invalid backup file');
         return;
       }
