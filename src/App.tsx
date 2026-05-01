@@ -16,6 +16,7 @@ import BudgetsPage from "./pages/Budgets";
 import BackupRestore from "./pages/BackupRestore";
 import Loans from "./pages/Loans";
 import DailyNotes from "./pages/DailyNotes";
+import Admin from "./pages/Admin";
 import AppLayout from "./components/AppLayout";
 import NotFound from "./pages/NotFound";
 
@@ -27,7 +28,7 @@ function AppRoutes() {
   if (loading) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center bg-background gap-3">
-        <img src="/icon-192.png" alt="J.LucTRACKER" className="w-12 h-12 rounded-xl animate-pulse" />
+        <img src="/icon-192.png" alt="CungaCash" className="w-12 h-12 rounded-xl animate-pulse" />
         <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin" />
       </div>
     );
@@ -48,6 +49,7 @@ function AppRoutes() {
         <Route path="/budgets" element={<BudgetsPage />} />
         <Route path="/loans" element={<Loans />} />
         <Route path="/notes" element={<DailyNotes />} />
+        <Route path="/admin" element={<Admin />} />
         <Route path="/backup" element={<BackupRestore />} />
         <Route path="*" element={<NotFound />} />
       </Routes>

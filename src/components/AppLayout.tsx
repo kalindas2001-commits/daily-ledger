@@ -20,6 +20,7 @@ import {
   Sun,
   HandCoins,
   StickyNote,
+  Shield,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
@@ -41,21 +42,24 @@ const moreNav = [
 ];
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
-  const { signOut } = useAuth();
+  const { signOut, isAdmin } = useAuth();
   const { theme, toggle } = useTheme();
   const location = useLocation();
   const [mobileOpen, setMobileOpen] = useState(false);
 
-  const allNav = [...mainNav, ...moreNav];
-  const currentLabel = allNav.find((i) => i.path === location.pathname)?.label ?? 'J.LucTRACKER';
+  const moreNavWithAdmin = isAdmin
+    ? [...moreNav, { path: '/admin', label: 'Admin', icon: Shield }]
+    : moreNav;
+  const allNav = [...mainNav, ...moreNavWithAdmin];
+  const currentLabel = allNav.find((i) => i.path === location.pathname)?.label ?? 'CungaCash';
 
   return (
     <div className="flex h-[100dvh] overflow-hidden bg-background">
       {/* Desktop Sidebar */}
       <aside className="hidden lg:flex lg:flex-col lg:w-64 bg-sidebar text-sidebar-foreground border-r border-sidebar-border">
         <div className="flex items-center gap-3 p-6 border-b border-sidebar-border">
-          <img src="/icon-192.png" alt="J.LucTRACKER" className="w-9 h-9 rounded-xl" />
-          <span className="text-lg font-bold text-sidebar-primary-foreground tracking-tight">J.LucTRACKER</span>
+          <img src="/icon-192.png" alt="CungaCash" className="w-9 h-9 rounded-xl" />
+          <span className="text-lg font-bold text-sidebar-primary-foreground tracking-tight">CungaCash</span>
         </div>
 
         <nav className="flex-1 p-3 space-y-0.5 overflow-y-auto">
@@ -73,7 +77,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
           })}
 
           <p className="px-3 pt-4 pb-1 text-[10px] font-semibold uppercase tracking-wider text-sidebar-foreground/40">Manage</p>
-          {moreNav.map((item) => {
+          {moreNavWithAdmin.map((item) => {
             const active = location.pathname === item.path;
             return (
               <Link key={item.path} to={item.path}
@@ -109,14 +113,14 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
           <aside className="fixed inset-y-0 left-0 z-50 w-72 bg-sidebar text-sidebar-foreground shadow-2xl lg:hidden animate-fade-in">
             <div className="flex items-center justify-between p-5 border-b border-sidebar-border">
               <div className="flex items-center gap-3">
-                <img src="/icon-192.png" alt="J.LucTRACKER" className="w-8 h-8 rounded-xl" />
-                <span className="font-bold text-sidebar-primary-foreground">J.LucTRACKER</span>
+                <img src="/icon-192.png" alt="CungaCash" className="w-8 h-8 rounded-xl" />
+                <span className="font-bold text-sidebar-primary-foreground">CungaCash</span>
               </div>
               <button onClick={() => setMobileOpen(false)} className="p-1 text-sidebar-foreground"><X className="w-5 h-5" /></button>
             </div>
             <nav className="p-3 space-y-0.5 overflow-y-auto max-h-[calc(100dvh-180px)]">
               <p className="px-3 pt-2 pb-1 text-[10px] font-semibold uppercase tracking-wider text-sidebar-foreground/40">Manage</p>
-              {moreNav.map((item) => {
+              {moreNavWithAdmin.map((item) => {
                 const active = location.pathname === item.path;
                 return (
                   <Link key={item.path} to={item.path} onClick={() => setMobileOpen(false)}

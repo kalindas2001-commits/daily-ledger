@@ -31,10 +31,10 @@ export default function Auth() {
       <Card className="w-full max-w-sm shadow-xl border-border/50">
         <CardHeader className="text-center space-y-4 pb-2">
           <div className="mx-auto">
-            <img src="/icon-192.png" alt="J.LucTRACKER" className="w-16 h-16 mx-auto rounded-2xl shadow-lg" />
+            <img src="/icon-192.png" alt="CungaCash" className="w-16 h-16 mx-auto rounded-2xl shadow-lg" />
           </div>
           <div>
-            <CardTitle className="text-2xl font-bold tracking-tight">J.LucTRACKER</CardTitle>
+            <CardTitle className="text-2xl font-bold tracking-tight">CungaCash</CardTitle>
             <CardDescription className="mt-1">Sign in to manage your finances</CardDescription>
           </div>
         </CardHeader>
