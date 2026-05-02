@@ -3,9 +3,11 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
-import { Camera, Loader2, Shield, User as UserIcon, LogOut, Calendar, Clock } from 'lucide-react';
+import { Camera, Loader2, Shield, User as UserIcon, LogOut, Calendar, Save } from 'lucide-react';
 import { toast } from 'sonner';
 
 const AVATAR_KEY = 'cungacash:avatar_url';
@@ -16,27 +18,36 @@ export default function Profile() {
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
 
+  const [fullName, setFullName] = useState('');
+  const [phone, setPhone] = useState('');
+  const [savingProfile, setSavingProfile] = useState(false);
+
   const username = user?.email?.split('@')[0] ?? 'user';
   const createdAt = user?.created_at ? new Date(user.created_at) : null;
-  const lastSignIn = user?.last_sign_in_at ? new Date(user.last_sign_in_at) : null;
   const expiresAt = session?.expires_at ? new Date(session.expires_at * 1000) : null;
 
   useEffect(() => {
     if (!user) return;
-    // Try cached then fresh list
     const cached = localStorage.getItem(`${AVATAR_KEY}:${user.id}`);
     if (cached) setAvatarUrl(cached);
 
     (async () => {
-      const { data } = await supabase.storage.from('avatars').list(user.id, {
-        limit: 1, sortBy: { column: 'created_at', order: 'desc' },
-      });
-      if (data && data.length > 0) {
-        const path = `${user.id}/${data[0].name}`;
+      const [{ data: list }, { data: prof }] = await Promise.all([
+        supabase.storage.from('avatars').list(user.id, {
+          limit: 1, sortBy: { column: 'created_at', order: 'desc' },
+        }),
+        supabase.from('profiles').select('full_name, phone').eq('user_id', user.id).maybeSingle(),
+      ]);
+      if (list && list.length > 0) {
+        const path = `${user.id}/${list[0].name}`;
         const { data: pub } = supabase.storage.from('avatars').getPublicUrl(path);
         const url = `${pub.publicUrl}?t=${Date.now()}`;
         setAvatarUrl(url);
         localStorage.setItem(`${AVATAR_KEY}:${user.id}`, url);
+      }
+      if (prof) {
+        setFullName(prof.full_name ?? '');
+        setPhone(prof.phone ?? '');
       }
     })();
   }, [user]);
@@ -67,6 +78,18 @@ export default function Profile() {
     }
   };
 
+  const saveProfile = async () => {
+    if (!user) return;
+    setSavingProfile(true);
+    const { error } = await supabase
+      .from('profiles')
+      .upsert({ user_id: user.id, full_name: fullName.trim(), phone: phone.trim() },
+              { onConflict: 'user_id' });
+    setSavingProfile(false);
+    if (error) toast.error(error.message);
+    else toast.success('Profile saved');
+  };
+
   const fmtDate = (d: Date | null) =>
     d ? d.toLocaleString(undefined, { dateStyle: 'long', timeStyle: 'short' }) : '—';
 
@@ -79,7 +102,7 @@ export default function Profile() {
               <Avatar className="w-24 h-24 ring-4 ring-primary/10">
                 {avatarUrl && <AvatarImage src={avatarUrl} alt={username} />}
                 <AvatarFallback className="text-2xl bg-primary text-primary-foreground">
-                  {username.slice(0, 2).toUpperCase()}
+                  {(fullName || username).slice(0, 2).toUpperCase()}
                 </AvatarFallback>
               </Avatar>
               <button
@@ -90,18 +113,12 @@ export default function Profile() {
               >
                 {uploading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Camera className="w-4 h-4" />}
               </button>
-              <input
-                ref={fileRef}
-                type="file"
-                accept="image/*"
-                onChange={handleUpload}
-                className="hidden"
-              />
+              <input ref={fileRef} type="file" accept="image/*" onChange={handleUpload} className="hidden" />
             </div>
 
             <div className="flex-1 text-center sm:text-left">
               <div className="flex items-center justify-center sm:justify-start gap-2 flex-wrap">
-                <h2 className="text-2xl font-bold">{username}</h2>
+                <h2 className="text-2xl font-bold">{fullName || username}</h2>
                 {isAdmin ? (
                   <Badge className="gap-1"><Shield className="w-3 h-3" /> Admin</Badge>
                 ) : (
@@ -117,6 +134,27 @@ export default function Profile() {
         </CardContent>
       </Card>
 
+      <Card>
+        <CardHeader className="pb-3">
+          <CardTitle className="text-base">Personal information</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          <div className="grid sm:grid-cols-2 gap-3">
+            <div className="space-y-1.5">
+              <Label htmlFor="fn">Full name</Label>
+              <Input id="fn" value={fullName} onChange={(e) => setFullName(e.target.value)} maxLength={100} />
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="ph">Phone number</Label>
+              <Input id="ph" type="tel" value={phone} onChange={(e) => setPhone(e.target.value)} maxLength={30} />
+            </div>
+          </div>
+          <Button onClick={saveProfile} disabled={savingProfile} size="sm" className="gap-2">
+            <Save className="w-4 h-4" /> {savingProfile ? 'Saving…' : 'Save changes'}
+          </Button>
+        </CardContent>
+      </Card>
+
       <div className="grid sm:grid-cols-2 gap-3">
         <Card>
           <CardHeader className="pb-2">
@@ -126,38 +164,18 @@ export default function Profile() {
           </CardHeader>
           <CardContent>
             <div className="text-base font-semibold">{fmtDate(createdAt)}</div>
-            <p className="text-xs text-muted-foreground mt-1">
-              When your credentials were issued
-            </p>
+            <p className="text-xs text-muted-foreground mt-1">When your credentials were issued</p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium flex items-center gap-2 text-muted-foreground">
-              <Clock className="w-4 h-4" /> Last sign-in
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-base font-semibold">{fmtDate(lastSignIn)}</div>
-            <p className="text-xs text-muted-foreground mt-1">Most recent successful login</p>
-          </CardContent>
-        </Card>
-
-        <Card className="sm:col-span-2">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium flex items-center gap-2 text-muted-foreground">
-              Session status
-            </CardTitle>
+            <CardTitle className="text-sm font-medium text-muted-foreground">Session status</CardTitle>
           </CardHeader>
           <CardContent className="space-y-1.5">
             <div className="flex justify-between text-sm">
               <span className="text-muted-foreground">Status</span>
               <Badge variant="outline" className="text-emerald-600 border-emerald-600/40">Active</Badge>
-            </div>
-            <div className="flex justify-between text-sm">
-              <span className="text-muted-foreground">Token type</span>
-              <span className="font-medium">{session?.token_type ?? 'bearer'}</span>
             </div>
             <div className="flex justify-between text-sm">
               <span className="text-muted-foreground">Expires</span>
