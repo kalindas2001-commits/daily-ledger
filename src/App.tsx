@@ -20,6 +20,7 @@ import Admin from "./pages/Admin";
 import Profile from "./pages/Profile";
 import AppLayout from "./components/AppLayout";
 import WhatsNewDialog from "./components/WhatsNewDialog";
+import InfoPopup from "./components/InfoPopup";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -57,6 +58,7 @@ function AppRoutes() {
         <Route path="*" element={<NotFound />} />
       </Routes>
       <WhatsNewDialog />
+      <InfoPopup />
     </AppLayout>
   );
 }

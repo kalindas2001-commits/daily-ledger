@@ -24,6 +24,7 @@ import {
   UserCircle2,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import InfoBanner from './InfoBanner';
 
 const mainNav = [
   { path: '/', label: 'Dashboard', icon: LayoutDashboard },
@@ -154,6 +155,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
 
       {/* Main content */}
       <main className="flex-1 flex flex-col overflow-hidden">
+        <InfoBanner />
         <header className="sticky top-0 z-30 flex items-center gap-3 px-4 sm:px-6 py-3 bg-background/80 backdrop-blur-md border-b shrink-0">
           <button className="lg:hidden p-1.5 rounded-lg hover:bg-muted transition-colors" onClick={() => setMobileOpen(true)}>
             <Menu className="w-5 h-5" />

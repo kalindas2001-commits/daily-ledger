@@ -15,11 +15,14 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, Dialog
 import { Users, Shield, TrendingUp, TrendingDown, Wallet, HandCoins, UserPlus, Ban, Check, RefreshCw } from 'lucide-react';
 import { toast } from 'sonner';
 import AdminAnalytics from '@/components/AdminAnalytics';
+import AdminNotificationsManager from '@/components/AdminNotificationsManager';
 
 interface AdminUser {
   id: string;
   email: string;
   username: string;
+  full_name: string;
+  phone: string;
   created_at: string;
   last_sign_in_at: string | null;
   is_admin: boolean;
@@ -162,6 +165,9 @@ export default function Admin() {
       {/* Drill-down analytics with filters */}
       <AdminAnalytics />
 
+      {/* Broadcast notifications */}
+      <AdminNotificationsManager />
+
       {/* Users table */}
       <Card>
         <CardHeader><CardTitle className="text-base">Users ({users.length})</CardTitle></CardHeader>
@@ -171,7 +177,8 @@ export default function Admin() {
               <thead className="bg-muted/40 text-xs uppercase text-muted-foreground">
                 <tr>
                   <th className="text-left p-3">User</th>
-                  <th className="text-left p-3 hidden sm:table-cell">Last Sign-in</th>
+                  <th className="text-left p-3 hidden md:table-cell">Phone</th>
+                  <th className="text-left p-3 hidden lg:table-cell">Joined</th>
                   <th className="text-right p-3">Tx</th>
                   <th className="text-right p-3 hidden md:table-cell">Income</th>
                   <th className="text-right p-3 hidden md:table-cell">Expense</th>
@@ -181,16 +188,17 @@ export default function Admin() {
               </thead>
               <tbody>
                 {loading && (
-                  <tr><td colSpan={7} className="p-6 text-center text-muted-foreground">Loading…</td></tr>
+                  <tr><td colSpan={8} className="p-6 text-center text-muted-foreground">Loading…</td></tr>
                 )}
                 {!loading && users.map((u) => (
                   <tr key={u.id} className="border-t">
                     <td className="p-3">
-                      <div className="font-medium">{u.username}</div>
+                      <div className="font-medium">{u.full_name || u.username}</div>
                       <div className="text-xs text-muted-foreground">{u.email}</div>
                     </td>
-                    <td className="p-3 text-xs text-muted-foreground hidden sm:table-cell">
-                      {u.last_sign_in_at ? new Date(u.last_sign_in_at).toLocaleDateString() : '—'}
+                    <td className="p-3 text-xs hidden md:table-cell">{u.phone || '—'}</td>
+                    <td className="p-3 text-xs text-muted-foreground hidden lg:table-cell">
+                      {new Date(u.created_at).toLocaleDateString()}
                     </td>
                     <td className="p-3 text-right tabular-nums">{u.tx_count}</td>
                     <td className="p-3 text-right tabular-nums text-emerald-600 hidden md:table-cell">{fmt(Number(u.total_income))}</td>
@@ -233,7 +241,7 @@ export default function Admin() {
                   </tr>
                 ))}
                 {!loading && users.length === 0 && (
-                  <tr><td colSpan={7} className="p-6 text-center text-muted-foreground">No users found</td></tr>
+                  <tr><td colSpan={8} className="p-6 text-center text-muted-foreground">No users found</td></tr>
                 )}
               </tbody>
             </table>

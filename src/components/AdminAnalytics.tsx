@@ -191,8 +191,101 @@ export default function AdminAnalytics() {
             </ResponsiveContainer>
           </div>
         </div>
+
+        {/* Drill-down table + CSV */}
+        <DrillDownTable rows={data} />
       </CardContent>
     </Card>
+  );
+}
+
+function DrillDownTable({ rows }: { rows: FilteredTx[] }) {
+  const [page, setPage] = useState(1);
+  const PAGE_SIZE = 25;
+  const sorted = useMemo(
+    () => [...rows].sort((a, b) => b.transaction_date.localeCompare(a.transaction_date)),
+    [rows]
+  );
+  const totalPages = Math.max(1, Math.ceil(sorted.length / PAGE_SIZE));
+  const pageRows = sorted.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
+
+  const exportCsv = () => {
+    const header = ['Date', 'Type', 'Category', 'Amount (RWF)', 'User ID'];
+    const lines = [header.join(',')];
+    for (const r of sorted) {
+      const cells = [
+        r.transaction_date,
+        r.type,
+        `"${(r.category ?? '').replace(/"/g, '""')}"`,
+        Math.round(Number(r.total_amount) || 0),
+        r.user_id,
+      ];
+      lines.push(cells.join(','));
+    }
+    const blob = new Blob([lines.join('\n')], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `cungacash-admin-transactions-${new Date().toISOString().slice(0, 10)}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  return (
+    <div className="rounded-lg border">
+      <div className="flex items-center justify-between p-3 border-b">
+        <div className="text-sm font-semibold">
+          Matching transactions <span className="text-muted-foreground font-normal">({sorted.length})</span>
+        </div>
+        <Button size="sm" variant="outline" onClick={exportCsv} disabled={sorted.length === 0}>
+          Export CSV
+        </Button>
+      </div>
+      <div className="overflow-x-auto">
+        <table className="w-full text-sm">
+          <thead className="bg-muted/40 text-xs uppercase text-muted-foreground">
+            <tr>
+              <th className="text-left p-2">Date</th>
+              <th className="text-left p-2">Type</th>
+              <th className="text-left p-2">Category</th>
+              <th className="text-right p-2">Amount</th>
+              <th className="text-left p-2 hidden md:table-cell">User</th>
+            </tr>
+          </thead>
+          <tbody>
+            {pageRows.length === 0 && (
+              <tr><td colSpan={5} className="p-4 text-center text-muted-foreground">No transactions match.</td></tr>
+            )}
+            {pageRows.map((r, i) => (
+              <tr key={i} className="border-t">
+                <td className="p-2 whitespace-nowrap">{r.transaction_date}</td>
+                <td className="p-2">
+                  <span className={`text-[10px] px-1.5 py-0.5 rounded font-medium ${
+                    r.type === 'INCOME' ? 'bg-emerald-500/15 text-emerald-700' : 'bg-rose-500/15 text-rose-700'
+                  }`}>{r.type}</span>
+                </td>
+                <td className="p-2">{r.category}</td>
+                <td className={`p-2 text-right tabular-nums font-medium ${
+                  r.type === 'INCOME' ? 'text-emerald-600' : 'text-rose-600'
+                }`}>{fmt(Number(r.total_amount))}</td>
+                <td className="p-2 text-xs text-muted-foreground hidden md:table-cell font-mono">
+                  {r.user_id.slice(0, 8)}…
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+      {totalPages > 1 && (
+        <div className="flex items-center justify-between p-2 border-t text-xs">
+          <span className="text-muted-foreground">Page {page} of {totalPages}</span>
+          <div className="flex gap-1">
+            <Button size="sm" variant="outline" disabled={page === 1} onClick={() => setPage((p) => p - 1)}>Prev</Button>
+            <Button size="sm" variant="outline" disabled={page === totalPages} onClick={() => setPage((p) => p + 1)}>Next</Button>
+          </div>
+        </div>
+      )}
+    </div>
   );
 }
 

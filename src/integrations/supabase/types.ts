@@ -167,6 +167,92 @@ export type Database = {
         }
         Relationships: []
       }
+      notification_dismissals: {
+        Row: {
+          dismissed_at: string
+          id: string
+          notification_id: string
+          user_id: string
+        }
+        Insert: {
+          dismissed_at?: string
+          id?: string
+          notification_id: string
+          user_id: string
+        }
+        Update: {
+          dismissed_at?: string
+          id?: string
+          notification_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "notification_dismissals_notification_id_fkey"
+            columns: ["notification_id"]
+            isOneToOne: false
+            referencedRelation: "notifications"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      notifications: {
+        Row: {
+          body: string
+          created_at: string
+          created_by: string | null
+          id: string
+          kind: Database["public"]["Enums"]["notification_kind"]
+          title: string
+        }
+        Insert: {
+          body: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          kind?: Database["public"]["Enums"]["notification_kind"]
+          title: string
+        }
+        Update: {
+          body?: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          kind?: Database["public"]["Enums"]["notification_kind"]
+          title?: string
+        }
+        Relationships: []
+      }
+      profiles: {
+        Row: {
+          avatar_url: string | null
+          created_at: string
+          full_name: string | null
+          id: string
+          phone: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          avatar_url?: string | null
+          created_at?: string
+          full_name?: string | null
+          id?: string
+          phone?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          avatar_url?: string | null
+          created_at?: string
+          full_name?: string | null
+          id?: string
+          phone?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       recurring_transactions: {
         Row: {
           category: string
@@ -314,10 +400,12 @@ export type Database = {
         Returns: {
           created_at: string
           email: string
+          full_name: string
           id: string
           is_admin: boolean
           is_disabled: boolean
           last_sign_in_at: string
+          phone: string
           total_expense: number
           total_income: number
           tx_count: number
@@ -340,6 +428,7 @@ export type Database = {
       app_role: "admin" | "user"
       loan_status: "PENDING" | "PAID"
       loan_type: "GIVEN" | "RECEIVED"
+      notification_kind: "banner" | "popup"
       transaction_type: "INCOME" | "EXPENSE"
     }
     CompositeTypes: {
@@ -471,6 +560,7 @@ export const Constants = {
       app_role: ["admin", "user"],
       loan_status: ["PENDING", "PAID"],
       loan_type: ["GIVEN", "RECEIVED"],
+      notification_kind: ["banner", "popup"],
       transaction_type: ["INCOME", "EXPENSE"],
     },
   },
