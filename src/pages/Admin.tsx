@@ -15,11 +15,22 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, Dialog
 import { Users, Shield, TrendingUp, TrendingDown, Wallet, HandCoins, UserPlus, Ban, Check, RefreshCw } from 'lucide-react';
 import { toast } from 'sonner';
 import AdminAnalytics from '@/components/AdminAnalytics';
+import AdminNotificationsManager from '@/components/AdminNotificationsManager';
 
 interface AdminUser {
   id: string;
   email: string;
   username: string;
+  full_name: string;
+  phone: string;
+  created_at: string;
+  last_sign_in_at: string | null;
+  is_admin: boolean;
+  is_disabled: boolean;
+  tx_count: number;
+  total_income: number;
+  total_expense: number;
+}
   created_at: string;
   last_sign_in_at: string | null;
   is_admin: boolean;
