@@ -31,14 +31,6 @@ interface AdminUser {
   total_income: number;
   total_expense: number;
 }
-  created_at: string;
-  last_sign_in_at: string | null;
-  is_admin: boolean;
-  is_disabled: boolean;
-  tx_count: number;
-  total_income: number;
-  total_expense: number;
-}
 
 interface GlobalStats {
   total_users: number;
