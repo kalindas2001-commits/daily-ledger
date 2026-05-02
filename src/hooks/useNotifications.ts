@@ -16,25 +16,51 @@ export function useNotifications() {
   const [dismissedIds, setDismissedIds] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState(true);
 
-  const load = useCallback(async () => {
-    if (!user) return;
-    const [{ data: notifs }, { data: dismissals }] = await Promise.all([
+const load = useCallback(async () => {
+  if (!user) {
+    setItems([]);
+    setDismissedIds(new Set());
+    setLoading(false);
+    return;
+  }
+    const [notifRes, dismissRes] = await Promise.all([
+  supabase
+    .from('notifications')
+    .select('*')
+    .order('created_at', { ascending: false }),
+
+  supabase
+    .from('notification_dismissals')
+    .select('notification_id')
+    .eq('user_id', user.id),
+]);
+
+if (notifRes.error || dismissRes.error) {
+  console.error(notifRes.error || dismissRes.error);
+  setLoading(false);
+  return;
+}
       supabase.from('notifications').select('*').order('created_at', { ascending: false }),
       supabase.from('notification_dismissals').select('notification_id').eq('user_id', user.id),
     ]);
-    setItems((notifs ?? []) as AppNotification[]);
-    setDismissedIds(new Set((dismissals ?? []).map((d: any) => d.notification_id)));
+    setItems((notifRes.data ?? []) as AppNotification[]);
+    const safeDismissals = Array.isArray(dismissRes.data) ? dismissRes.data : [];
+setDismissedIds(new Set(safeDismissals.map((d: any) => d.notification_id)));
     setLoading(false);
   }, [user]);
 
   useEffect(() => {
     if (!user) { setLoading(false); return; }
     load();
-
+    
+if (!user?.id) {
+  setLoading(false);
+  return;
+}
     const ch = supabase
       .channel('notifications-' + user.id)
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'notifications' }, load)
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'notification_dismissals', filter: `user_id=eq.${user.id}` }, load)
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'notifications' }, load)
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'notification_dismissals', filter: `user_id=eq.${user.id}` }, load)
       .subscribe();
 
     return () => { supabase.removeChannel(ch); };
