@@ -7,13 +7,13 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
-import { Camera, Loader2, Shield, User as UserIcon, LogOut, Calendar, Save } from 'lucide-react';
+import { Camera, Loader2, Shield, User as UserIcon, LogOut, Calendar, Save, Lock } from 'lucide-react';
 import { toast } from 'sonner';
 
 const AVATAR_KEY = 'cungacash:avatar_url';
 
 export default function Profile() {
-  const { user, session, isAdmin, signOut } = useAuth();
+  const { user, isAdmin, signOut } = useAuth();
   const fileRef = useRef<HTMLInputElement>(null);
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
@@ -22,9 +22,10 @@ export default function Profile() {
   const [phone, setPhone] = useState('');
   const [savingProfile, setSavingProfile] = useState(false);
 
+  // Username is the immutable handle derived from the account email's local part.
+  // It is set at signup and CANNOT be changed afterwards.
   const username = user?.email?.split('@')[0] ?? 'user';
   const createdAt = user?.created_at ? new Date(user.created_at) : null;
-  const expiresAt = session?.expires_at ? new Date(session.expires_at * 1000) : null;
 
   useEffect(() => {
     if (!user) return;
@@ -93,6 +94,8 @@ export default function Profile() {
   const fmtDate = (d: Date | null) =>
     d ? d.toLocaleString(undefined, { dateStyle: 'long', timeStyle: 'short' }) : '—';
 
+  const displayName = fullName.trim() || username;
+
   return (
     <div className="space-y-5 max-w-3xl mx-auto">
       <Card>
@@ -100,9 +103,9 @@ export default function Profile() {
           <div className="flex flex-col sm:flex-row gap-5 items-center sm:items-start">
             <div className="relative">
               <Avatar className="w-24 h-24 ring-4 ring-primary/10">
-                {avatarUrl && <AvatarImage src={avatarUrl} alt={username} />}
+                {avatarUrl && <AvatarImage src={avatarUrl} alt={displayName} />}
                 <AvatarFallback className="text-2xl bg-primary text-primary-foreground">
-                  {(fullName || username).slice(0, 2).toUpperCase()}
+                  {displayName.slice(0, 2).toUpperCase()}
                 </AvatarFallback>
               </Avatar>
               <button
@@ -116,19 +119,44 @@ export default function Profile() {
               <input ref={fileRef} type="file" accept="image/*" onChange={handleUpload} className="hidden" />
             </div>
 
-            <div className="flex-1 text-center sm:text-left">
+            <div className="flex-1 text-center sm:text-left min-w-0">
               <div className="flex items-center justify-center sm:justify-start gap-2 flex-wrap">
-                <h2 className="text-2xl font-bold">{fullName || username}</h2>
+                <h2 className="text-2xl font-bold truncate">{displayName}</h2>
                 {isAdmin ? (
                   <Badge className="gap-1"><Shield className="w-3 h-3" /> Admin</Badge>
                 ) : (
                   <Badge variant="secondary" className="gap-1"><UserIcon className="w-3 h-3" /> User</Badge>
                 )}
               </div>
-              <p className="text-sm text-muted-foreground mt-1 break-all">{user?.email}</p>
+              <p className="text-sm text-muted-foreground mt-1">@{username}</p>
+              <p className="text-xs text-muted-foreground mt-0.5 break-all">{user?.email}</p>
               <Button variant="outline" size="sm" className="mt-3 gap-2" onClick={signOut}>
                 <LogOut className="w-4 h-4" /> Sign out
               </Button>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader className="pb-3">
+          <CardTitle className="text-base">Account</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          <div className="grid sm:grid-cols-2 gap-3">
+            <div className="space-y-1.5">
+              <Label htmlFor="un" className="flex items-center gap-1.5">
+                Username <Lock className="w-3 h-3 text-muted-foreground" />
+              </Label>
+              <Input id="un" value={username} readOnly disabled className="bg-muted/40" />
+              <p className="text-[11px] text-muted-foreground">Set at signup — cannot be changed.</p>
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="em" className="flex items-center gap-1.5">
+                Email <Lock className="w-3 h-3 text-muted-foreground" />
+              </Label>
+              <Input id="em" value={user?.email ?? ''} readOnly disabled className="bg-muted/40" />
+              <p className="text-[11px] text-muted-foreground">Contact an admin to change.</p>
             </div>
           </div>
         </CardContent>
@@ -142,11 +170,11 @@ export default function Profile() {
           <div className="grid sm:grid-cols-2 gap-3">
             <div className="space-y-1.5">
               <Label htmlFor="fn">Full name</Label>
-              <Input id="fn" value={fullName} onChange={(e) => setFullName(e.target.value)} maxLength={100} />
+              <Input id="fn" value={fullName} onChange={(e) => setFullName(e.target.value)} maxLength={100} placeholder="Your real name" />
             </div>
             <div className="space-y-1.5">
               <Label htmlFor="ph">Phone number</Label>
-              <Input id="ph" type="tel" value={phone} onChange={(e) => setPhone(e.target.value)} maxLength={30} />
+              <Input id="ph" type="tel" value={phone} onChange={(e) => setPhone(e.target.value)} maxLength={30} placeholder="+250 ..." />
             </div>
           </div>
           <Button onClick={saveProfile} disabled={savingProfile} size="sm" className="gap-2">
@@ -155,39 +183,16 @@ export default function Profile() {
         </CardContent>
       </Card>
 
-      <div className="grid sm:grid-cols-2 gap-3">
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium flex items-center gap-2 text-muted-foreground">
-              <Calendar className="w-4 h-4" /> Account since
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-base font-semibold">{fmtDate(createdAt)}</div>
-            <p className="text-xs text-muted-foreground mt-1">When your credentials were issued</p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Session status</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-1.5">
-            <div className="flex justify-between text-sm">
-              <span className="text-muted-foreground">Status</span>
-              <Badge variant="outline" className="text-emerald-600 border-emerald-600/40">Active</Badge>
-            </div>
-            <div className="flex justify-between text-sm">
-              <span className="text-muted-foreground">Expires</span>
-              <span className="font-medium">{fmtDate(expiresAt)}</span>
-            </div>
-            <div className="flex justify-between text-sm">
-              <span className="text-muted-foreground">Auto-refresh</span>
-              <span className="font-medium text-emerald-600">Enabled</span>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
+      <Card>
+        <CardHeader className="pb-2">
+          <CardTitle className="text-sm font-medium flex items-center gap-2 text-muted-foreground">
+            <Calendar className="w-4 h-4" /> Account since
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="text-base font-semibold">{fmtDate(createdAt)}</div>
+        </CardContent>
+      </Card>
     </div>
   );
 }
