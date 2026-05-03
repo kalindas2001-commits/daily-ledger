@@ -34,7 +34,7 @@ export function useNotifications() {
     }
     load();
     const ch = supabase
-      .channel('notifications-' + user.id)
+      .channel(`notifications-${user.id}-${Date.now()}-${Math.random().toString(36).slice(2)}`)
       .on('postgres_changes', { event: '*', schema: 'public', table: 'notifications' }, load)
       .on(
         'postgres_changes',
