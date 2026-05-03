@@ -12,7 +12,8 @@ import {
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from '@/components/ui/dialog';
-import { Users, Shield, TrendingUp, TrendingDown, Wallet, HandCoins, UserPlus, Ban, Check, RefreshCw } from 'lucide-react';
+import { Users, Shield, TrendingUp, TrendingDown, Wallet, HandCoins, UserPlus, Ban, Check, RefreshCw, KeyRound } from 'lucide-react';
+import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
 import AdminAnalytics from '@/components/AdminAnalytics';
 import AdminNotificationsManager from '@/components/AdminNotificationsManager';
@@ -52,6 +53,10 @@ export default function Admin() {
   const [newPassword, setNewPassword] = useState('');
   const [creating, setCreating] = useState(false);
   const [createOpen, setCreateOpen] = useState(false);
+  const [resetTarget, setResetTarget] = useState<AdminUser | null>(null);
+  const [resetEmail, setResetEmail] = useState('');
+  const [resetPassword, setResetPassword] = useState('');
+  const [resetting, setResetting] = useState(false);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -88,6 +93,35 @@ export default function Admin() {
     toast.success(`User ${username} created`);
     setNewUsername(''); setNewPassword(''); setCreateOpen(false);
     setTimeout(load, 600);
+  };
+
+  const openReset = (u: AdminUser) => {
+    setResetTarget(u);
+    setResetEmail(u.email);
+    setResetPassword('');
+  };
+
+  const handleReset = async () => {
+    if (!resetTarget) return;
+    if (!resetEmail.trim() && !resetPassword) {
+      toast.error('Provide a new email or password');
+      return;
+    }
+    if (resetPassword && resetPassword.length < 6) {
+      toast.error('Password must be at least 6 characters');
+      return;
+    }
+    setResetting(true);
+    const payload: any = { target_user_id: resetTarget.id };
+    if (resetEmail.trim() && resetEmail.trim() !== resetTarget.email) payload.new_email = resetEmail.trim();
+    if (resetPassword) payload.new_password = resetPassword;
+    const { error } = await supabase.functions.invoke('admin-reset-credentials', { body: payload });
+    setResetting(false);
+    if (error) { toast.error(error.message); return; }
+    toast.success(`Credentials updated for ${resetTarget.username}`);
+    setResetTarget(null);
+    setResetEmail(''); setResetPassword('');
+    setTimeout(load, 400);
   };
 
   const handleToggleDisabled = async (target: AdminUser) => {
@@ -215,27 +249,32 @@ export default function Admin() {
                       {u.id === user?.id ? (
                         <span className="text-xs text-muted-foreground">you</span>
                       ) : (
-                        <AlertDialog>
-                          <AlertDialogTrigger asChild>
-                            <Button size="sm" variant={u.is_disabled ? 'outline' : 'destructive'}>
-                              {u.is_disabled ? <><Check className="w-3.5 h-3.5 mr-1" />Enable</> : <><Ban className="w-3.5 h-3.5 mr-1" />Disable</>}
-                            </Button>
-                          </AlertDialogTrigger>
-                          <AlertDialogContent>
-                            <AlertDialogHeader>
-                              <AlertDialogTitle>{u.is_disabled ? 'Enable' : 'Disable'} {u.username}?</AlertDialogTitle>
-                              <AlertDialogDescription>
-                                {u.is_disabled
-                                  ? 'They will be able to sign in again.'
-                                  : 'They will no longer be able to sign in. Their data is preserved.'}
-                              </AlertDialogDescription>
-                            </AlertDialogHeader>
-                            <AlertDialogFooter>
-                              <AlertDialogCancel>Cancel</AlertDialogCancel>
-                              <AlertDialogAction onClick={() => handleToggleDisabled(u)}>Confirm</AlertDialogAction>
-                            </AlertDialogFooter>
-                          </AlertDialogContent>
-                        </AlertDialog>
+                        <div className="flex justify-end gap-1.5 flex-wrap">
+                          <Button size="sm" variant="outline" onClick={() => openReset(u)} title="Reset credentials">
+                            <KeyRound className="w-3.5 h-3.5 mr-1" />Reset
+                          </Button>
+                          <AlertDialog>
+                            <AlertDialogTrigger asChild>
+                              <Button size="sm" variant={u.is_disabled ? 'outline' : 'destructive'}>
+                                {u.is_disabled ? <><Check className="w-3.5 h-3.5 mr-1" />Enable</> : <><Ban className="w-3.5 h-3.5 mr-1" />Disable</>}
+                              </Button>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent>
+                              <AlertDialogHeader>
+                                <AlertDialogTitle>{u.is_disabled ? 'Enable' : 'Disable'} {u.username}?</AlertDialogTitle>
+                                <AlertDialogDescription>
+                                  {u.is_disabled
+                                    ? 'They will be able to sign in again.'
+                                    : 'They will no longer be able to sign in. Their data is preserved.'}
+                                </AlertDialogDescription>
+                              </AlertDialogHeader>
+                              <AlertDialogFooter>
+                                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                <AlertDialogAction onClick={() => handleToggleDisabled(u)}>Confirm</AlertDialogAction>
+                              </AlertDialogFooter>
+                            </AlertDialogContent>
+                          </AlertDialog>
+                        </div>
                       )}
                     </td>
                   </tr>
@@ -248,6 +287,37 @@ export default function Admin() {
           </div>
         </CardContent>
       </Card>
+
+      {/* Reset credentials dialog */}
+      <Dialog open={!!resetTarget} onOpenChange={(o) => !o && setResetTarget(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Reset credentials — {resetTarget?.username}</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3 py-2">
+            <p className="text-xs text-muted-foreground">
+              Set a new email and/or password for this user. They will need to sign in again with the new credentials.
+            </p>
+            <div className="space-y-1.5">
+              <Label htmlFor="re">New email</Label>
+              <Input id="re" type="email" value={resetEmail}
+                onChange={(e) => setResetEmail(e.target.value)} />
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="rp">New password</Label>
+              <Input id="rp" type="text" placeholder="Leave blank to keep current"
+                value={resetPassword} onChange={(e) => setResetPassword(e.target.value)} />
+              <p className="text-[11px] text-muted-foreground">≥ 6 characters. Shown in plain so you can copy it.</p>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setResetTarget(null)}>Cancel</Button>
+            <Button onClick={handleReset} disabled={resetting}>
+              {resetting ? 'Saving…' : 'Apply reset'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
