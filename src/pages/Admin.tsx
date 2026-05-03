@@ -287,6 +287,37 @@ export default function Admin() {
           </div>
         </CardContent>
       </Card>
+
+      {/* Reset credentials dialog */}
+      <Dialog open={!!resetTarget} onOpenChange={(o) => !o && setResetTarget(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Reset credentials — {resetTarget?.username}</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3 py-2">
+            <p className="text-xs text-muted-foreground">
+              Set a new email and/or password for this user. They will need to sign in again with the new credentials.
+            </p>
+            <div className="space-y-1.5">
+              <Label htmlFor="re">New email</Label>
+              <Input id="re" type="email" value={resetEmail}
+                onChange={(e) => setResetEmail(e.target.value)} />
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="rp">New password</Label>
+              <Input id="rp" type="text" placeholder="Leave blank to keep current"
+                value={resetPassword} onChange={(e) => setResetPassword(e.target.value)} />
+              <p className="text-[11px] text-muted-foreground">≥ 6 characters. Shown in plain so you can copy it.</p>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setResetTarget(null)}>Cancel</Button>
+            <Button onClick={handleReset} disabled={resetting}>
+              {resetting ? 'Saving…' : 'Apply reset'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
