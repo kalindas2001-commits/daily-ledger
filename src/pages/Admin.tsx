@@ -249,27 +249,32 @@ export default function Admin() {
                       {u.id === user?.id ? (
                         <span className="text-xs text-muted-foreground">you</span>
                       ) : (
-                        <AlertDialog>
-                          <AlertDialogTrigger asChild>
-                            <Button size="sm" variant={u.is_disabled ? 'outline' : 'destructive'}>
-                              {u.is_disabled ? <><Check className="w-3.5 h-3.5 mr-1" />Enable</> : <><Ban className="w-3.5 h-3.5 mr-1" />Disable</>}
-                            </Button>
-                          </AlertDialogTrigger>
-                          <AlertDialogContent>
-                            <AlertDialogHeader>
-                              <AlertDialogTitle>{u.is_disabled ? 'Enable' : 'Disable'} {u.username}?</AlertDialogTitle>
-                              <AlertDialogDescription>
-                                {u.is_disabled
-                                  ? 'They will be able to sign in again.'
-                                  : 'They will no longer be able to sign in. Their data is preserved.'}
-                              </AlertDialogDescription>
-                            </AlertDialogHeader>
-                            <AlertDialogFooter>
-                              <AlertDialogCancel>Cancel</AlertDialogCancel>
-                              <AlertDialogAction onClick={() => handleToggleDisabled(u)}>Confirm</AlertDialogAction>
-                            </AlertDialogFooter>
-                          </AlertDialogContent>
-                        </AlertDialog>
+                        <div className="flex justify-end gap-1.5 flex-wrap">
+                          <Button size="sm" variant="outline" onClick={() => openReset(u)} title="Reset credentials">
+                            <KeyRound className="w-3.5 h-3.5 mr-1" />Reset
+                          </Button>
+                          <AlertDialog>
+                            <AlertDialogTrigger asChild>
+                              <Button size="sm" variant={u.is_disabled ? 'outline' : 'destructive'}>
+                                {u.is_disabled ? <><Check className="w-3.5 h-3.5 mr-1" />Enable</> : <><Ban className="w-3.5 h-3.5 mr-1" />Disable</>}
+                              </Button>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent>
+                              <AlertDialogHeader>
+                                <AlertDialogTitle>{u.is_disabled ? 'Enable' : 'Disable'} {u.username}?</AlertDialogTitle>
+                                <AlertDialogDescription>
+                                  {u.is_disabled
+                                    ? 'They will be able to sign in again.'
+                                    : 'They will no longer be able to sign in. Their data is preserved.'}
+                                </AlertDialogDescription>
+                              </AlertDialogHeader>
+                              <AlertDialogFooter>
+                                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                <AlertDialogAction onClick={() => handleToggleDisabled(u)}>Confirm</AlertDialogAction>
+                              </AlertDialogFooter>
+                            </AlertDialogContent>
+                          </AlertDialog>
+                        </div>
                       )}
                     </td>
                   </tr>
