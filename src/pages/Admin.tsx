@@ -95,6 +95,35 @@ export default function Admin() {
     setTimeout(load, 600);
   };
 
+  const openReset = (u: AdminUser) => {
+    setResetTarget(u);
+    setResetEmail(u.email);
+    setResetPassword('');
+  };
+
+  const handleReset = async () => {
+    if (!resetTarget) return;
+    if (!resetEmail.trim() && !resetPassword) {
+      toast.error('Provide a new email or password');
+      return;
+    }
+    if (resetPassword && resetPassword.length < 6) {
+      toast.error('Password must be at least 6 characters');
+      return;
+    }
+    setResetting(true);
+    const payload: any = { target_user_id: resetTarget.id };
+    if (resetEmail.trim() && resetEmail.trim() !== resetTarget.email) payload.new_email = resetEmail.trim();
+    if (resetPassword) payload.new_password = resetPassword;
+    const { error } = await supabase.functions.invoke('admin-reset-credentials', { body: payload });
+    setResetting(false);
+    if (error) { toast.error(error.message); return; }
+    toast.success(`Credentials updated for ${resetTarget.username}`);
+    setResetTarget(null);
+    setResetEmail(''); setResetPassword('');
+    setTimeout(load, 400);
+  };
+
   const handleToggleDisabled = async (target: AdminUser) => {
     const { error } = await supabase.rpc('admin_set_user_disabled', {
       _target_user: target.id,
