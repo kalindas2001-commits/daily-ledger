@@ -7,8 +7,9 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
-import { Camera, Loader2, Shield, User as UserIcon, LogOut, Calendar, Save, Lock } from 'lucide-react';
+import { Camera, Loader2, Shield, User as UserIcon, LogOut, Calendar, Save, Lock, Building2, Users as UsersIcon } from 'lucide-react';
 import { toast } from 'sonner';
+import { useMyTenant } from '@/hooks/useTenant';
 
 const AVATAR_KEY = 'cungacash:avatar_url';
 
