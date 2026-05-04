@@ -7,13 +7,15 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
-import { Camera, Loader2, Shield, User as UserIcon, LogOut, Calendar, Save, Lock } from 'lucide-react';
+import { Camera, Loader2, Shield, User as UserIcon, LogOut, Calendar, Save, Lock, Building2, Users as UsersIcon } from 'lucide-react';
 import { toast } from 'sonner';
+import { useMyTenant } from '@/hooks/useTenant';
 
 const AVATAR_KEY = 'cungacash:avatar_url';
 
 export default function Profile() {
   const { user, isAdmin, signOut } = useAuth();
+  const { info: tenant, reload: reloadTenant } = useMyTenant();
   const fileRef = useRef<HTMLInputElement>(null);
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
@@ -22,10 +24,21 @@ export default function Profile() {
   const [phone, setPhone] = useState('');
   const [savingProfile, setSavingProfile] = useState(false);
 
-  // Username is the immutable handle derived from the account email's local part.
-  // It is set at signup and CANNOT be changed afterwards.
+  const [businessName, setBusinessName] = useState('');
+  const [tinNumber, setTinNumber] = useState('');
+  const [savingBusiness, setSavingBusiness] = useState(false);
+  const [requestQty, setRequestQty] = useState('');
+  const [requestingQuota, setRequestingQuota] = useState(false);
+
   const username = user?.email?.split('@')[0] ?? 'user';
   const createdAt = user?.created_at ? new Date(user.created_at) : null;
+
+  useEffect(() => {
+    if (tenant) {
+      setBusinessName(tenant.business_name ?? '');
+      setTinNumber(tenant.tin_number ?? '');
+    }
+  }, [tenant]);
 
   useEffect(() => {
     if (!user) return;
@@ -84,11 +97,43 @@ export default function Profile() {
     setSavingProfile(true);
     const { error } = await supabase
       .from('profiles')
-      .upsert({ user_id: user.id, full_name: fullName.trim(), phone: phone.trim() },
-              { onConflict: 'user_id' });
+      .update({ full_name: fullName.trim(), phone: phone.trim() })
+      .eq('user_id', user.id);
     setSavingProfile(false);
     if (error) toast.error(error.message);
     else toast.success('Profile saved');
+  };
+
+  const saveBusiness = async () => {
+    setSavingBusiness(true);
+    const { error } = await supabase.rpc('update_business_profile', {
+      _business_name: businessName.trim(),
+      _tin_number: tinNumber.trim(),
+    });
+    setSavingBusiness(false);
+    if (error) { toast.error(error.message); return; }
+    toast.success('Business profile saved');
+    reloadTenant();
+  };
+
+  const requestQuota = async () => {
+    if (!tenant) return;
+    const n = parseInt(requestQty, 10);
+    if (!n || n <= tenant.max_users) {
+      toast.error(`Enter a number greater than ${tenant.max_users}`);
+      return;
+    }
+    setRequestingQuota(true);
+    const { error } = await supabase.from('quota_requests').insert({
+      tenant_id: tenant.tenant_id,
+      requested_by: user!.id,
+      requested_max_users: n,
+    });
+    setRequestingQuota(false);
+    if (error) { toast.error(error.message); return; }
+    toast.success('Request sent to super admin');
+    setRequestQty('');
+    reloadTenant();
   };
 
   const fmtDate = (d: Date | null) =>
@@ -182,6 +227,64 @@ export default function Profile() {
           </Button>
         </CardContent>
       </Card>
+
+      {tenant && (
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base flex items-center gap-2">
+              <Building2 className="w-4 h-4 text-primary" /> Business profile
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="grid sm:grid-cols-2 gap-3">
+              <div className="space-y-1.5">
+                <Label htmlFor="bn">Business name</Label>
+                <Input id="bn" value={businessName} onChange={(e) => setBusinessName(e.target.value)}
+                  maxLength={120} placeholder="Your business name"
+                  disabled={!tenant.is_owner} />
+              </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="tin">TIN number</Label>
+                <Input id="tin" value={tinNumber} onChange={(e) => setTinNumber(e.target.value)}
+                  maxLength={30} placeholder="Optional"
+                  disabled={!tenant.is_owner} />
+              </div>
+            </div>
+            {tenant.is_owner && (
+              <Button onClick={saveBusiness} disabled={savingBusiness} size="sm" className="gap-2">
+                <Save className="w-4 h-4" /> {savingBusiness ? 'Saving…' : 'Save business info'}
+              </Button>
+            )}
+
+            <div className="border-t pt-3 space-y-2">
+              <div className="flex items-center justify-between text-sm">
+                <div className="flex items-center gap-2">
+                  <UsersIcon className="w-4 h-4 text-muted-foreground" />
+                  <span>User quota</span>
+                </div>
+                <Badge variant={tenant.current_users >= tenant.max_users ? 'destructive' : 'secondary'}>
+                  {tenant.current_users} / {tenant.max_users}
+                </Badge>
+              </div>
+              {tenant.is_owner && (
+                tenant.pending_request ? (
+                  <p className="text-xs text-muted-foreground">A quota increase request is pending review.</p>
+                ) : (
+                  <div className="flex gap-2">
+                    <Input type="number" min={tenant.max_users + 1}
+                      placeholder={`Request more (current: ${tenant.max_users})`}
+                      value={requestQty} onChange={(e) => setRequestQty(e.target.value)}
+                      className="max-w-[260px]" />
+                    <Button size="sm" variant="outline" onClick={requestQuota} disabled={requestingQuota}>
+                      {requestingQuota ? 'Sending…' : 'Request increase'}
+                    </Button>
+                  </div>
+                )
+              )}
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       <Card>
         <CardHeader className="pb-2">
