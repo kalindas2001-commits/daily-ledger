@@ -84,8 +84,8 @@ export default function Profile() {
     setSavingProfile(true);
     const { error } = await supabase
       .from('profiles')
-      .upsert({ user_id: user.id, full_name: fullName.trim(), phone: phone.trim() },
-              { onConflict: 'user_id' });
+      .update({ full_name: fullName.trim(), phone: phone.trim() })
+      .eq('user_id', user.id);
     setSavingProfile(false);
     if (error) toast.error(error.message);
     else toast.success('Profile saved');
