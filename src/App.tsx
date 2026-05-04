@@ -16,7 +16,6 @@ import BudgetsPage from "./pages/Budgets";
 import BackupRestore from "./pages/BackupRestore";
 import Loans from "./pages/Loans";
 import DailyNotes from "./pages/DailyNotes";
-import Admin from "./pages/Admin";
 import Profile from "./pages/Profile";
 import AppLayout from "./components/AppLayout";
 import WhatsNewDialog from "./components/WhatsNewDialog";
@@ -51,8 +50,7 @@ function AppRoutes() {
         <Route path="/recurring" element={<RecurringTransactions />} />
         <Route path="/budgets" element={<BudgetsPage />} />
         <Route path="/loans" element={<Loans />} />
-        <Route path="/notes" element={<DailyNotes />} />
-        <Route path="/admin" element={<Admin />} />
+        <Route path="/notes" element={<DailyNotes />}
         <Route path="/profile" element={<Profile />} />
         <Route path="/backup" element={<BackupRestore />} />
         <Route path="*" element={<NotFound />} />
