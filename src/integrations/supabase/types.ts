@@ -14,6 +14,39 @@ export type Database = {
   }
   public: {
     Tables: {
+      audit_logs: {
+        Row: {
+          action: string
+          actor_user_id: string | null
+          created_at: string
+          id: string
+          metadata: Json | null
+          target_id: string | null
+          target_type: string | null
+          tenant_id: string | null
+        }
+        Insert: {
+          action: string
+          actor_user_id?: string | null
+          created_at?: string
+          id?: string
+          metadata?: Json | null
+          target_id?: string | null
+          target_type?: string | null
+          tenant_id?: string | null
+        }
+        Update: {
+          action?: string
+          actor_user_id?: string | null
+          created_at?: string
+          id?: string
+          metadata?: Json | null
+          target_id?: string | null
+          target_type?: string | null
+          tenant_id?: string | null
+        }
+        Relationships: []
+      }
       budgets: {
         Row: {
           alert_threshold: number | null
@@ -21,6 +54,7 @@ export type Database = {
           created_at: string | null
           id: string
           monthly_limit: number
+          tenant_id: string | null
           updated_at: string | null
           user_id: string
         }
@@ -30,6 +64,7 @@ export type Database = {
           created_at?: string | null
           id?: string
           monthly_limit: number
+          tenant_id?: string | null
           updated_at?: string | null
           user_id: string
         }
@@ -39,6 +74,7 @@ export type Database = {
           created_at?: string | null
           id?: string
           monthly_limit?: number
+          tenant_id?: string | null
           updated_at?: string | null
           user_id?: string
         }
@@ -49,6 +85,7 @@ export type Database = {
           created_at: string | null
           id: string
           name: string
+          tenant_id: string | null
           type: Database["public"]["Enums"]["transaction_type"]
           user_id: string
         }
@@ -56,6 +93,7 @@ export type Database = {
           created_at?: string | null
           id?: string
           name: string
+          tenant_id?: string | null
           type: Database["public"]["Enums"]["transaction_type"]
           user_id: string
         }
@@ -63,6 +101,7 @@ export type Database = {
           created_at?: string | null
           id?: string
           name?: string
+          tenant_id?: string | null
           type?: Database["public"]["Enums"]["transaction_type"]
           user_id?: string
         }
@@ -74,6 +113,7 @@ export type Database = {
           id: string
           note: string
           note_date: string
+          tenant_id: string | null
           updated_at: string | null
           user_id: string
         }
@@ -82,6 +122,7 @@ export type Database = {
           id?: string
           note: string
           note_date: string
+          tenant_id?: string | null
           updated_at?: string | null
           user_id: string
         }
@@ -90,6 +131,7 @@ export type Database = {
           id?: string
           note?: string
           note_date?: string
+          tenant_id?: string | null
           updated_at?: string | null
           user_id?: string
         }
@@ -100,6 +142,7 @@ export type Database = {
           id: string
           net_balance: number | null
           summary_date: string
+          tenant_id: string | null
           total_expense: number | null
           total_income: number | null
           updated_at: string | null
@@ -109,6 +152,7 @@ export type Database = {
           id?: string
           net_balance?: number | null
           summary_date: string
+          tenant_id?: string | null
           total_expense?: number | null
           total_income?: number | null
           updated_at?: string | null
@@ -118,6 +162,7 @@ export type Database = {
           id?: string
           net_balance?: number | null
           summary_date?: string
+          tenant_id?: string | null
           total_expense?: number | null
           total_income?: number | null
           updated_at?: string | null
@@ -135,6 +180,7 @@ export type Database = {
           paid_date: string | null
           person_name: string
           status: Database["public"]["Enums"]["loan_status"]
+          tenant_id: string | null
           type: Database["public"]["Enums"]["loan_type"]
           updated_at: string | null
           user_id: string
@@ -148,6 +194,7 @@ export type Database = {
           paid_date?: string | null
           person_name: string
           status?: Database["public"]["Enums"]["loan_status"]
+          tenant_id?: string | null
           type: Database["public"]["Enums"]["loan_type"]
           updated_at?: string | null
           user_id: string
@@ -161,6 +208,7 @@ export type Database = {
           paid_date?: string | null
           person_name?: string
           status?: Database["public"]["Enums"]["loan_status"]
+          tenant_id?: string | null
           type?: Database["public"]["Enums"]["loan_type"]
           updated_at?: string | null
           user_id?: string
@@ -231,6 +279,7 @@ export type Database = {
           full_name: string | null
           id: string
           phone: string | null
+          tenant_id: string
           updated_at: string
           user_id: string
         }
@@ -241,6 +290,7 @@ export type Database = {
           full_name?: string | null
           id?: string
           phone?: string | null
+          tenant_id: string
           updated_at?: string
           user_id: string
         }
@@ -251,10 +301,55 @@ export type Database = {
           full_name?: string | null
           id?: string
           phone?: string | null
+          tenant_id?: string
           updated_at?: string
           user_id?: string
         }
         Relationships: []
+      }
+      quota_requests: {
+        Row: {
+          created_at: string
+          id: string
+          reason: string | null
+          requested_by: string
+          requested_max_users: number
+          reviewed_at: string | null
+          reviewed_by: string | null
+          status: string
+          tenant_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          reason?: string | null
+          requested_by: string
+          requested_max_users: number
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
+          tenant_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          reason?: string | null
+          requested_by?: string
+          requested_max_users?: number
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
+          tenant_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "quota_requests_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       recurring_transactions: {
         Row: {
@@ -267,6 +362,7 @@ export type Database = {
           next_run_date: string
           payment_method: string | null
           quantity: number | null
+          tenant_id: string | null
           type: Database["public"]["Enums"]["transaction_type"]
           unit_price: number
           updated_at: string | null
@@ -282,6 +378,7 @@ export type Database = {
           next_run_date: string
           payment_method?: string | null
           quantity?: number | null
+          tenant_id?: string | null
           type: Database["public"]["Enums"]["transaction_type"]
           unit_price: number
           updated_at?: string | null
@@ -297,10 +394,41 @@ export type Database = {
           next_run_date?: string
           payment_method?: string | null
           quantity?: number | null
+          tenant_id?: string | null
           type?: Database["public"]["Enums"]["transaction_type"]
           unit_price?: number
           updated_at?: string | null
           user_id?: string
+        }
+        Relationships: []
+      }
+      tenants: {
+        Row: {
+          business_name: string
+          created_at: string
+          id: string
+          max_users: number
+          owner_user_id: string
+          tin_number: string | null
+          updated_at: string
+        }
+        Insert: {
+          business_name?: string
+          created_at?: string
+          id?: string
+          max_users?: number
+          owner_user_id: string
+          tin_number?: string | null
+          updated_at?: string
+        }
+        Update: {
+          business_name?: string
+          created_at?: string
+          id?: string
+          max_users?: number
+          owner_user_id?: string
+          tin_number?: string | null
+          updated_at?: string
         }
         Relationships: []
       }
@@ -312,6 +440,7 @@ export type Database = {
           id: string
           payment_method: string | null
           quantity: number | null
+          tenant_id: string | null
           total_amount: number | null
           transaction_date: string
           type: Database["public"]["Enums"]["transaction_type"]
@@ -325,6 +454,7 @@ export type Database = {
           id?: string
           payment_method?: string | null
           quantity?: number | null
+          tenant_id?: string | null
           total_amount?: number | null
           transaction_date: string
           type: Database["public"]["Enums"]["transaction_type"]
@@ -338,6 +468,7 @@ export type Database = {
           id?: string
           payment_method?: string | null
           quantity?: number | null
+          tenant_id?: string | null
           total_amount?: number | null
           transaction_date?: string
           type?: Database["public"]["Enums"]["transaction_type"]
@@ -391,9 +522,11 @@ export type Database = {
         Args: never
         Returns: {
           net_balance: number
+          total_admins: number
           total_expense: number
           total_income: number
           total_loans_pending: number
+          total_tenants: number
           total_transactions: number
           total_users: number
         }[]
@@ -401,6 +534,7 @@ export type Database = {
       admin_list_users: {
         Args: never
         Returns: {
+          business_name: string
           created_at: string
           email: string
           full_name: string
@@ -409,22 +543,76 @@ export type Database = {
           is_disabled: boolean
           last_sign_in_at: string
           phone: string
+          tenant_id: string
           total_expense: number
           total_income: number
           tx_count: number
           username: string
         }[]
       }
+      admin_promote_user: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _target: string
+        }
+        Returns: undefined
+      }
+      admin_review_quota_request: {
+        Args: { _approve: boolean; _request_id: string }
+        Returns: undefined
+      }
+      admin_revoke_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _target: string
+        }
+        Returns: undefined
+      }
       admin_set_user_disabled: {
         Args: { _disabled: boolean; _target_user: string }
         Returns: undefined
       }
+      admin_tenants_overview: {
+        Args: never
+        Returns: {
+          business_name: string
+          created_at: string
+          current_users: number
+          max_users: number
+          owner_email: string
+          owner_full_name: string
+          owner_phone: string
+          tenant_id: string
+          tin_number: string
+          total_expense: number
+          total_income: number
+          total_loans: number
+        }[]
+      }
+      get_my_tenant: { Args: never; Returns: string }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
           _user_id: string
         }
         Returns: boolean
+      }
+      is_super_admin: { Args: { _uid: string }; Returns: boolean }
+      my_tenant_info: {
+        Args: never
+        Returns: {
+          business_name: string
+          current_users: number
+          is_owner: boolean
+          max_users: number
+          pending_request: boolean
+          tenant_id: string
+          tin_number: string
+        }[]
+      }
+      update_business_profile: {
+        Args: { _business_name: string; _tin_number: string }
+        Returns: undefined
       }
     }
     Enums: {
