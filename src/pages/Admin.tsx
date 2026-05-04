@@ -45,7 +45,7 @@ interface GlobalStats {
 const fmt = (n: number) => new Intl.NumberFormat('en-US').format(Math.round(n)) + ' RWF';
 
 export default function Admin() {
-  const { isAdmin, loading: authLoading, user } = useAuth();
+  const { isSuperAdmin, loading: authLoading, user } = useAuth();
   const [users, setUsers] = useState<AdminUser[]>([]);
   const [stats, setStats] = useState<GlobalStats | null>(null);
   const [loading, setLoading] = useState(true);
