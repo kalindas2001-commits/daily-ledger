@@ -15,6 +15,7 @@ const AVATAR_KEY = 'cungacash:avatar_url';
 
 export default function Profile() {
   const { user, isAdmin, signOut } = useAuth();
+  const { info: tenant, reload: reloadTenant } = useMyTenant();
   const fileRef = useRef<HTMLInputElement>(null);
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
@@ -23,10 +24,21 @@ export default function Profile() {
   const [phone, setPhone] = useState('');
   const [savingProfile, setSavingProfile] = useState(false);
 
-  // Username is the immutable handle derived from the account email's local part.
-  // It is set at signup and CANNOT be changed afterwards.
+  const [businessName, setBusinessName] = useState('');
+  const [tinNumber, setTinNumber] = useState('');
+  const [savingBusiness, setSavingBusiness] = useState(false);
+  const [requestQty, setRequestQty] = useState('');
+  const [requestingQuota, setRequestingQuota] = useState(false);
+
   const username = user?.email?.split('@')[0] ?? 'user';
   const createdAt = user?.created_at ? new Date(user.created_at) : null;
+
+  useEffect(() => {
+    if (tenant) {
+      setBusinessName(tenant.business_name ?? '');
+      setTinNumber(tenant.tin_number ?? '');
+    }
+  }, [tenant]);
 
   useEffect(() => {
     if (!user) return;
