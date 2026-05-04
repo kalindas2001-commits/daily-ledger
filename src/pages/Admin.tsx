@@ -179,64 +179,7 @@ export default function Admin() {
         </div>
       </div>
 
-      {/* Global KPIs */}
-      <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-        {kpis.map((k) => (
-          <Card key={k.label}>
-            <CardContent className="pt-4">
-              <div className="flex items-center justify-between mb-1">
-                <span className="text-xs text-muted-foreground uppercase tracking-wide">{k.label}</span>
-                <k.icon className="w-4 h-4 text-muted-foreground" />
-              </div>
-              <div className="text-lg font-bold">{k.fmt(k.value)}</div>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
-
-      {/* Users table */}
-      <Card>
-        <CardHeader><CardTitle className="text-base">Users ({users.length})</CardTitle></CardHeader>
-        <CardContent className="p-0">
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead className="bg-muted/40 text-xs uppercase text-muted-foreground">
-                <tr>
-                  <th className="text-left p-3">User</th>
-                  <th className="text-left p-3 hidden md:table-cell">Phone</th>
-                  <th className="text-left p-3 hidden lg:table-cell">Joined</th>
-                  <th className="text-right p-3">Tx</th>
-                  <th className="text-right p-3 hidden md:table-cell">Income</th>
-                  <th className="text-right p-3 hidden md:table-cell">Expense</th>
-                  <th className="text-center p-3">Status</th>
-                  <th className="text-right p-3">Action</th>
-                </tr>
-              </thead>
-              <tbody>
-                {loading && (
-                  <tr><td colSpan={8} className="p-6 text-center text-muted-foreground">Loading…</td></tr>
-                )}
-                {!loading && users.map((u) => (
-                  <tr key={u.id} className="border-t">
-                    <td className="p-3">
-                      <div className="font-medium">{u.full_name || u.username}</div>
-                      <div className="text-xs text-muted-foreground">{u.email}</div>
-                    </td>
-                    <td className="p-3 text-xs hidden md:table-cell">{u.phone || '—'}</td>
-                    <td className="p-3 text-xs text-muted-foreground hidden lg:table-cell">
-                      {new Date(u.created_at).toLocaleDateString()}
-                    </td>
-                    <td className="p-3 text-right tabular-nums">{u.tx_count}</td>
-                    <td className="p-3 text-right tabular-nums text-emerald-600 hidden md:table-cell">{fmt(Number(u.total_income))}</td>
-                    <td className="p-3 text-right tabular-nums text-rose-600 hidden md:table-cell">{fmt(Number(u.total_expense))}</td>
-                    <td className="p-3 text-center">
-                      <div className="flex flex-col items-center gap-1">
-                        {u.is_admin && <Badge className="text-[10px]">admin</Badge>}
-                        {u.is_disabled
-                          ? <Badge variant="destructive" className="text-[10px]">disabled</Badge>
-                          : <Badge variant="outline" className="text-[10px]">active</Badge>}
-                      </div>
-                    </td>
+  
                     <td className="p-3 text-right">
                       {u.id === user?.id ? (
                         <span className="text-xs text-muted-foreground">you</span>
