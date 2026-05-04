@@ -104,6 +104,38 @@ export default function Profile() {
     else toast.success('Profile saved');
   };
 
+  const saveBusiness = async () => {
+    setSavingBusiness(true);
+    const { error } = await supabase.rpc('update_business_profile', {
+      _business_name: businessName.trim(),
+      _tin_number: tinNumber.trim(),
+    });
+    setSavingBusiness(false);
+    if (error) { toast.error(error.message); return; }
+    toast.success('Business profile saved');
+    reloadTenant();
+  };
+
+  const requestQuota = async () => {
+    if (!tenant) return;
+    const n = parseInt(requestQty, 10);
+    if (!n || n <= tenant.max_users) {
+      toast.error(`Enter a number greater than ${tenant.max_users}`);
+      return;
+    }
+    setRequestingQuota(true);
+    const { error } = await supabase.from('quota_requests').insert({
+      tenant_id: tenant.tenant_id,
+      requested_by: user!.id,
+      requested_max_users: n,
+    });
+    setRequestingQuota(false);
+    if (error) { toast.error(error.message); return; }
+    toast.success('Request sent to super admin');
+    setRequestQty('');
+    reloadTenant();
+  };
+
   const fmtDate = (d: Date | null) =>
     d ? d.toLocaleString(undefined, { dateStyle: 'long', timeStyle: 'short' }) : '—';
 
