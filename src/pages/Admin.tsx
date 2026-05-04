@@ -15,8 +15,6 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, Dialog
 import { Users, Shield, TrendingUp, TrendingDown, Wallet, HandCoins, UserPlus, Ban, Check, RefreshCw, KeyRound } from 'lucide-react';
 import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
-import AdminAnalytics from '@/components/AdminAnalytics';
-import AdminNotificationsManager from '@/components/AdminNotificationsManager';
 
 interface AdminUser {
   id: string;
@@ -195,12 +193,6 @@ export default function Admin() {
           </Card>
         ))}
       </div>
-
-      {/* Drill-down analytics with filters */}
-      <AdminAnalytics />
-
-      {/* Broadcast notifications */}
-      <AdminNotificationsManager />
 
       {/* Users table */}
       <Card>
