@@ -70,11 +70,11 @@ export default function Admin() {
   }, []);
 
   useEffect(() => {
-    if (isAdmin) load();
-  }, [isAdmin, load]);
+    if (isSuperAdmin) load();
+  }, [isSuperAdmin, load]);
 
   if (authLoading) return null;
-  if (!isAdmin) return <Navigate to="/" replace />;
+  if (!isSuperAdmin) return <Navigate to="/" replace />;
 
   const handleCreate = async () => {
     const username = newUsername.trim().toLowerCase();
