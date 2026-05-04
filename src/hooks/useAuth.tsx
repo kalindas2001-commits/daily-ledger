@@ -22,6 +22,7 @@ const AuthContext = createContext<AuthContextType>({
   session: null,
   loading: true,
   isAdmin: false,
+  isSuperAdmin: false,
   signIn: authNotReady,
   signUp: authNotReady,
   signOut: async () => {},
@@ -32,6 +33,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
   const [isAdmin, setIsAdmin] = useState(false);
+  const [isSuperAdmin, setIsSuperAdmin] = useState(false);
 
   const signOut = useCallback(async () => {
     await supabase.auth.signOut();
@@ -40,15 +42,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     let mounted = true;
 
-    const fetchAdmin = async (uid: string | undefined) => {
-      if (!uid) { if (mounted) setIsAdmin(false); return; }
+    const fetchRoles = async (uid: string | undefined) => {
+      if (!uid) {
+        if (mounted) { setIsAdmin(false); setIsSuperAdmin(false); }
+        return;
+      }
       const { data } = await supabase
         .from('user_roles')
         .select('role')
-        .eq('user_id', uid)
-        .eq('role', 'admin')
-        .maybeSingle();
-      if (mounted) setIsAdmin(!!data);
+        .eq('user_id', uid);
+      if (!mounted) return;
+      const roles = (data ?? []).map((r: any) => r.role);
+      setIsAdmin(roles.includes('admin') || roles.includes('super_admin'));
+      setIsSuperAdmin(roles.includes('super_admin'));
     };
 
     const applySession = (nextSession: Session | null) => {
@@ -56,8 +62,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setSession(nextSession);
       setUser(nextSession?.user ?? null);
       setLoading(false);
-      // Defer role fetch to avoid blocking auth state callback
-      setTimeout(() => fetchAdmin(nextSession?.user?.id), 0);
+      setTimeout(() => fetchRoles(nextSession?.user?.id), 0);
     };
 
     supabase.auth.getSession()
@@ -85,7 +90,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   return (
-    <AuthContext.Provider value={{ user, session, loading, isAdmin, signIn, signUp, signOut }}>
+    <AuthContext.Provider value={{ user, session, loading, isAdmin, isSuperAdmin, signIn, signUp, signOut }}>
       {children}
     </AuthContext.Provider>
   );
