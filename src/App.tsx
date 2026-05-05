@@ -17,6 +17,8 @@ import BackupRestore from "./pages/BackupRestore";
 import Loans from "./pages/Loans";
 import DailyNotes from "./pages/DailyNotes";
 import Profile from "./pages/Profile";
+import SavingsPage from "./pages/Savings";
+import Admin from "./pages/Admin";
 import AppLayout from "./components/AppLayout";
 import WhatsNewDialog from "./components/WhatsNewDialog";
 import InfoPopup from "./components/InfoPopup";
