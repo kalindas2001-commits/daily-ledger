@@ -17,15 +17,20 @@ import BackupRestore from "./pages/BackupRestore";
 import Loans from "./pages/Loans";
 import DailyNotes from "./pages/DailyNotes";
 import Profile from "./pages/Profile";
+import SavingsPage from "./pages/Savings";
+import Admin from "./pages/Admin";
 import AppLayout from "./components/AppLayout";
 import WhatsNewDialog from "./components/WhatsNewDialog";
 import InfoPopup from "./components/InfoPopup";
 import NotFound from "./pages/NotFound";
+import { useEffect } from "react";
+import { initOfflineSync } from "@/lib/offlineSync";
 
 const queryClient = new QueryClient();
 
 function AppRoutes() {
   const { user, loading } = useAuth();
+  useEffect(() => { initOfflineSync(); }, []);
 
   if (loading) {
     return (
@@ -50,7 +55,9 @@ function AppRoutes() {
         <Route path="/recurring" element={<RecurringTransactions />} />
         <Route path="/budgets" element={<BudgetsPage />} />
         <Route path="/loans" element={<Loans />} />
-        <Route path="/notes" element={<DailyNotes />}
+        <Route path="/notes" element={<DailyNotes />} />
+        <Route path="/savings" element={<SavingsPage />} />
+        <Route path="/admin" element={<Admin />} />
         <Route path="/profile" element={<Profile />} />
         <Route path="/backup" element={<BackupRestore />} />
         <Route path="*" element={<NotFound />} />

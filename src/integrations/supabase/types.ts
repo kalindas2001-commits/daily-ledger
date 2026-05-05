@@ -14,6 +14,42 @@ export type Database = {
   }
   public: {
     Tables: {
+      alerts: {
+        Row: {
+          category: string | null
+          created_at: string
+          id: string
+          message: string
+          read_at: string | null
+          severity: Database["public"]["Enums"]["alert_severity"]
+          tenant_id: string | null
+          title: string
+          user_id: string
+        }
+        Insert: {
+          category?: string | null
+          created_at?: string
+          id?: string
+          message: string
+          read_at?: string | null
+          severity?: Database["public"]["Enums"]["alert_severity"]
+          tenant_id?: string | null
+          title: string
+          user_id: string
+        }
+        Update: {
+          category?: string | null
+          created_at?: string
+          id?: string
+          message?: string
+          read_at?: string | null
+          severity?: Database["public"]["Enums"]["alert_severity"]
+          tenant_id?: string | null
+          title?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       audit_logs: {
         Row: {
           action: string
@@ -170,6 +206,53 @@ export type Database = {
         }
         Relationships: []
       }
+      loan_transactions: {
+        Row: {
+          action: Database["public"]["Enums"]["loan_action"]
+          amount: number
+          created_at: string
+          id: string
+          loan_id: string
+          note: string | null
+          occurred_at: string
+          receipt_no: string
+          tenant_id: string | null
+          user_id: string
+        }
+        Insert: {
+          action: Database["public"]["Enums"]["loan_action"]
+          amount: number
+          created_at?: string
+          id?: string
+          loan_id: string
+          note?: string | null
+          occurred_at?: string
+          receipt_no?: string
+          tenant_id?: string | null
+          user_id: string
+        }
+        Update: {
+          action?: Database["public"]["Enums"]["loan_action"]
+          amount?: number
+          created_at?: string
+          id?: string
+          loan_id?: string
+          note?: string | null
+          occurred_at?: string
+          receipt_no?: string
+          tenant_id?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "loan_transactions_loan_id_fkey"
+            columns: ["loan_id"]
+            isOneToOne: false
+            referencedRelation: "loans"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       loans: {
         Row: {
           amount: number
@@ -177,6 +260,7 @@ export type Database = {
           description: string | null
           id: string
           loan_date: string
+          original_amount: number | null
           paid_date: string | null
           person_name: string
           status: Database["public"]["Enums"]["loan_status"]
@@ -191,6 +275,7 @@ export type Database = {
           description?: string | null
           id?: string
           loan_date?: string
+          original_amount?: number | null
           paid_date?: string | null
           person_name: string
           status?: Database["public"]["Enums"]["loan_status"]
@@ -205,6 +290,7 @@ export type Database = {
           description?: string | null
           id?: string
           loan_date?: string
+          original_amount?: number | null
           paid_date?: string | null
           person_name?: string
           status?: Database["public"]["Enums"]["loan_status"]
@@ -402,6 +488,86 @@ export type Database = {
         }
         Relationships: []
       }
+      savings_accounts: {
+        Row: {
+          created_at: string
+          current_balance: number
+          goal_amount: number | null
+          id: string
+          name: string
+          tenant_id: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          current_balance?: number
+          goal_amount?: number | null
+          id?: string
+          name?: string
+          tenant_id?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          current_balance?: number
+          goal_amount?: number | null
+          id?: string
+          name?: string
+          tenant_id?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      savings_transactions: {
+        Row: {
+          account_id: string
+          action: Database["public"]["Enums"]["savings_action"]
+          amount: number
+          created_at: string
+          id: string
+          note: string | null
+          occurred_at: string
+          receipt_no: string
+          tenant_id: string | null
+          user_id: string
+        }
+        Insert: {
+          account_id: string
+          action: Database["public"]["Enums"]["savings_action"]
+          amount: number
+          created_at?: string
+          id?: string
+          note?: string | null
+          occurred_at?: string
+          receipt_no?: string
+          tenant_id?: string | null
+          user_id: string
+        }
+        Update: {
+          account_id?: string
+          action?: Database["public"]["Enums"]["savings_action"]
+          amount?: number
+          created_at?: string
+          id?: string
+          note?: string | null
+          occurred_at?: string
+          receipt_no?: string
+          tenant_id?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "savings_transactions_account_id_fkey"
+            columns: ["account_id"]
+            isOneToOne: false
+            referencedRelation: "savings_accounts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       tenants: {
         Row: {
           business_name: string
@@ -589,6 +755,25 @@ export type Database = {
           total_loans: number
         }[]
       }
+      admin_tenants_overview_paginated: {
+        Args: { _limit?: number; _offset?: number; _search?: string }
+        Returns: {
+          business_name: string
+          created_at: string
+          current_users: number
+          last_activity: string
+          max_users: number
+          owner_email: string
+          owner_full_name: string
+          tenant_id: string
+          tin_number: string
+          total_count: number
+          total_expense: number
+          total_income: number
+          total_loans_pending: number
+          total_savings: number
+        }[]
+      }
       get_my_tenant: { Args: never; Returns: string }
       has_role: {
         Args: {
@@ -610,16 +795,20 @@ export type Database = {
           tin_number: string
         }[]
       }
+      tenant_drilldown: { Args: { _tenant_id: string }; Returns: Json }
       update_business_profile: {
         Args: { _business_name: string; _tin_number: string }
         Returns: undefined
       }
     }
     Enums: {
+      alert_severity: "info" | "warning" | "critical"
       app_role: "admin" | "user" | "super_admin"
+      loan_action: "ADD" | "FULL_REPAY" | "PARTIAL"
       loan_status: "PENDING" | "PAID"
       loan_type: "GIVEN" | "RECEIVED"
       notification_kind: "banner" | "popup"
+      savings_action: "DEPOSIT" | "WITHDRAW"
       transaction_type: "INCOME" | "EXPENSE"
     }
     CompositeTypes: {
@@ -748,10 +937,13 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
+      alert_severity: ["info", "warning", "critical"],
       app_role: ["admin", "user", "super_admin"],
+      loan_action: ["ADD", "FULL_REPAY", "PARTIAL"],
       loan_status: ["PENDING", "PAID"],
       loan_type: ["GIVEN", "RECEIVED"],
       notification_kind: ["banner", "popup"],
+      savings_action: ["DEPOSIT", "WITHDRAW"],
       transaction_type: ["INCOME", "EXPENSE"],
     },
   },
