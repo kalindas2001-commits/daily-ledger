@@ -22,7 +22,11 @@ import {
   StickyNote,
   Shield,
   UserCircle2,
+  PiggyBank,
+  Bell,
 } from 'lucide-react';
+import OfflineIndicator from './OfflineIndicator';
+import AlertsBell from './AlertsBell';
 import { Button } from '@/components/ui/button';
 import InfoBanner from './InfoBanner';
 
@@ -35,6 +39,7 @@ const mainNav = [
 ];
 
 const moreNav = [
+  { path: '/savings', label: 'Savings', icon: PiggyBank },
   { path: '/loans', label: 'Loans', icon: HandCoins },
   { path: '/notes', label: 'Notes', icon: StickyNote },
   { path: '/categories', label: 'Categories', icon: Tag },
@@ -155,12 +160,14 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
 
       {/* Main content */}
       <main className="flex-1 flex flex-col overflow-hidden">
+        <OfflineIndicator />
         <InfoBanner />
         <header className="sticky top-0 z-30 flex items-center gap-3 px-4 sm:px-6 py-3 bg-background/80 backdrop-blur-md border-b shrink-0">
           <button className="lg:hidden p-1.5 rounded-lg hover:bg-muted transition-colors" onClick={() => setMobileOpen(true)}>
             <Menu className="w-5 h-5" />
           </button>
           <h1 className="text-base sm:text-lg font-semibold truncate flex-1">{currentLabel}</h1>
+          <AlertsBell />
           <Link to="/profile" className="p-1.5 rounded-full hover:bg-muted transition-colors" aria-label="Profile">
             <UserCircle2 className="w-6 h-6 text-muted-foreground" />
           </Link>

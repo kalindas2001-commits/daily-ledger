@@ -23,11 +23,14 @@ import AppLayout from "./components/AppLayout";
 import WhatsNewDialog from "./components/WhatsNewDialog";
 import InfoPopup from "./components/InfoPopup";
 import NotFound from "./pages/NotFound";
+import { useEffect } from "react";
+import { initOfflineSync } from "@/lib/offlineSync";
 
 const queryClient = new QueryClient();
 
 function AppRoutes() {
   const { user, loading } = useAuth();
+  useEffect(() => { initOfflineSync(); }, []);
 
   if (loading) {
     return (
