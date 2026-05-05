@@ -50,7 +50,9 @@ function AppRoutes() {
         <Route path="/recurring" element={<RecurringTransactions />} />
         <Route path="/budgets" element={<BudgetsPage />} />
         <Route path="/loans" element={<Loans />} />
-        <Route path="/notes" element={<DailyNotes />}
+        <Route path="/notes" element={<DailyNotes />} />
+        <Route path="/savings" element={<SavingsPage />} />
+        <Route path="/admin" element={<Admin />} />
         <Route path="/profile" element={<Profile />} />
         <Route path="/backup" element={<BackupRestore />} />
         <Route path="*" element={<NotFound />} />
