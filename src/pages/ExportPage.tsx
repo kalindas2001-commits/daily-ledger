@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Button } from '@/components/ui/button';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { CalendarIcon, FileDown, FileText, BarChart3 } from 'lucide-react';
+import { CalendarIcon, FileDown, FileText, BarChart3, PiggyBank, HandCoins, FileSpreadsheet } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useTransactions, useDailySummaries } from '@/hooks/useTransactions';
 import { useAuth } from '@/hooks/useAuth';
@@ -12,6 +12,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
+import * as XLSX from 'xlsx';
 
 const PRIMARY: [number, number, number] = [13, 150, 104];
 const EXPENSE: [number, number, number] = [220, 38, 38];
@@ -480,6 +481,286 @@ export default function ExportPage() {
     toast.success('Summary PDF downloaded');
   };
 
+  // ---------- Savings & Loans data ----------
+  const fetchSavingsHistory = async () => {
+    const [{ data: accts }, { data: txs }] = await Promise.all([
+      supabase.from('savings_accounts').select('*').order('created_at', { ascending: false }),
+      supabase.from('savings_transactions').select('*')
+        .gte('occurred_at', `${fromStr}T00:00:00`)
+        .lte('occurred_at', `${toStr}T23:59:59`)
+        .order('occurred_at', { ascending: false }),
+    ]);
+    return { accounts: accts ?? [], txs: txs ?? [] };
+  };
+
+  const fetchLoanHistory = async () => {
+    const [{ data: loans }, { data: ltxs }] = await Promise.all([
+      supabase.from('loans').select('*').order('loan_date', { ascending: false }),
+      supabase.from('loan_transactions').select('*')
+        .gte('occurred_at', `${fromStr}T00:00:00`)
+        .lte('occurred_at', `${toStr}T23:59:59`)
+        .order('occurred_at', { ascending: false }),
+    ]);
+    return { loans: loans ?? [], ltxs: ltxs ?? [] };
+  };
+
+  // ---------- Excel exports ----------
+  const exportTransactionsXLSX = async () => {
+    if (!transactions || transactions.length === 0) { toast.error('No transactions to export'); return; }
+    const profile = await getProfile();
+    const wb = XLSX.utils.book_new();
+    const meta = [
+      ['CungaCash — Transactions Report'],
+      ['User', profile.name], ['Email', profile.email],
+      ['Period', `${format(from, 'MMM d, yyyy')} – ${format(to, 'MMM d, yyyy')}`],
+      ['Generated', format(new Date(), 'yyyy-MM-dd HH:mm')],
+      [], ['Total Income', totals.income], ['Total Expense', totals.expense], ['Net Balance', totals.net], [],
+    ];
+    const rows = [
+      ['Date', 'Type', 'Category', 'Description', 'Quantity', 'Unit Price (RWF)', 'Total (RWF)', 'Payment Method'],
+      ...transactions.map((t) => [
+        t.transaction_date, t.type, t.category, t.description ?? '',
+        t.quantity ?? 1, Number(t.unit_price), Number(t.total_amount ?? 0), t.payment_method ?? '',
+      ]),
+    ];
+    const ws = XLSX.utils.aoa_to_sheet([...meta, ...rows]);
+    ws['!cols'] = [{ wch: 14 }, { wch: 10 }, { wch: 20 }, { wch: 30 }, { wch: 8 }, { wch: 14 }, { wch: 14 }, { wch: 14 }];
+    XLSX.utils.book_append_sheet(wb, ws, 'Transactions');
+    XLSX.writeFile(wb, `CungaCash_Transactions_${fromStr}_${toStr}.xlsx`);
+    toast.success('Transactions Excel downloaded');
+  };
+
+  const exportSavingsPDF = async () => {
+    const profile = await getProfile();
+    const { accounts, txs } = await fetchSavingsHistory();
+    if (accounts.length === 0 && txs.length === 0) { toast.error('No savings data in this range'); return; }
+
+    const doc = new jsPDF();
+    addHeader(doc, 'Savings History Report', profile);
+
+    const totalBalance = accounts.reduce((s, a: any) => s + Number(a.current_balance ?? 0), 0);
+    const deposits = txs.filter((t: any) => t.action === 'DEPOSIT').reduce((s, t: any) => s + Number(t.amount), 0);
+    const withdrawals = txs.filter((t: any) => t.action === 'WITHDRAW').reduce((s, t: any) => s + Number(t.amount), 0);
+
+    const pageW = doc.internal.pageSize.getWidth();
+    const boxW = (pageW - 42) / 3;
+    const y0 = 50;
+    [
+      { label: 'Current Balance', val: totalBalance, color: PRIMARY, bg: [236, 253, 245] },
+      { label: 'Deposits', val: deposits, color: PRIMARY, bg: [236, 253, 245] },
+      { label: 'Withdrawals', val: withdrawals, color: EXPENSE, bg: [254, 242, 242] },
+    ].forEach((b, i) => {
+      const x = 14 + (boxW + 7) * i;
+      doc.setFillColor(b.bg[0], b.bg[1], b.bg[2]);
+      doc.roundedRect(x, y0, boxW, 26, 3, 3, 'F');
+      doc.setFontSize(8); doc.setTextColor(...MUTED); doc.setFont('helvetica', 'normal');
+      doc.text(b.label, x + boxW / 2, y0 + 9, { align: 'center' });
+      doc.setFontSize(13); doc.setTextColor(b.color[0], b.color[1], b.color[2]); doc.setFont('helvetica', 'bold');
+      doc.text(`${fmt(b.val)} RWF`, x + boxW / 2, y0 + 20, { align: 'center' });
+    });
+
+    let y = 86;
+    if (accounts.length > 0) {
+      doc.setTextColor(...INK); doc.setFontSize(11); doc.setFont('helvetica', 'bold');
+      doc.text('Savings Accounts', 14, y); y += 2;
+      autoTable(doc, {
+        startY: y + 2,
+        head: [['Account', 'Current Balance', 'Goal', 'Progress']],
+        body: accounts.map((a: any) => [
+          a.name,
+          `${fmt(a.current_balance)} RWF`,
+          a.goal_amount > 0 ? `${fmt(a.goal_amount)} RWF` : '—',
+          a.goal_amount > 0 ? `${Math.min(100, ((a.current_balance / a.goal_amount) * 100)).toFixed(1)}%` : '—',
+        ]),
+        headStyles: { fillColor: PRIMARY, fontSize: 8, fontStyle: 'bold' },
+        bodyStyles: { fontSize: 8 },
+        styles: { cellPadding: 3, lineWidth: 0.1 },
+        columnStyles: { 1: { halign: 'right' }, 2: { halign: 'right' }, 3: { halign: 'center' } },
+      });
+      y = (doc as any).lastAutoTable.finalY + 8;
+    }
+
+    if (txs.length > 0) {
+      if (y > 240) { doc.addPage(); y = 20; }
+      const acctMap = new Map(accounts.map((a: any) => [a.id, a.name]));
+      doc.setTextColor(...INK); doc.setFontSize(11); doc.setFont('helvetica', 'bold');
+      doc.text('Transaction History', 14, y);
+      autoTable(doc, {
+        startY: y + 2,
+        head: [['Date', 'Account', 'Action', 'Amount', 'Receipt #', 'Note']],
+        body: txs.map((t: any) => [
+          format(new Date(t.occurred_at), 'MMM d, yyyy HH:mm'),
+          acctMap.get(t.account_id) ?? '—',
+          t.action,
+          `${fmt(t.amount)} RWF`,
+          t.receipt_no,
+          t.note ?? '',
+        ]),
+        headStyles: { fillColor: PRIMARY, fontSize: 8, fontStyle: 'bold' },
+        bodyStyles: { fontSize: 7.5 },
+        alternateRowStyles: { fillColor: [248, 250, 252] },
+        styles: { cellPadding: 2.5, lineWidth: 0.1 },
+        columnStyles: { 3: { halign: 'right' } },
+        didParseCell: (d) => {
+          if (d.section === 'body' && d.column.index === 2) {
+            d.cell.styles.textColor = d.cell.raw === 'DEPOSIT' ? PRIMARY : EXPENSE;
+            d.cell.styles.fontStyle = 'bold';
+          }
+        },
+      });
+    }
+
+    addFooters(doc);
+    doc.save(`CungaCash_Savings_${fromStr}_${toStr}.pdf`);
+    toast.success('Savings PDF downloaded');
+  };
+
+  const exportSavingsXLSX = async () => {
+    const profile = await getProfile();
+    const { accounts, txs } = await fetchSavingsHistory();
+    if (accounts.length === 0 && txs.length === 0) { toast.error('No savings data'); return; }
+    const acctMap = new Map(accounts.map((a: any) => [a.id, a.name]));
+    const wb = XLSX.utils.book_new();
+    const meta = [
+      ['CungaCash — Savings Report'], ['User', profile.name],
+      ['Period', `${fromStr} – ${toStr}`], ['Generated', format(new Date(), 'yyyy-MM-dd HH:mm')], [],
+    ];
+    const acctRows = [['Account', 'Current Balance (RWF)', 'Goal (RWF)', 'Progress %'],
+      ...accounts.map((a: any) => [a.name, Number(a.current_balance), Number(a.goal_amount ?? 0),
+        a.goal_amount > 0 ? Number(((a.current_balance / a.goal_amount) * 100).toFixed(2)) : 0])];
+    const txRows = [['Date', 'Account', 'Action', 'Amount (RWF)', 'Receipt #', 'Note'],
+      ...txs.map((t: any) => [
+        format(new Date(t.occurred_at), 'yyyy-MM-dd HH:mm'),
+        acctMap.get(t.account_id) ?? '—', t.action, Number(t.amount), t.receipt_no, t.note ?? '',
+      ])];
+    const wsA = XLSX.utils.aoa_to_sheet([...meta, ...acctRows]);
+    const wsT = XLSX.utils.aoa_to_sheet([...meta, ...txRows]);
+    wsA['!cols'] = [{ wch: 24 }, { wch: 18 }, { wch: 18 }, { wch: 12 }];
+    wsT['!cols'] = [{ wch: 18 }, { wch: 24 }, { wch: 12 }, { wch: 14 }, { wch: 24 }, { wch: 30 }];
+    XLSX.utils.book_append_sheet(wb, wsA, 'Accounts');
+    XLSX.utils.book_append_sheet(wb, wsT, 'History');
+    XLSX.writeFile(wb, `CungaCash_Savings_${fromStr}_${toStr}.xlsx`);
+    toast.success('Savings Excel downloaded');
+  };
+
+  const exportLoansPDF = async () => {
+    const profile = await getProfile();
+    const { loans, ltxs } = await fetchLoanHistory();
+    if (loans.length === 0 && ltxs.length === 0) { toast.error('No loan data in this range'); return; }
+    const doc = new jsPDF();
+    addHeader(doc, 'Loans & Repayments Report', profile);
+
+    const oweMe = loans.filter((l: any) => l.type === 'GIVEN' && l.status === 'PENDING').reduce((s, l: any) => s + Number(l.amount), 0);
+    const iOwe = loans.filter((l: any) => l.type === 'RECEIVED' && l.status === 'PENDING').reduce((s, l: any) => s + Number(l.amount), 0);
+    const repaid = ltxs.filter((t: any) => t.action !== 'ADD').reduce((s, t: any) => s + Number(t.amount), 0);
+
+    const pageW = doc.internal.pageSize.getWidth();
+    const boxW = (pageW - 42) / 3;
+    const y0 = 50;
+    [
+      { label: 'People Owe Me', val: oweMe, color: PRIMARY, bg: [236, 253, 245] },
+      { label: 'I Owe', val: iOwe, color: EXPENSE, bg: [254, 242, 242] },
+      { label: 'Repayments (period)', val: repaid, color: PRIMARY, bg: [236, 253, 245] },
+    ].forEach((b, i) => {
+      const x = 14 + (boxW + 7) * i;
+      doc.setFillColor(b.bg[0], b.bg[1], b.bg[2]);
+      doc.roundedRect(x, y0, boxW, 26, 3, 3, 'F');
+      doc.setFontSize(8); doc.setTextColor(...MUTED); doc.setFont('helvetica', 'normal');
+      doc.text(b.label, x + boxW / 2, y0 + 9, { align: 'center' });
+      doc.setFontSize(13); doc.setTextColor(b.color[0], b.color[1], b.color[2]); doc.setFont('helvetica', 'bold');
+      doc.text(`${fmt(b.val)} RWF`, x + boxW / 2, y0 + 20, { align: 'center' });
+    });
+
+    let y = 86;
+    if (loans.length > 0) {
+      doc.setTextColor(...INK); doc.setFontSize(11); doc.setFont('helvetica', 'bold');
+      doc.text('Loans', 14, y);
+      autoTable(doc, {
+        startY: y + 2,
+        head: [['Date', 'Person', 'Type', 'Outstanding', 'Status', 'Notes']],
+        body: loans.map((l: any) => [
+          format(new Date(l.loan_date), 'MMM d, yyyy'),
+          l.person_name, l.type, `${fmt(l.amount)} RWF`, l.status, l.description ?? '',
+        ]),
+        headStyles: { fillColor: PRIMARY, fontSize: 8, fontStyle: 'bold' },
+        bodyStyles: { fontSize: 8 },
+        styles: { cellPadding: 3, lineWidth: 0.1 },
+        columnStyles: { 3: { halign: 'right' } },
+        didParseCell: (d) => {
+          if (d.section === 'body' && d.column.index === 2) {
+            d.cell.styles.textColor = d.cell.raw === 'GIVEN' ? PRIMARY : EXPENSE;
+            d.cell.styles.fontStyle = 'bold';
+          }
+          if (d.section === 'body' && d.column.index === 4) {
+            d.cell.styles.textColor = d.cell.raw === 'PAID' ? PRIMARY : MUTED;
+          }
+        },
+      });
+      y = (doc as any).lastAutoTable.finalY + 8;
+    }
+
+    if (ltxs.length > 0) {
+      if (y > 240) { doc.addPage(); y = 20; }
+      const loanMap = new Map(loans.map((l: any) => [l.id, l.person_name]));
+      doc.setTextColor(...INK); doc.setFontSize(11); doc.setFont('helvetica', 'bold');
+      doc.text('Action History', 14, y);
+      autoTable(doc, {
+        startY: y + 2,
+        head: [['Date', 'Person', 'Action', 'Amount', 'Receipt #', 'Note']],
+        body: ltxs.map((t: any) => [
+          format(new Date(t.occurred_at), 'MMM d, yyyy HH:mm'),
+          loanMap.get(t.loan_id) ?? '—',
+          t.action,
+          `${fmt(t.amount)} RWF`,
+          t.receipt_no,
+          t.note ?? '',
+        ]),
+        headStyles: { fillColor: PRIMARY, fontSize: 8, fontStyle: 'bold' },
+        bodyStyles: { fontSize: 7.5 },
+        alternateRowStyles: { fillColor: [248, 250, 252] },
+        styles: { cellPadding: 2.5, lineWidth: 0.1 },
+        columnStyles: { 3: { halign: 'right' } },
+        didParseCell: (d) => {
+          if (d.section === 'body' && d.column.index === 2) {
+            d.cell.styles.textColor = d.cell.raw === 'ADD' ? EXPENSE : PRIMARY;
+            d.cell.styles.fontStyle = 'bold';
+          }
+        },
+      });
+    }
+
+    addFooters(doc);
+    doc.save(`CungaCash_Loans_${fromStr}_${toStr}.pdf`);
+    toast.success('Loans PDF downloaded');
+  };
+
+  const exportLoansXLSX = async () => {
+    const profile = await getProfile();
+    const { loans, ltxs } = await fetchLoanHistory();
+    if (loans.length === 0 && ltxs.length === 0) { toast.error('No loan data'); return; }
+    const loanMap = new Map(loans.map((l: any) => [l.id, l.person_name]));
+    const wb = XLSX.utils.book_new();
+    const meta = [
+      ['CungaCash — Loans Report'], ['User', profile.name],
+      ['Period', `${fromStr} – ${toStr}`], ['Generated', format(new Date(), 'yyyy-MM-dd HH:mm')], [],
+    ];
+    const lRows = [['Date', 'Person', 'Type', 'Outstanding (RWF)', 'Original (RWF)', 'Status', 'Description'],
+      ...loans.map((l: any) => [l.loan_date, l.person_name, l.type, Number(l.amount),
+        Number(l.original_amount ?? l.amount), l.status, l.description ?? ''])];
+    const tRows = [['Date', 'Person', 'Action', 'Amount (RWF)', 'Receipt #', 'Note'],
+      ...ltxs.map((t: any) => [format(new Date(t.occurred_at), 'yyyy-MM-dd HH:mm'),
+        loanMap.get(t.loan_id) ?? '—', t.action, Number(t.amount), t.receipt_no, t.note ?? ''])];
+    const wsL = XLSX.utils.aoa_to_sheet([...meta, ...lRows]);
+    const wsT = XLSX.utils.aoa_to_sheet([...meta, ...tRows]);
+    wsL['!cols'] = [{ wch: 12 }, { wch: 22 }, { wch: 10 }, { wch: 16 }, { wch: 16 }, { wch: 10 }, { wch: 30 }];
+    wsT['!cols'] = [{ wch: 18 }, { wch: 22 }, { wch: 12 }, { wch: 14 }, { wch: 24 }, { wch: 30 }];
+    XLSX.utils.book_append_sheet(wb, wsL, 'Loans');
+    XLSX.utils.book_append_sheet(wb, wsT, 'Action History');
+    XLSX.writeFile(wb, `CungaCash_Loans_${fromStr}_${toStr}.xlsx`);
+    toast.success('Loans Excel downloaded');
+  };
+
+
   return (
     <div className="max-w-2xl mx-auto space-y-6">
       <Card>
@@ -518,42 +799,59 @@ export default function ExportPage() {
         </div>
       )}
 
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <Card className="hover:shadow-md transition-shadow cursor-pointer" onClick={exportTransactionsPDF}>
-          <CardContent className="p-6 flex items-center gap-4">
-            <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
-              <FileDown className="w-6 h-6 text-primary" />
-            </div>
-            <div>
-              <p className="font-semibold text-sm">Transactions PDF</p>
-              <p className="text-xs text-muted-foreground mt-0.5">{txLoading ? 'Loading...' : `${transactions?.length ?? 0} records`}</p>
-            </div>
-          </CardContent>
-        </Card>
-        <Card className="hover:shadow-md transition-shadow cursor-pointer" onClick={exportDailyReportPDF}>
-          <CardContent className="p-6 flex items-center gap-4">
-            <div className="w-12 h-12 rounded-xl bg-accent/10 flex items-center justify-center shrink-0">
-              <FileText className="w-6 h-6 text-accent" />
-            </div>
-            <div>
-              <p className="font-semibold text-sm">Daily Report PDF</p>
-              <p className="text-xs text-muted-foreground mt-0.5">{sumLoading ? 'Loading...' : `${summaries?.length ?? 0} days`} · with chart</p>
-            </div>
-          </CardContent>
-        </Card>
-        <Card className="hover:shadow-md transition-shadow cursor-pointer" onClick={exportMonthlySummaryPDF}>
-          <CardContent className="p-6 flex items-center gap-4">
-            <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
-              <BarChart3 className="w-6 h-6 text-primary" />
-            </div>
-            <div>
-              <p className="font-semibold text-sm">Smart Summary</p>
-              <p className="text-xs text-muted-foreground mt-0.5">Pies + insights</p>
-            </div>
-          </CardContent>
-        </Card>
+      <div>
+        <h2 className="text-sm font-semibold text-muted-foreground mb-2 px-1">Transactions</h2>
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          <ExportCard icon={FileDown} color="primary" title="Transactions PDF"
+            subtitle={txLoading ? 'Loading...' : `${transactions?.length ?? 0} records`} onClick={exportTransactionsPDF} />
+          <ExportCard icon={FileSpreadsheet} color="primary" title="Transactions Excel"
+            subtitle="Spreadsheet (.xlsx)" onClick={exportTransactionsXLSX} />
+          <ExportCard icon={FileText} color="accent" title="Daily Report PDF"
+            subtitle={`${sumLoading ? '…' : (summaries?.length ?? 0)} days · with chart`} onClick={exportDailyReportPDF} />
+          <ExportCard icon={BarChart3} color="primary" title="Smart Summary"
+            subtitle="Pies + insights" onClick={exportMonthlySummaryPDF} />
+        </div>
+      </div>
+
+      <div>
+        <h2 className="text-sm font-semibold text-muted-foreground mb-2 px-1">Savings History</h2>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <ExportCard icon={PiggyBank} color="primary" title="Savings PDF"
+            subtitle="Accounts + history" onClick={exportSavingsPDF} />
+          <ExportCard icon={FileSpreadsheet} color="primary" title="Savings Excel"
+            subtitle="Spreadsheet (.xlsx)" onClick={exportSavingsXLSX} />
+        </div>
+      </div>
+
+      <div>
+        <h2 className="text-sm font-semibold text-muted-foreground mb-2 px-1">Loans & Repayments</h2>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <ExportCard icon={HandCoins} color="accent" title="Loans PDF"
+            subtitle="Outstanding + actions" onClick={exportLoansPDF} />
+          <ExportCard icon={FileSpreadsheet} color="accent" title="Loans Excel"
+            subtitle="Spreadsheet (.xlsx)" onClick={exportLoansXLSX} />
+        </div>
       </div>
     </div>
+  );
+}
+
+function ExportCard({ icon: Icon, color, title, subtitle, onClick }: {
+  icon: any; color: 'primary' | 'accent'; title: string; subtitle: string; onClick: () => void;
+}) {
+  return (
+    <Card className="hover:shadow-md transition-shadow cursor-pointer" onClick={onClick}>
+      <CardContent className="p-5 flex items-center gap-4">
+        <div className={cn('w-12 h-12 rounded-xl flex items-center justify-center shrink-0',
+          color === 'primary' ? 'bg-primary/10' : 'bg-accent/10')}>
+          <Icon className={cn('w-6 h-6', color === 'primary' ? 'text-primary' : 'text-accent')} />
+        </div>
+        <div className="min-w-0">
+          <p className="font-semibold text-sm">{title}</p>
+          <p className="text-xs text-muted-foreground mt-0.5 truncate">{subtitle}</p>
+        </div>
+      </CardContent>
+    </Card>
   );
 }
 

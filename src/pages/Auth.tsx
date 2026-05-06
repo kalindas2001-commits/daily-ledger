@@ -8,8 +8,11 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { Lock, User, Mail, Phone, UserCircle2 } from 'lucide-react';
 import { toast } from 'sonner';
 
+import ForgotPassword from './ForgotPassword';
+
 export default function Auth() {
   const { signIn } = useAuth();
+  const [showForgot, setShowForgot] = useState(false);
 
   // Sign in state
   const [siUser, setSiUser] = useState('');
@@ -68,6 +71,8 @@ export default function Auth() {
     }
   };
 
+  if (showForgot) return <ForgotPassword onBack={() => setShowForgot(false)} />;
+
   return (
     <div className="min-h-[100dvh] flex flex-col items-center justify-center bg-gradient-to-br from-background via-background to-primary/5 p-4">
       <Card className="w-full max-w-sm shadow-xl border-border/50">
@@ -102,6 +107,10 @@ export default function Auth() {
                 <Button type="submit" className="w-full h-11 font-semibold" disabled={siLoading}>
                   {siLoading ? 'Signing in...' : 'Sign In'}
                 </Button>
+                <button type="button" onClick={() => setShowForgot(true)}
+                  className="w-full text-xs text-primary hover:underline text-center">
+                  Forgot password?
+                </button>
               </form>
             </TabsContent>
 

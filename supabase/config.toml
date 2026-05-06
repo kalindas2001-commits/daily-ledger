@@ -2,3 +2,9 @@ project_id = "zdtyaxvfcfllrwgeoivs"
 
 [functions.admin-reset-credentials]
 verify_jwt = true
+
+[functions.confirm-password-reset]
+verify_jwt = false
+
+[functions.ai-alert-analyzer]
+verify_jwt = false

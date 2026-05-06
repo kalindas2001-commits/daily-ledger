@@ -357,6 +357,48 @@ export type Database = {
         }
         Relationships: []
       }
+      password_reset_requests: {
+        Row: {
+          approved_by: string | null
+          attempt_count: number
+          created_at: string
+          email: string
+          expires_at: string | null
+          id: string
+          phone: string
+          reset_code: string | null
+          reviewed_at: string | null
+          status: string
+          user_id: string
+        }
+        Insert: {
+          approved_by?: string | null
+          attempt_count?: number
+          created_at?: string
+          email: string
+          expires_at?: string | null
+          id?: string
+          phone: string
+          reset_code?: string | null
+          reviewed_at?: string | null
+          status?: string
+          user_id: string
+        }
+        Update: {
+          approved_by?: string | null
+          attempt_count?: number
+          created_at?: string
+          email?: string
+          expires_at?: string | null
+          id?: string
+          phone?: string
+          reset_code?: string | null
+          reviewed_at?: string | null
+          status?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           avatar_url: string | null
@@ -783,6 +825,7 @@ export type Database = {
         Returns: boolean
       }
       is_super_admin: { Args: { _uid: string }; Returns: boolean }
+      mark_reset_used: { Args: { _user_id: string }; Returns: undefined }
       my_tenant_info: {
         Args: never
         Returns: {
@@ -795,10 +838,42 @@ export type Database = {
           tin_number: string
         }[]
       }
+      request_password_reset: {
+        Args: { _email: string; _phone: string }
+        Returns: string
+      }
+      super_admin_approve_reset: {
+        Args: { _request_id: string }
+        Returns: string
+      }
+      super_admin_list_reset_requests: {
+        Args: never
+        Returns: {
+          attempt_count: number
+          created_at: string
+          email: string
+          expires_at: string
+          full_name: string
+          id: string
+          phone: string
+          reset_code: string
+          reviewed_at: string
+          status: string
+          user_id: string
+        }[]
+      }
+      super_admin_reject_reset: {
+        Args: { _request_id: string }
+        Returns: undefined
+      }
       tenant_drilldown: { Args: { _tenant_id: string }; Returns: Json }
       update_business_profile: {
         Args: { _business_name: string; _tin_number: string }
         Returns: undefined
+      }
+      verify_reset_code: {
+        Args: { _code: string; _email: string }
+        Returns: string
       }
     }
     Enums: {
