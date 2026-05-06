@@ -107,6 +107,10 @@ export default function Auth() {
                 <Button type="submit" className="w-full h-11 font-semibold" disabled={siLoading}>
                   {siLoading ? 'Signing in...' : 'Sign In'}
                 </Button>
+                <button type="button" onClick={() => setShowForgot(true)}
+                  className="w-full text-xs text-primary hover:underline text-center">
+                  Forgot password?
+                </button>
               </form>
             </TabsContent>
 
