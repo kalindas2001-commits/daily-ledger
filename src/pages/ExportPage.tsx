@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Button } from '@/components/ui/button';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { CalendarIcon, FileDown, FileText, BarChart3 } from 'lucide-react';
+import { CalendarIcon, FileDown, FileText, BarChart3, PiggyBank, HandCoins, FileSpreadsheet } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useTransactions, useDailySummaries } from '@/hooks/useTransactions';
 import { useAuth } from '@/hooks/useAuth';
@@ -12,6 +12,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
+import * as XLSX from 'xlsx';
 
 const PRIMARY: [number, number, number] = [13, 150, 104];
 const EXPENSE: [number, number, number] = [220, 38, 38];
