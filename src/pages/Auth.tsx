@@ -8,8 +8,11 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { Lock, User, Mail, Phone, UserCircle2 } from 'lucide-react';
 import { toast } from 'sonner';
 
+import ForgotPassword from './ForgotPassword';
+
 export default function Auth() {
   const { signIn } = useAuth();
+  const [showForgot, setShowForgot] = useState(false);
 
   // Sign in state
   const [siUser, setSiUser] = useState('');
@@ -67,6 +70,8 @@ export default function Auth() {
       setSuLoading(false);
     }
   };
+
+  if (showForgot) return <ForgotPassword onBack={() => setShowForgot(false)} />;
 
   return (
     <div className="min-h-[100dvh] flex flex-col items-center justify-center bg-gradient-to-br from-background via-background to-primary/5 p-4">
