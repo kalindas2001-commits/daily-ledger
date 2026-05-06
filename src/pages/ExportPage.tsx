@@ -799,42 +799,59 @@ export default function ExportPage() {
         </div>
       )}
 
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <Card className="hover:shadow-md transition-shadow cursor-pointer" onClick={exportTransactionsPDF}>
-          <CardContent className="p-6 flex items-center gap-4">
-            <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
-              <FileDown className="w-6 h-6 text-primary" />
-            </div>
-            <div>
-              <p className="font-semibold text-sm">Transactions PDF</p>
-              <p className="text-xs text-muted-foreground mt-0.5">{txLoading ? 'Loading...' : `${transactions?.length ?? 0} records`}</p>
-            </div>
-          </CardContent>
-        </Card>
-        <Card className="hover:shadow-md transition-shadow cursor-pointer" onClick={exportDailyReportPDF}>
-          <CardContent className="p-6 flex items-center gap-4">
-            <div className="w-12 h-12 rounded-xl bg-accent/10 flex items-center justify-center shrink-0">
-              <FileText className="w-6 h-6 text-accent" />
-            </div>
-            <div>
-              <p className="font-semibold text-sm">Daily Report PDF</p>
-              <p className="text-xs text-muted-foreground mt-0.5">{sumLoading ? 'Loading...' : `${summaries?.length ?? 0} days`} · with chart</p>
-            </div>
-          </CardContent>
-        </Card>
-        <Card className="hover:shadow-md transition-shadow cursor-pointer" onClick={exportMonthlySummaryPDF}>
-          <CardContent className="p-6 flex items-center gap-4">
-            <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
-              <BarChart3 className="w-6 h-6 text-primary" />
-            </div>
-            <div>
-              <p className="font-semibold text-sm">Smart Summary</p>
-              <p className="text-xs text-muted-foreground mt-0.5">Pies + insights</p>
-            </div>
-          </CardContent>
-        </Card>
+      <div>
+        <h2 className="text-sm font-semibold text-muted-foreground mb-2 px-1">Transactions</h2>
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          <ExportCard icon={FileDown} color="primary" title="Transactions PDF"
+            subtitle={txLoading ? 'Loading...' : `${transactions?.length ?? 0} records`} onClick={exportTransactionsPDF} />
+          <ExportCard icon={FileSpreadsheet} color="primary" title="Transactions Excel"
+            subtitle="Spreadsheet (.xlsx)" onClick={exportTransactionsXLSX} />
+          <ExportCard icon={FileText} color="accent" title="Daily Report PDF"
+            subtitle={`${sumLoading ? '…' : (summaries?.length ?? 0)} days · with chart`} onClick={exportDailyReportPDF} />
+          <ExportCard icon={BarChart3} color="primary" title="Smart Summary"
+            subtitle="Pies + insights" onClick={exportMonthlySummaryPDF} />
+        </div>
+      </div>
+
+      <div>
+        <h2 className="text-sm font-semibold text-muted-foreground mb-2 px-1">Savings History</h2>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <ExportCard icon={PiggyBank} color="primary" title="Savings PDF"
+            subtitle="Accounts + history" onClick={exportSavingsPDF} />
+          <ExportCard icon={FileSpreadsheet} color="primary" title="Savings Excel"
+            subtitle="Spreadsheet (.xlsx)" onClick={exportSavingsXLSX} />
+        </div>
+      </div>
+
+      <div>
+        <h2 className="text-sm font-semibold text-muted-foreground mb-2 px-1">Loans & Repayments</h2>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <ExportCard icon={HandCoins} color="accent" title="Loans PDF"
+            subtitle="Outstanding + actions" onClick={exportLoansPDF} />
+          <ExportCard icon={FileSpreadsheet} color="accent" title="Loans Excel"
+            subtitle="Spreadsheet (.xlsx)" onClick={exportLoansXLSX} />
+        </div>
       </div>
     </div>
+  );
+}
+
+function ExportCard({ icon: Icon, color, title, subtitle, onClick }: {
+  icon: any; color: 'primary' | 'accent'; title: string; subtitle: string; onClick: () => void;
+}) {
+  return (
+    <Card className="hover:shadow-md transition-shadow cursor-pointer" onClick={onClick}>
+      <CardContent className="p-5 flex items-center gap-4">
+        <div className={cn('w-12 h-12 rounded-xl flex items-center justify-center shrink-0',
+          color === 'primary' ? 'bg-primary/10' : 'bg-accent/10')}>
+          <Icon className={cn('w-6 h-6', color === 'primary' ? 'text-primary' : 'text-accent')} />
+        </div>
+        <div className="min-w-0">
+          <p className="font-semibold text-sm">{title}</p>
+          <p className="text-xs text-muted-foreground mt-0.5 truncate">{subtitle}</p>
+        </div>
+      </CardContent>
+    </Card>
   );
 }
 
