@@ -90,7 +90,7 @@ CREATE TRIGGER set_tenant_loan_tx BEFORE INSERT ON public.loan_transactions
 ALTER TABLE public.loans ADD COLUMN IF NOT EXISTS original_amount NUMERIC(14,2);
 UPDATE public.loans SET original_amount = amount WHERE original_amount IS NULL;
 
--- Apply loan transaction logic
+-- Apply loan transaction logic - WITH PROPER ENUM CASTING
 CREATE OR REPLACE FUNCTION public.apply_loan_tx() RETURNS TRIGGER
 LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
 DECLARE v_loan RECORD;
@@ -102,18 +102,18 @@ BEGIN
     UPDATE public.loans
       SET amount = amount + NEW.amount,
           original_amount = COALESCE(original_amount,0) + NEW.amount,
-          status = 'PENDING',
+          status = 'PENDING'::loan_status,
           paid_date = NULL,
           updated_at = now()
       WHERE id = NEW.loan_id;
   ELSIF NEW.action = 'FULL_REPAY' THEN
     UPDATE public.loans
-      SET amount = 0, status = 'PAID', paid_date = CURRENT_DATE, updated_at = now()
+      SET amount = 0, status = 'PAID'::loan_status, paid_date = CURRENT_DATE, updated_at = now()
       WHERE id = NEW.loan_id;
   ELSIF NEW.action = 'PARTIAL' THEN
     UPDATE public.loans
       SET amount = GREATEST(0, amount - NEW.amount),
-          status = CASE WHEN amount - NEW.amount <= 0 THEN 'PAID' ELSE 'PENDING' END,
+          status = CASE WHEN amount - NEW.amount <= 0 THEN 'PAID'::loan_status ELSE 'PENDING'::loan_status END,
           paid_date = CASE WHEN amount - NEW.amount <= 0 THEN CURRENT_DATE ELSE NULL END,
           updated_at = now()
       WHERE id = NEW.loan_id;
@@ -174,7 +174,7 @@ BEGIN
            COALESCE((SELECT SUM(total_amount) FROM public.transactions tr WHERE tr.tenant_id = t.id AND tr.type='INCOME'), 0) AS total_income,
            COALESCE((SELECT SUM(total_amount) FROM public.transactions tr WHERE tr.tenant_id = t.id AND tr.type='EXPENSE'), 0) AS total_expense,
            COALESCE((SELECT SUM(current_balance) FROM public.savings_accounts sa WHERE sa.tenant_id = t.id), 0) AS total_savings,
-           COALESCE((SELECT SUM(amount) FROM public.loans l WHERE l.tenant_id = t.id AND l.status='PENDING'), 0) AS total_loans_pending,
+           COALESCE((SELECT SUM(amount) FROM public.loans l WHERE l.tenant_id = t.id AND l.status='PENDING'::loan_status), 0) AS total_loans_pending,
            (SELECT MAX(created_at) FROM public.transactions tr WHERE tr.tenant_id = t.id) AS last_activity,
            t.created_at
     FROM public.tenants t
@@ -205,7 +205,7 @@ BEGIN
       'income', COALESCE((SELECT SUM(total_amount) FROM public.transactions WHERE tenant_id=_tenant_id AND type='INCOME'),0),
       'expense', COALESCE((SELECT SUM(total_amount) FROM public.transactions WHERE tenant_id=_tenant_id AND type='EXPENSE'),0),
       'savings', COALESCE((SELECT SUM(current_balance) FROM public.savings_accounts WHERE tenant_id=_tenant_id),0),
-      'loans_pending', COALESCE((SELECT SUM(amount) FROM public.loans WHERE tenant_id=_tenant_id AND status='PENDING'),0),
+      'loans_pending', COALESCE((SELECT SUM(amount) FROM public.loans WHERE tenant_id=_tenant_id AND status='PENDING'::loan_status),0),
       'tx_count', (SELECT COUNT(*) FROM public.transactions WHERE tenant_id=_tenant_id),
       'loan_count', (SELECT COUNT(*) FROM public.loans WHERE tenant_id=_tenant_id),
       'savings_count', (SELECT COUNT(*) FROM public.savings_accounts WHERE tenant_id=_tenant_id)
