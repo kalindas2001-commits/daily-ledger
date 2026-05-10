@@ -90,7 +90,7 @@ CREATE TRIGGER set_tenant_loan_tx BEFORE INSERT ON public.loan_transactions
 ALTER TABLE public.loans ADD COLUMN IF NOT EXISTS original_amount NUMERIC(14,2);
 UPDATE public.loans SET original_amount = amount WHERE original_amount IS NULL;
 
--- Apply loan transaction logic - WITH PROPER ENUM CASTING
+-- Apply loan transaction logic - FIXED WITH PROPER ENUM CASTING
 CREATE OR REPLACE FUNCTION public.apply_loan_tx() RETURNS TRIGGER
 LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
 DECLARE v_loan RECORD;
