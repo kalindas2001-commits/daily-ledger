@@ -10,7 +10,7 @@ export interface LoanInsert {
   loan_date: string;
 }
 
-export function useLoans( statusFilter?: 'pending' | 'paid' ) {
+export function useLoans( statusFilter?: 'PENDING' | 'PAID' ) {
   const { user } = useAuth();
 
   return useQuery({
@@ -60,7 +60,7 @@ export function useMarkLoanPaid() {
     mutationFn: async (id: string) => {
       const { error } = await supabase
         .from('loans')
-        .update({ status: 'paid', paid_date: new Date().toISOString().split('T')[0] 
+        .update({ status: 'PAID', paid_date: new Date().toISOString().split('T')[0] })
         .eq('id', id);
       if (error) throw error;
     },
