@@ -846,6 +846,31 @@ export type Database = {
         Args: { _request_id: string }
         Returns: string
       }
+      super_admin_cron_history: {
+        Args: { _jobid: number; _limit?: number }
+        Returns: {
+          end_time: string
+          return_message: string
+          runid: number
+          start_time: string
+          status: string
+        }[]
+      }
+      super_admin_cron_status: {
+        Args: never
+        Returns: {
+          active: boolean
+          failed_runs: number
+          jobid: number
+          jobname: string
+          last_return_message: string
+          last_run_finished: string
+          last_run_started: string
+          last_status: string
+          schedule: string
+          total_runs: number
+        }[]
+      }
       super_admin_list_reset_requests: {
         Args: never
         Returns: {
@@ -862,6 +887,7 @@ export type Database = {
           user_id: string
         }[]
       }
+      super_admin_platform_pulse: { Args: never; Returns: Json }
       super_admin_reject_reset: {
         Args: { _request_id: string }
         Returns: undefined
