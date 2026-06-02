@@ -6,7 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { supabase } from '@/integrations/supabase/client';
-import { ChevronLeft, ChevronRight, Search, Building2, Users, TrendingUp, TrendingDown, Eye, Ban, CheckCircle2 } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Search, Building2, Users, TrendingUp, TrendingDown, Eye, Ban, CheckCircle2, ArrowUp, ArrowDown, ArrowUpDown } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend } from 'recharts';
 import { format } from 'date-fns';
 import { toast } from 'sonner';
@@ -32,6 +32,8 @@ export default function TenantsOverview() {
   const [drilldown, setDrilldown] = useState<any>(null);
   const [drillName, setDrillName] = useState<string>('');
   const [drillUsers, setDrillUsers] = useState<any[]>([]);
+  const [sortKey, setSortKey] = useState<keyof TenantRow>('created_at');
+  const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc');
 
   useEffect(() => {
     const t = setTimeout(() => { setDebounced(search); setPage(0); }, 300);
