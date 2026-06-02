@@ -16,7 +16,7 @@ const PAGE_SIZE = 20;
 
 interface TenantRow {
   tenant_id: string; business_name: string; tin_number: string;
-  owner_email: string; owner_full_name: string;
+  owner_email: string; owner_full_name: string; owner_phone: string;
   max_users: number; current_users: number;
   total_income: number; total_expense: number; total_savings: number; total_loans_pending: number;
   last_activity: string | null; created_at: string; total_count: number;
@@ -189,6 +189,7 @@ export default function TenantsOverview() {
                       <td className="py-2 px-2">
                         <div>{r.owner_full_name || '—'}</div>
                         <div className="text-[10px] text-muted-foreground">{r.owner_email}</div>
+                        {r.owner_phone && <div className="text-[10px] text-muted-foreground">📞 {r.owner_phone}</div>}
                       </td>
                       <td className="py-2 px-2 text-center"><Badge variant="outline">{r.current_users}/{r.max_users}</Badge></td>
                       <td className="py-2 px-2 text-right text-income font-medium">{fmt(r.total_income)}</td>

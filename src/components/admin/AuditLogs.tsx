@@ -139,8 +139,10 @@ export default function AuditLogs() {
                       {r.target_type ?? '—'}{r.target_id ? <span className="text-[10px] block opacity-70">{r.target_id.slice(0, 18)}</span> : null}
                     </td>
                     <td className="py-1.5 px-2">{outcomeOf(r) ?? <span className="text-muted-foreground">—</span>}</td>
-                    <td className="py-1.5 pl-2 font-mono text-[10px] text-muted-foreground max-w-xs truncate" title={JSON.stringify(r.metadata ?? {})}>
-                      {r.metadata && Object.keys(r.metadata).length > 0 ? JSON.stringify(r.metadata) : '—'}
+                    <td className="py-1.5 pl-2 font-mono text-[10px] text-muted-foreground max-w-xs truncate" title={JSON.stringify(r.metadata ?? {}, null, 2)}>
+                      {r.metadata?.request_id && <div className="truncate">req: {String(r.metadata.request_id).slice(0, 8)}…</div>}
+                      {r.metadata?.user_agent && <div className="truncate opacity-70">{String(r.metadata.user_agent).slice(0, 40)}</div>}
+                      {!r.metadata?.request_id && !r.metadata?.user_agent && (r.metadata && Object.keys(r.metadata).length > 0 ? JSON.stringify(r.metadata) : '—')}
                     </td>
                   </tr>
                 ))}
