@@ -61,9 +61,13 @@ export default function SystemHealth() {
   const retryAlertAnalyzer = async (name: string) => {
     setRetrying(name);
     const startedAt = new Date().toISOString();
-    const { data, error } = await supabase.functions.invoke('ai-alert-analyzer', { body: {} });
+    const requestId = (crypto as any).randomUUID ? crypto.randomUUID() : `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+    const { data, error } = await supabase.functions.invoke('ai-alert-analyzer', {
+      body: {},
+      headers: { 'x-request-id': requestId },
+    });
     setRetrying(null);
-    // Audit trail for manual run
+    // Audit trail for manual run — include client request metadata
     await supabase.rpc('super_admin_log_action', {
       _action: error ? 'cron.manual_run_failed' : 'cron.manual_run',
       _target_type: 'cron_job',
@@ -74,6 +78,9 @@ export default function SystemHealth() {
         outcome: error ? 'failed' : 'success',
         error: error?.message ?? null,
         inserted: data?.inserted ?? null,
+        request_id: requestId,
+        user_agent: navigator.userAgent,
+        page_url: window.location.href,
       } as any,
     });
     if (error) return toast.error(`Run failed: ${error.message}`);
