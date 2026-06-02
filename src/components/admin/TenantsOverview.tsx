@@ -168,17 +168,19 @@ export default function TenantsOverview() {
               <table className="w-full text-sm">
                 <thead className="text-left text-xs text-muted-foreground uppercase tracking-wider">
                   <tr className="border-b">
-                    <th className="py-2 pr-2">Business</th><th className="py-2 px-2">Owner</th>
-                    <th className="py-2 px-2 text-center">Users</th>
-                    <th className="py-2 px-2 text-right">Income</th>
-                    <th className="py-2 px-2 text-right">Expense</th>
-                    <th className="py-2 px-2 text-right">Savings</th>
-                    <th className="py-2 px-2 text-right">Loans</th>
-                    <th className="py-2 pl-2">Joined</th><th className="py-2 pl-2"></th>
+                    <th className="py-2 pr-2 cursor-pointer select-none" onClick={() => toggleSort('business_name')}>Business <SortIcon k="business_name" /></th>
+                    <th className="py-2 px-2 cursor-pointer select-none" onClick={() => toggleSort('owner_email')}>Owner <SortIcon k="owner_email" /></th>
+                    <th className="py-2 px-2 text-center cursor-pointer select-none" onClick={() => toggleSort('current_users')}>Users <SortIcon k="current_users" /></th>
+                    <th className="py-2 px-2 text-right cursor-pointer select-none" onClick={() => toggleSort('total_income')}>Income <SortIcon k="total_income" /></th>
+                    <th className="py-2 px-2 text-right cursor-pointer select-none" onClick={() => toggleSort('total_expense')}>Expense <SortIcon k="total_expense" /></th>
+                    <th className="py-2 px-2 text-right cursor-pointer select-none" onClick={() => toggleSort('total_savings')}>Savings <SortIcon k="total_savings" /></th>
+                    <th className="py-2 px-2 text-right cursor-pointer select-none" onClick={() => toggleSort('total_loans_pending')}>Loans <SortIcon k="total_loans_pending" /></th>
+                    <th className="py-2 pl-2 cursor-pointer select-none" onClick={() => toggleSort('created_at')}>Joined <SortIcon k="created_at" /></th>
+                    <th className="py-2 pl-2"></th>
                   </tr>
                 </thead>
                 <tbody>
-                  {rows.map(r => (
+                  {sortedRows.map(r => (
                     <tr key={r.tenant_id} className="border-b hover:bg-muted/30">
                       <td className="py-2 pr-2">
                         <div className="font-semibold">{r.business_name}</div>
