@@ -807,6 +807,7 @@ export type Database = {
           max_users: number
           owner_email: string
           owner_full_name: string
+          owner_phone: string
           tenant_id: string
           tin_number: string
           total_count: number
