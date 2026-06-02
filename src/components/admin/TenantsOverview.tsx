@@ -189,6 +189,7 @@ export default function TenantsOverview() {
                       <td className="py-2 px-2">
                         <div>{r.owner_full_name || '—'}</div>
                         <div className="text-[10px] text-muted-foreground">{r.owner_email}</div>
+                        {r.owner_phone && <div className="text-[10px] text-muted-foreground">📞 {r.owner_phone}</div>}
                       </td>
                       <td className="py-2 px-2 text-center"><Badge variant="outline">{r.current_users}/{r.max_users}</Badge></td>
                       <td className="py-2 px-2 text-right text-income font-medium">{fmt(r.total_income)}</td>
