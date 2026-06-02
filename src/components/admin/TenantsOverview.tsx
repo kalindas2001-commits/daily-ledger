@@ -16,7 +16,7 @@ const PAGE_SIZE = 20;
 
 interface TenantRow {
   tenant_id: string; business_name: string; tin_number: string;
-  owner_email: string; owner_full_name: string;
+  owner_email: string; owner_full_name: string; owner_phone: string;
   max_users: number; current_users: number;
   total_income: number; total_expense: number; total_savings: number; total_loans_pending: number;
   last_activity: string | null; created_at: string; total_count: number;
