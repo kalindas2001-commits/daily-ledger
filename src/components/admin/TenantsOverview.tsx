@@ -57,13 +57,36 @@ export default function TenantsOverview() {
   const totalPages = Math.max(1, Math.ceil(Number(totalCount) / PAGE_SIZE));
   const fmt = (n: any) => Number(n ?? 0).toLocaleString('en-RW', { maximumFractionDigits: 0 });
 
-  const tenantChart = useMemo(() => rows.map(r => ({
+  const sortedRows = useMemo(() => {
+    const copy = [...rows];
+    copy.sort((a, b) => {
+      const av: any = a[sortKey]; const bv: any = b[sortKey];
+      if (av == null && bv == null) return 0;
+      if (av == null) return 1;
+      if (bv == null) return -1;
+      const an = Number(av); const bn = Number(bv);
+      const numeric = !isNaN(an) && !isNaN(bn) && typeof av !== 'string';
+      const cmp = numeric ? an - bn : String(av).localeCompare(String(bv));
+      return sortDir === 'asc' ? cmp : -cmp;
+    });
+    return copy;
+  }, [rows, sortKey, sortDir]);
+
+  const toggleSort = (k: keyof TenantRow) => {
+    if (k === sortKey) setSortDir(d => d === 'asc' ? 'desc' : 'asc');
+    else { setSortKey(k); setSortDir('desc'); }
+  };
+  const SortIcon = ({ k }: { k: keyof TenantRow }) =>
+    k !== sortKey ? <ArrowUpDown className="w-3 h-3 inline opacity-40" /> :
+    sortDir === 'asc' ? <ArrowUp className="w-3 h-3 inline" /> : <ArrowDown className="w-3 h-3 inline" />;
+
+  const tenantChart = useMemo(() => sortedRows.map(r => ({
     name: r.business_name.length > 14 ? r.business_name.slice(0, 13) + '…' : r.business_name,
     Income: Number(r.total_income), Expense: Number(r.total_expense),
-  })), [rows]);
-  const distributionData = useMemo(() => rows.slice(0, 8).map(r => ({
+  })), [sortedRows]);
+  const distributionData = useMemo(() => sortedRows.slice(0, 8).map(r => ({
     name: r.business_name, value: Number(r.total_income) + Number(r.total_expense),
-  })).filter(x => x.value > 0), [rows]);
+  })).filter(x => x.value > 0), [sortedRows]);
 
   const openDrilldown = async (t: TenantRow) => {
     setDrillName(t.business_name);
