@@ -887,6 +887,15 @@ export type Database = {
           user_id: string
         }[]
       }
+      super_admin_log_action: {
+        Args: {
+          _action: string
+          _metadata?: Json
+          _target_id?: string
+          _target_type?: string
+        }
+        Returns: string
+      }
       super_admin_platform_pulse: { Args: never; Returns: Json }
       super_admin_reject_reset: {
         Args: { _request_id: string }
