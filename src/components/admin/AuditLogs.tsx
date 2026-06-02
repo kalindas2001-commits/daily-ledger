@@ -1,11 +1,12 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { supabase } from '@/integrations/supabase/client';
 import { format } from 'date-fns';
-import { ScrollText, RefreshCw, Search } from 'lucide-react';
+import { ScrollText, RefreshCw, Search, Download } from 'lucide-react';
 
 interface AuditRow {
   id: string;
@@ -23,6 +24,7 @@ export default function AuditLogs() {
   const [actors, setActors] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
+  const [actionFilter, setActionFilter] = useState<string>('all');
 
   const reload = async () => {
     setLoading(true);
@@ -41,17 +43,48 @@ export default function AuditLogs() {
 
   useEffect(() => { reload(); }, []);
 
-  const filtered = rows.filter(r =>
-    !search ||
-    r.action.toLowerCase().includes(search.toLowerCase()) ||
-    (r.target_type ?? '').toLowerCase().includes(search.toLowerCase()) ||
-    (actors[r.actor_user_id ?? ''] ?? '').toLowerCase().includes(search.toLowerCase()),
-  );
+  const actions = useMemo(() => Array.from(new Set(rows.map(r => r.action))).sort(), [rows]);
+
+  const filtered = rows.filter(r => {
+    if (actionFilter !== 'all' && r.action !== actionFilter) return false;
+    if (!search) return true;
+    const s = search.toLowerCase();
+    return r.action.toLowerCase().includes(s)
+      || (r.target_type ?? '').toLowerCase().includes(s)
+      || (r.target_id ?? '').toLowerCase().includes(s)
+      || (actors[r.actor_user_id ?? ''] ?? '').toLowerCase().includes(s)
+      || JSON.stringify(r.metadata ?? {}).toLowerCase().includes(s);
+  });
 
   const actionColor = (a: string) => {
-    if (a.includes('granted') || a.includes('approved')) return 'bg-primary/10 text-primary';
-    if (a.includes('revoked') || a.includes('rejected') || a.includes('disabled')) return 'bg-destructive/10 text-destructive';
+    if (a.includes('granted') || a.includes('approved') || a.includes('manual_run') && !a.includes('failed')) return 'bg-primary/10 text-primary';
+    if (a.includes('revoked') || a.includes('rejected') || a.includes('disabled') || a.includes('failed')) return 'bg-destructive/10 text-destructive';
     return 'bg-muted text-muted-foreground';
+  };
+
+  const outcomeOf = (r: AuditRow) => {
+    const o = r.metadata?.outcome;
+    if (o === 'success') return <Badge variant="outline" className="bg-income/10 text-income border-income/30">success</Badge>;
+    if (o === 'failed') return <Badge variant="outline" className="bg-destructive/10 text-destructive border-destructive/30">failed</Badge>;
+    return null;
+  };
+
+  const exportCsv = () => {
+    const header = ['When', 'Actor', 'Action', 'Target type', 'Target id', 'Outcome', 'Metadata'];
+    const lines = [header.join(',')].concat(filtered.map(r => [
+      format(new Date(r.created_at), 'yyyy-MM-dd HH:mm:ss'),
+      actors[r.actor_user_id ?? ''] ?? r.actor_user_id ?? '',
+      r.action,
+      r.target_type ?? '',
+      r.target_id ?? '',
+      r.metadata?.outcome ?? '',
+      JSON.stringify(r.metadata ?? {}).replace(/"/g, '""'),
+    ].map(v => `"${String(v).replace(/"/g, '""')}"`).join(',')));
+    const blob = new Blob([lines.join('\n')], { type: 'text/csv' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = `audit-logs-${format(new Date(), 'yyyyMMdd-HHmm')}.csv`;
+    a.click();
   };
 
   return (
@@ -60,12 +93,21 @@ export default function AuditLogs() {
         <div className="flex items-center justify-between gap-3 flex-wrap">
           <CardTitle className="text-base flex items-center gap-2">
             <ScrollText className="w-4 h-4 text-primary" /> Audit Logs
+            <span className="text-xs text-muted-foreground font-normal">({filtered.length})</span>
           </CardTitle>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-wrap">
+            <Select value={actionFilter} onValueChange={setActionFilter}>
+              <SelectTrigger className="w-48 h-9"><SelectValue placeholder="Action" /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All actions</SelectItem>
+                {actions.map(a => <SelectItem key={a} value={a}>{a}</SelectItem>)}
+              </SelectContent>
+            </Select>
             <div className="relative">
               <Search className="w-4 h-4 absolute left-2.5 top-2.5 text-muted-foreground" />
-              <Input className="pl-8 w-64" placeholder="Filter action/user…" value={search} onChange={e => setSearch(e.target.value)} />
+              <Input className="pl-8 w-64" placeholder="Search action / user / details…" value={search} onChange={e => setSearch(e.target.value)} />
             </div>
+            <Button size="sm" variant="outline" onClick={exportCsv}><Download className="w-4 h-4 mr-1" />CSV</Button>
             <Button size="sm" variant="ghost" onClick={reload}><RefreshCw className="w-4 h-4" /></Button>
           </div>
         </div>
@@ -81,18 +123,24 @@ export default function AuditLogs() {
                   <th className="py-2 px-2">Actor</th>
                   <th className="py-2 px-2">Action</th>
                   <th className="py-2 px-2">Target</th>
+                  <th className="py-2 px-2">Outcome</th>
                   <th className="py-2 pl-2">Details</th>
                 </tr>
               </thead>
               <tbody>
                 {filtered.map(r => (
                   <tr key={r.id} className="border-b hover:bg-muted/30">
-                    <td className="py-1.5 pr-2 whitespace-nowrap text-muted-foreground">{format(new Date(r.created_at), 'MMM d, HH:mm')}</td>
+                    <td className="py-1.5 pr-2 whitespace-nowrap text-muted-foreground" title={format(new Date(r.created_at), 'PPpp')}>
+                      {format(new Date(r.created_at), 'MMM d, HH:mm:ss')}
+                    </td>
                     <td className="py-1.5 px-2">{actors[r.actor_user_id ?? ''] ?? (r.actor_user_id ? r.actor_user_id.slice(0, 8) : '—')}</td>
                     <td className="py-1.5 px-2"><Badge variant="outline" className={actionColor(r.action)}>{r.action}</Badge></td>
-                    <td className="py-1.5 px-2 text-muted-foreground">{r.target_type ?? '—'}</td>
-                    <td className="py-1.5 pl-2 font-mono text-[10px] text-muted-foreground max-w-xs truncate">
-                      {r.metadata ? JSON.stringify(r.metadata) : '—'}
+                    <td className="py-1.5 px-2 text-muted-foreground">
+                      {r.target_type ?? '—'}{r.target_id ? <span className="text-[10px] block opacity-70">{r.target_id.slice(0, 18)}</span> : null}
+                    </td>
+                    <td className="py-1.5 px-2">{outcomeOf(r) ?? <span className="text-muted-foreground">—</span>}</td>
+                    <td className="py-1.5 pl-2 font-mono text-[10px] text-muted-foreground max-w-xs truncate" title={JSON.stringify(r.metadata ?? {})}>
+                      {r.metadata && Object.keys(r.metadata).length > 0 ? JSON.stringify(r.metadata) : '—'}
                     </td>
                   </tr>
                 ))}
