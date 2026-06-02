@@ -60,8 +60,22 @@ export default function SystemHealth() {
 
   const retryAlertAnalyzer = async (name: string) => {
     setRetrying(name);
+    const startedAt = new Date().toISOString();
     const { data, error } = await supabase.functions.invoke('ai-alert-analyzer', { body: {} });
     setRetrying(null);
+    // Audit trail for manual run
+    await supabase.rpc('super_admin_log_action', {
+      _action: error ? 'cron.manual_run_failed' : 'cron.manual_run',
+      _target_type: 'cron_job',
+      _target_id: name,
+      _metadata: {
+        started_at: startedAt,
+        finished_at: new Date().toISOString(),
+        outcome: error ? 'failed' : 'success',
+        error: error?.message ?? null,
+        inserted: data?.inserted ?? null,
+      } as any,
+    });
     if (error) return toast.error(`Run failed: ${error.message}`);
     toast.success(`Manual run completed${data?.inserted != null ? ` — ${data.inserted} alerts inserted` : ''}`);
     setTimeout(reload, 1500);
