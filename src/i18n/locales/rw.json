@@ -1,0 +1,105 @@
+{
+  "app": { "name": "CungaCash", "tagline": "Gukurikirana imari ya buri munsi" },
+  "common": {
+    "save": "Bika", "cancel": "Hagarika", "delete": "Siba", "edit": "Hindura",
+    "confirm": "Emeza", "close": "Funga", "back": "Subira", "next": "Komeza",
+    "loading": "Birapakira…", "search": "Shakisha", "filter": "Mushyiramo",
+    "export": "Sohora", "import": "Injiza", "add": "Ongeraho", "create": "Kora",
+    "update": "Vugurura", "remove": "Kuraho", "yes": "Yego", "no": "Oya",
+    "all": "Byose", "none": "Nta na kimwe", "total": "Igiteranyo", "amount": "Amafaranga",
+    "date": "Itariki", "description": "Ibisobanuro", "category": "Icyiciro",
+    "type": "Ubwoko", "status": "Imimerere", "actions": "Ibikorwa", "name": "Izina",
+    "email": "Imeyili", "phone": "Telefone", "password": "Ijambobanga",
+    "submit": "Ohereza", "view": "Reba", "details": "Birambuye",
+    "today": "Uyu munsi", "yesterday": "Ejo hashize", "thisWeek": "Iki cyumweru",
+    "thisMonth": "Uku kwezi", "thisYear": "Uyu mwaka",
+    "income": "Amafaranga yinjiye", "expense": "Amafaranga yasohotse", "balance": "Ibyasigaye",
+    "currency": "RWF", "noData": "Nta makuru ahari",
+    "success": "Byagenze neza", "error": "Ikosa", "warning": "Iburira",
+    "signOut": "Sohoka", "signIn": "Injira", "profile": "Umwirondoro",
+    "settings": "Igenamiterere", "language": "Ururimi", "darkMode": "Imiterere yijimye",
+    "lightMode": "Imiterere yera", "developedBy": "Yakozwe na"
+  },
+  "nav": {
+    "dashboard": "Imbonerahamwe", "add": "Ongeraho", "calendar": "Kalendari",
+    "transactions": "Imikorere", "export": "Sohora", "savings": "Ubwizigame",
+    "loans": "Inguzanyo", "notes": "Inyandiko", "categories": "Ibyiciro",
+    "recurring": "Bisubirwamo", "budgets": "Ingengo y'imari", "backup": "Bika kopi",
+    "profile": "Umwirondoro", "superAdmin": "Umuyobozi mukuru",
+    "main": "Ibikuru", "manage": "Gucunga", "more": "Birenzeho"
+  },
+  "auth": {
+    "welcome": "Murakaza neza kuri CungaCash", "signInTitle": "Injira muri konti yawe",
+    "signUpTitle": "Fungura konti yawe", "emailLabel": "Imeyili",
+    "passwordLabel": "Ijambobanga", "forgotPassword": "Wibagiwe ijambobanga?",
+    "noAccount": "Nta konti ufite?", "haveAccount": "Usanzwe ufite konti?",
+    "createAccount": "Fungura konti", "signUp": "Iyandikishe", "signingIn": "Kwinjira…",
+    "businessName": "Izina ry'ubucuruzi", "fullName": "Amazina yose", "phoneNumber": "Numero ya telefone"
+  },
+  "dashboard": {
+    "title": "Imbonerahamwe", "todayIncome": "Amafaranga yinjiye uyu munsi",
+    "todayExpense": "Amafaranga yasohotse uyu munsi", "netBalance": "Ibyasigaye",
+    "recentTransactions": "Imikorere ya vuba", "viewAll": "Reba byose",
+    "monthSummary": "Incamake y'ukwezi", "categoryBreakdown": "Igabanya ku byiciro",
+    "noTransactions": "Nta mikorere irahari"
+  },
+  "transactions": {
+    "title": "Imikorere", "addNew": "Ongeraho ikorwa",
+    "editTransaction": "Hindura ikorwa", "deleteConfirm": "Siba iyi mikorere?",
+    "unitPrice": "Igiciro cy'igice", "quantity": "Umubare", "totalAmount": "Igiteranyo cyose",
+    "paymentMethod": "Uburyo bw'ubwishyu", "cash": "Mu mafaranga", "mobileMoney": "Mobile Money",
+    "bank": "Banki", "transactionDate": "Itariki y'ikorwa",
+    "noResults": "Nta mikorere ihuye n'ibisabwa",
+    "incomeAdded": "Amafaranga yinjiye yongeweho", "expenseAdded": "Amafaranga yasohotse yongeweho"
+  },
+  "savings": {
+    "title": "Ubwizigame", "currentBalance": "Amafaranga ahari", "goal": "Intego",
+    "deposit": "Shyiramo", "withdraw": "Kuramo", "history": "Amateka y'ubwizigame",
+    "noAccount": "Nta konti y'ubwizigame", "createAccount": "Fungura konti y'ubwizigame",
+    "depositAmount": "Amafaranga ushyiramo", "withdrawAmount": "Amafaranga ukuramo",
+    "note": "Inyandiko (si itegeko)", "receiptNo": "Numero y'inyemezabwishyu"
+  },
+  "loans": {
+    "title": "Inguzanyo", "given": "Watanze", "received": "Wahawe",
+    "addLoan": "Ongeraho inguzanyo", "personName": "Izina ry'umuntu", "loanDate": "Itariki y'inguzanyo",
+    "originalAmount": "Amafaranga yose", "remaining": "Asigaye",
+    "markPaid": "Garagaza ko yishyuwe", "repayment": "Kwishyura",
+    "pending": "Itegerejwe", "paid": "Yishyuwe", "noLoans": "Nta nguzanyo ihari",
+    "actionHistory": "Amateka y'inguzanyo"
+  },
+  "notes": {
+    "title": "Inyandiko za buri munsi", "todayNote": "Inyandiko y'uyu munsi", "writePlaceholder": "Andika inyandiko y'uyu munsi…", "saveNote": "Bika inyandiko", "noNotes": "Nta nyandiko z'uyu munsi"
+  },
+  "categories": {
+    "title": "Ibyiciro", "addCategory": "Ongeraho icyiciro", "categoryName": "Izina ry'icyiciro", "incomeCategories": "Ibyiciro by'amafaranga yinjira", "expenseCategories": "Ibyiciro by'amafaranga asohoka"
+  },
+  "budgets": {
+    "title": "Ingengo y'imari", "monthlyLimit": "Urugero rwo mu kwezi", "alertThreshold": "Aho iburira ritangirira (%)", "addBudget": "Ongeraho ingengo", "spent": "Yakoreshejwe", "remaining": "Asigaye"
+  },
+  "recurring": {
+    "title": "Imikorere isubirwamo", "frequency": "Inshuro", "daily": "Buri munsi", "weekly": "Buri cyumweru", "monthly": "Buri kwezi", "yearly": "Buri mwaka", "nextRun": "Iza gukora ubutaha", "active": "Ikora", "paused": "Yahagaritswe"
+  },
+  "export": {
+    "title": "Sohora amakuru", "selectRange": "Hitamo igihe", "exportExcel": "Sohora muri Excel", "exportPdf": "Sohora muri PDF", "transactions": "Imikorere", "savingsHistory": "Amateka y'ubwizigame", "loanHistory": "Amateka y'inguzanyo", "from": "Kuva", "to": "Kugeza"
+  },
+  "backup": {
+    "title": "Bika no Gusubiza", "createBackup": "Kora kopi", "restoreBackup": "Subiza uhereye kuri kopi", "downloadBackup": "Manura idosiye ya kopi", "uploadBackup": "Shyiramo idosiye ya kopi"
+  },
+  "profile": {
+    "title": "Umwirondoro", "personalInfo": "Amakuru bwite", "businessInfo": "Amakuru y'ubucuruzi", "changePassword": "Hindura ijambobanga", "currentPassword": "Ijambobanga ririho", "newPassword": "Ijambobanga rishya", "confirmPassword": "Emeza ijambobanga", "avatarUrl": "URL y'ifoto", "updated": "Umwirondoro wavuguruwe"
+  },
+  "notifications": {
+    "title": "Imenyesha", "noNotifications": "Nta menyesha", "alerts": "Imenyesha ya AI", "markRead": "Garagaza ko wasomye", "enablePush": "Emeza imenyesha rya push", "pushEnabled": "Imenyesha rya push ryashyizweho", "pushBlocked": "Imenyesha rya push ryahagaritswe na navigateur"
+  },
+  "admin": {
+    "title": "Umuyobozi mukuru", "overview": "Incamake", "tenants": "Abakiriya",
+    "systemHealth": "Ubuzima bwa sisitemu", "roles": "Inshingano", "quotas": "Ingano",
+    "passwordResets": "Guhindura ijambobanga", "auditLogs": "Amateka",
+    "broadcasts": "Ubutumwa", "totalTenants": "Abakiriya bose",
+    "totalUsers": "Abakoresha bose", "totalIncome": "Amafaranga yose yinjiye",
+    "totalExpense": "Amafaranga yose yasohotse", "business": "Ubucuruzi", "owner": "Nyiri",
+    "users": "Abakoresha", "joined": "Yinjiye", "tenantDetail": "Birambuye by'umukiriya",
+    "backToTenants": "Subira ku bakiriya", "alerts": "Imenyesha", "noAlerts": "Nta menyesha",
+    "pendingQuotas": "Ibisabwa by'ingano bitegerejwe", "tenantUsers": "Abakoresha b'umukiriya"
+  }
+}

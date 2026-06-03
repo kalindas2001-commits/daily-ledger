@@ -1,62 +1,49 @@
 import { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { useAuth } from '@/hooks/useAuth';
 import { useTheme } from '@/hooks/useTheme';
 import {
-  LayoutDashboard,
-  PlusCircle,
-  CalendarDays,
-  List,
-  LogOut,
-  Menu,
-  FileDown,
-  ExternalLink,
-  X,
-  Tag,
-  Repeat,
-  Target,
-  Database,
-  Moon,
-  Sun,
-  HandCoins,
-  StickyNote,
-  Shield,
-  UserCircle2,
-  PiggyBank,
-  Bell,
+  LayoutDashboard, PlusCircle, CalendarDays, List, LogOut, Menu, FileDown,
+  ExternalLink, X, Tag, Repeat, Target, Database, Moon, Sun, HandCoins,
+  StickyNote, Shield, UserCircle2, PiggyBank,
 } from 'lucide-react';
 import OfflineIndicator from './OfflineIndicator';
 import AlertsBell from './AlertsBell';
+import LanguageSwitcher from './LanguageSwitcher';
 import { Button } from '@/components/ui/button';
 import InfoBanner from './InfoBanner';
 
-const mainNav = [
-  { path: '/', label: 'Dashboard', icon: LayoutDashboard },
-  { path: '/add', label: 'Add', icon: PlusCircle },
-  { path: '/calendar', label: 'Calendar', icon: CalendarDays },
-  { path: '/transactions', label: 'Transactions', icon: List },
-  { path: '/export', label: 'Export', icon: FileDown },
+const mainNavCfg = [
+  { path: '/', key: 'dashboard', icon: LayoutDashboard },
+  { path: '/add', key: 'add', icon: PlusCircle },
+  { path: '/calendar', key: 'calendar', icon: CalendarDays },
+  { path: '/transactions', key: 'transactions', icon: List },
+  { path: '/export', key: 'export', icon: FileDown },
 ];
 
-const moreNav = [
-  { path: '/savings', label: 'Savings', icon: PiggyBank },
-  { path: '/loans', label: 'Loans', icon: HandCoins },
-  { path: '/notes', label: 'Notes', icon: StickyNote },
-  { path: '/categories', label: 'Categories', icon: Tag },
-  { path: '/recurring', label: 'Recurring', icon: Repeat },
-  { path: '/budgets', label: 'Budgets', icon: Target },
-  { path: '/backup', label: 'Backup', icon: Database },
-  { path: '/profile', label: 'Profile', icon: UserCircle2 },
+const moreNavCfg = [
+  { path: '/savings', key: 'savings', icon: PiggyBank },
+  { path: '/loans', key: 'loans', icon: HandCoins },
+  { path: '/notes', key: 'notes', icon: StickyNote },
+  { path: '/categories', key: 'categories', icon: Tag },
+  { path: '/recurring', key: 'recurring', icon: Repeat },
+  { path: '/budgets', key: 'budgets', icon: Target },
+  { path: '/backup', key: 'backup', icon: Database },
+  { path: '/profile', key: 'profile', icon: UserCircle2 },
 ];
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   const { signOut, isSuperAdmin } = useAuth();
   const { theme, toggle } = useTheme();
+  const { t } = useTranslation();
   const location = useLocation();
   const [mobileOpen, setMobileOpen] = useState(false);
 
+  const mainNav = mainNavCfg.map(i => ({ ...i, label: t(`nav.${i.key}`) }));
+  const moreNav = moreNavCfg.map(i => ({ ...i, label: t(`nav.${i.key}`) }));
   const moreNavWithAdmin = isSuperAdmin
-    ? [...moreNav, { path: '/admin', label: 'Super Admin', icon: Shield }]
+    ? [...moreNav, { path: '/admin', key: 'superAdmin', label: t('nav.superAdmin'), icon: Shield }]
     : moreNav;
   const allNav = [...mainNav, ...moreNavWithAdmin];
   const currentLabel = allNav.find((i) => i.path === location.pathname)?.label ?? 'CungaCash';
@@ -71,7 +58,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         </div>
 
         <nav className="flex-1 p-3 space-y-0.5 overflow-y-auto">
-          <p className="px-3 pt-2 pb-1 text-[10px] font-semibold uppercase tracking-wider text-sidebar-foreground/40">Main</p>
+          <p className="px-3 pt-2 pb-1 text-[10px] font-semibold uppercase tracking-wider text-sidebar-foreground/40">{t('nav.main')}</p>
           {mainNav.map((item) => {
             const active = location.pathname === item.path;
             return (
@@ -84,7 +71,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
             );
           })}
 
-          <p className="px-3 pt-4 pb-1 text-[10px] font-semibold uppercase tracking-wider text-sidebar-foreground/40">Manage</p>
+          <p className="px-3 pt-4 pb-1 text-[10px] font-semibold uppercase tracking-wider text-sidebar-foreground/40">{t('nav.manage')}</p>
           {moreNavWithAdmin.map((item) => {
             const active = location.pathname === item.path;
             return (
@@ -102,14 +89,14 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
           <button onClick={toggle}
             className="flex items-center gap-3 px-3 py-2 rounded-lg text-xs text-sidebar-foreground/60 hover:text-sidebar-foreground hover:bg-sidebar-accent/40 transition-colors w-full">
             {theme === 'dark' ? <Sun className="w-3.5 h-3.5" /> : <Moon className="w-3.5 h-3.5" />}
-            <span>{theme === 'dark' ? 'Light Mode' : 'Dark Mode'}</span>
+            <span>{theme === 'dark' ? t('common.lightMode') : t('common.darkMode')}</span>
           </button>
           <a href="https://rossets.rw" target="_blank" rel="noopener noreferrer"
             className="flex items-center gap-3 px-3 py-2 rounded-lg text-xs text-sidebar-foreground/60 hover:text-sidebar-foreground hover:bg-sidebar-accent/40 transition-colors">
-            <ExternalLink className="w-3.5 h-3.5" /><span>Developed by <strong>rossets.rw</strong></span>
+            <ExternalLink className="w-3.5 h-3.5" /><span>{t('common.developedBy')} <strong>rossets.rw</strong></span>
           </a>
           <Button variant="ghost" className="w-full justify-start gap-3 text-sidebar-foreground hover:bg-sidebar-accent hover:text-destructive" onClick={signOut}>
-            <LogOut className="w-4 h-4" />Sign Out
+            <LogOut className="w-4 h-4" />{t("common.signOut")}
           </Button>
         </div>
       </aside>
@@ -127,7 +114,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
               <button onClick={() => setMobileOpen(false)} className="p-1 text-sidebar-foreground"><X className="w-5 h-5" /></button>
             </div>
             <nav className="p-3 space-y-0.5 overflow-y-auto max-h-[calc(100dvh-180px)]">
-              <p className="px-3 pt-2 pb-1 text-[10px] font-semibold uppercase tracking-wider text-sidebar-foreground/40">Manage</p>
+              <p className="px-3 pt-2 pb-1 text-[10px] font-semibold uppercase tracking-wider text-sidebar-foreground/40">{t('nav.manage')}</p>
               {moreNavWithAdmin.map((item) => {
                 const active = location.pathname === item.path;
                 return (
@@ -144,14 +131,14 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
               <button onClick={toggle}
                 className="flex items-center gap-3 px-3 py-2 rounded-lg text-xs text-sidebar-foreground/60 hover:text-sidebar-foreground transition-colors w-full">
                 {theme === 'dark' ? <Sun className="w-3.5 h-3.5" /> : <Moon className="w-3.5 h-3.5" />}
-                <span>{theme === 'dark' ? 'Light Mode' : 'Dark Mode'}</span>
+                <span>{theme === 'dark' ? t('common.lightMode') : t('common.darkMode')}</span>
               </button>
               <a href="https://rossets.rw" target="_blank" rel="noopener noreferrer"
                 className="flex items-center gap-3 px-3 py-2 rounded-lg text-xs text-sidebar-foreground/60 hover:text-sidebar-foreground transition-colors">
-                <ExternalLink className="w-3.5 h-3.5" /><span>Developed by <strong>rossets.rw</strong></span>
+                <ExternalLink className="w-3.5 h-3.5" /><span>{t('common.developedBy')} <strong>rossets.rw</strong></span>
               </a>
               <Button variant="ghost" className="w-full justify-start gap-3 text-sidebar-foreground hover:text-destructive" onClick={signOut}>
-                <LogOut className="w-4 h-4" />Sign Out
+                <LogOut className="w-4 h-4" />{t("common.signOut")}
               </Button>
             </div>
           </aside>
@@ -167,6 +154,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
             <Menu className="w-5 h-5" />
           </button>
           <h1 className="text-base sm:text-lg font-semibold truncate flex-1">{currentLabel}</h1>
+          <LanguageSwitcher />
           <AlertsBell />
           <Link to="/profile" className="p-1.5 rounded-full hover:bg-muted transition-colors" aria-label="Profile">
             <UserCircle2 className="w-6 h-6 text-muted-foreground" />

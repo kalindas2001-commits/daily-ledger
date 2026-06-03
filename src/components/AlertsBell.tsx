@@ -3,6 +3,7 @@ import { Bell, Check, Trash2 } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Button } from '@/components/ui/button';
 import { useAlerts, useMarkAlertRead, useDeleteAlert } from '@/hooks/useAlerts';
+import PushSubscribeButton from '@/components/PushSubscribeButton';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
 
@@ -51,6 +52,7 @@ export default function AlertsBell() {
             </div>
           ))}
         </div>
+        <div className="p-2 border-t"><PushSubscribeButton /></div>
       </PopoverContent>
     </Popover>
   );

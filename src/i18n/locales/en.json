@@ -1,0 +1,105 @@
+{
+  "app": { "name": "CungaCash", "tagline": "Daily financial tracking" },
+  "common": {
+    "save": "Save", "cancel": "Cancel", "delete": "Delete", "edit": "Edit",
+    "confirm": "Confirm", "close": "Close", "back": "Back", "next": "Next",
+    "loading": "Loading…", "search": "Search", "filter": "Filter",
+    "export": "Export", "import": "Import", "add": "Add", "create": "Create",
+    "update": "Update", "remove": "Remove", "yes": "Yes", "no": "No",
+    "all": "All", "none": "None", "total": "Total", "amount": "Amount",
+    "date": "Date", "description": "Description", "category": "Category",
+    "type": "Type", "status": "Status", "actions": "Actions", "name": "Name",
+    "email": "Email", "phone": "Phone", "password": "Password",
+    "submit": "Submit", "view": "View", "details": "Details",
+    "today": "Today", "yesterday": "Yesterday", "thisWeek": "This week",
+    "thisMonth": "This month", "thisYear": "This year",
+    "income": "Income", "expense": "Expense", "balance": "Balance",
+    "currency": "RWF", "noData": "No data available",
+    "success": "Success", "error": "Error", "warning": "Warning",
+    "signOut": "Sign Out", "signIn": "Sign In", "profile": "Profile",
+    "settings": "Settings", "language": "Language", "darkMode": "Dark Mode",
+    "lightMode": "Light Mode", "developedBy": "Developed by"
+  },
+  "nav": {
+    "dashboard": "Dashboard", "add": "Add", "calendar": "Calendar",
+    "transactions": "Transactions", "export": "Export", "savings": "Savings",
+    "loans": "Loans", "notes": "Notes", "categories": "Categories",
+    "recurring": "Recurring", "budgets": "Budgets", "backup": "Backup",
+    "profile": "Profile", "superAdmin": "Super Admin",
+    "main": "Main", "manage": "Manage", "more": "More"
+  },
+  "auth": {
+    "welcome": "Welcome to CungaCash", "signInTitle": "Sign in to your account",
+    "signUpTitle": "Create your account", "emailLabel": "Email address",
+    "passwordLabel": "Password", "forgotPassword": "Forgot password?",
+    "noAccount": "Don't have an account?", "haveAccount": "Already have an account?",
+    "createAccount": "Create account", "signUp": "Sign up", "signingIn": "Signing in…",
+    "businessName": "Business name", "fullName": "Full name", "phoneNumber": "Phone number"
+  },
+  "dashboard": {
+    "title": "Dashboard", "todayIncome": "Today's Income",
+    "todayExpense": "Today's Expense", "netBalance": "Net Balance",
+    "recentTransactions": "Recent Transactions", "viewAll": "View all",
+    "monthSummary": "Monthly Summary", "categoryBreakdown": "Category Breakdown",
+    "noTransactions": "No transactions yet"
+  },
+  "transactions": {
+    "title": "Transactions", "addNew": "Add Transaction",
+    "editTransaction": "Edit Transaction", "deleteConfirm": "Delete this transaction?",
+    "unitPrice": "Unit price", "quantity": "Quantity", "totalAmount": "Total amount",
+    "paymentMethod": "Payment method", "cash": "Cash", "mobileMoney": "Mobile Money",
+    "bank": "Bank", "transactionDate": "Transaction date",
+    "noResults": "No transactions match your filters",
+    "incomeAdded": "Income added", "expenseAdded": "Expense added"
+  },
+  "savings": {
+    "title": "Savings", "currentBalance": "Current balance", "goal": "Goal",
+    "deposit": "Deposit", "withdraw": "Withdraw", "history": "Savings history",
+    "noAccount": "No savings account yet", "createAccount": "Create savings account",
+    "depositAmount": "Deposit amount", "withdrawAmount": "Withdraw amount",
+    "note": "Note (optional)", "receiptNo": "Receipt No"
+  },
+  "loans": {
+    "title": "Loans", "given": "Given", "received": "Received",
+    "addLoan": "Add Loan", "personName": "Person name", "loanDate": "Loan date",
+    "originalAmount": "Original amount", "remaining": "Remaining",
+    "markPaid": "Mark as paid", "repayment": "Repayment",
+    "pending": "Pending", "paid": "Paid", "noLoans": "No loans recorded",
+    "actionHistory": "Loan action history"
+  },
+  "notes": {
+    "title": "Daily Notes", "todayNote": "Today's note", "writePlaceholder": "Write your note for today…", "saveNote": "Save note", "noNotes": "No notes for this day"
+  },
+  "categories": {
+    "title": "Categories", "addCategory": "Add category", "categoryName": "Category name", "incomeCategories": "Income categories", "expenseCategories": "Expense categories"
+  },
+  "budgets": {
+    "title": "Budgets", "monthlyLimit": "Monthly limit", "alertThreshold": "Alert threshold (%)", "addBudget": "Add budget", "spent": "Spent", "remaining": "Remaining"
+  },
+  "recurring": {
+    "title": "Recurring Transactions", "frequency": "Frequency", "daily": "Daily", "weekly": "Weekly", "monthly": "Monthly", "yearly": "Yearly", "nextRun": "Next run", "active": "Active", "paused": "Paused"
+  },
+  "export": {
+    "title": "Export Data", "selectRange": "Select date range", "exportExcel": "Export to Excel", "exportPdf": "Export to PDF", "transactions": "Transactions", "savingsHistory": "Savings History", "loanHistory": "Loan History", "from": "From", "to": "To"
+  },
+  "backup": {
+    "title": "Backup & Restore", "createBackup": "Create Backup", "restoreBackup": "Restore from Backup", "downloadBackup": "Download backup file", "uploadBackup": "Upload backup file"
+  },
+  "profile": {
+    "title": "Profile", "personalInfo": "Personal Information", "businessInfo": "Business Information", "changePassword": "Change Password", "currentPassword": "Current password", "newPassword": "New password", "confirmPassword": "Confirm password", "avatarUrl": "Avatar URL", "updated": "Profile updated"
+  },
+  "notifications": {
+    "title": "Notifications", "noNotifications": "No notifications", "alerts": "AI Alerts", "markRead": "Mark as read", "enablePush": "Enable push notifications", "pushEnabled": "Push notifications enabled", "pushBlocked": "Push notifications blocked by browser"
+  },
+  "admin": {
+    "title": "Super Admin", "overview": "Overview", "tenants": "Tenants",
+    "systemHealth": "System Health", "roles": "Roles", "quotas": "Quotas",
+    "passwordResets": "Password Resets", "auditLogs": "Audit Logs",
+    "broadcasts": "Broadcasts", "totalTenants": "Total Tenants",
+    "totalUsers": "Total Users", "totalIncome": "Total Income",
+    "totalExpense": "Total Expense", "business": "Business", "owner": "Owner",
+    "users": "Users", "joined": "Joined", "tenantDetail": "Tenant Detail",
+    "backToTenants": "Back to tenants", "alerts": "Alerts", "noAlerts": "No alerts",
+    "pendingQuotas": "Pending quota requests", "tenantUsers": "Tenant users"
+  }
+}

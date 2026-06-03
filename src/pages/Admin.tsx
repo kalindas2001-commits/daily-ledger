@@ -1,5 +1,6 @@
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { Navigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { useAuth } from '@/hooks/useAuth';
 import PlatformOverview from '@/components/admin/PlatformOverview';
 import TenantsOverview from '@/components/admin/TenantsOverview';
@@ -13,20 +14,21 @@ import { Building2, LayoutDashboard, KeyRound, Bell, Users, Shield, ScrollText, 
 
 export default function Admin() {
   const { isSuperAdmin, loading } = useAuth();
-  if (loading) return <div className="text-center py-12 text-muted-foreground">Loading…</div>;
+  const { t } = useTranslation();
+  if (loading) return <div className="text-center py-12 text-muted-foreground">{t('common.loading')}</div>;
   if (!isSuperAdmin) return <Navigate to="/" replace />;
 
   return (
     <Tabs defaultValue="overview" className="space-y-4">
       <TabsList className="flex flex-wrap h-auto w-full justify-start gap-1">
-        <TabsTrigger value="overview" className="gap-1.5"><LayoutDashboard className="w-4 h-4" /> Overview</TabsTrigger>
-        <TabsTrigger value="tenants" className="gap-1.5"><Building2 className="w-4 h-4" /> Tenants</TabsTrigger>
-        <TabsTrigger value="system" className="gap-1.5"><Activity className="w-4 h-4" /> System Health</TabsTrigger>
-        <TabsTrigger value="roles" className="gap-1.5"><Shield className="w-4 h-4" /> Roles</TabsTrigger>
-        <TabsTrigger value="quotas" className="gap-1.5"><Users className="w-4 h-4" /> Quotas</TabsTrigger>
-        <TabsTrigger value="resets" className="gap-1.5"><KeyRound className="w-4 h-4" /> Password Resets</TabsTrigger>
-        <TabsTrigger value="audit" className="gap-1.5"><ScrollText className="w-4 h-4" /> Audit Logs</TabsTrigger>
-        <TabsTrigger value="broadcasts" className="gap-1.5"><Bell className="w-4 h-4" /> Broadcasts</TabsTrigger>
+        <TabsTrigger value="overview" className="gap-1.5"><LayoutDashboard className="w-4 h-4" /> {t('admin.overview')}</TabsTrigger>
+        <TabsTrigger value="tenants" className="gap-1.5"><Building2 className="w-4 h-4" /> {t('admin.tenants')}</TabsTrigger>
+        <TabsTrigger value="system" className="gap-1.5"><Activity className="w-4 h-4" /> {t('admin.systemHealth')}</TabsTrigger>
+        <TabsTrigger value="roles" className="gap-1.5"><Shield className="w-4 h-4" /> {t('admin.roles')}</TabsTrigger>
+        <TabsTrigger value="quotas" className="gap-1.5"><Users className="w-4 h-4" /> {t('admin.quotas')}</TabsTrigger>
+        <TabsTrigger value="resets" className="gap-1.5"><KeyRound className="w-4 h-4" /> {t('admin.passwordResets')}</TabsTrigger>
+        <TabsTrigger value="audit" className="gap-1.5"><ScrollText className="w-4 h-4" /> {t('admin.auditLogs')}</TabsTrigger>
+        <TabsTrigger value="broadcasts" className="gap-1.5"><Bell className="w-4 h-4" /> {t('admin.broadcasts')}</TabsTrigger>
       </TabsList>
 
       <TabsContent value="overview"><PlatformOverview /></TabsContent>
@@ -40,4 +42,5 @@ export default function Admin() {
     </Tabs>
   );
 }
+
 
