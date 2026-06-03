@@ -1,0 +1,105 @@
+{
+  "app": { "name": "CungaCash", "tagline": "Suivi financier quotidien" },
+  "common": {
+    "save": "Enregistrer", "cancel": "Annuler", "delete": "Supprimer", "edit": "Modifier",
+    "confirm": "Confirmer", "close": "Fermer", "back": "Retour", "next": "Suivant",
+    "loading": "Chargement…", "search": "Rechercher", "filter": "Filtrer",
+    "export": "Exporter", "import": "Importer", "add": "Ajouter", "create": "Créer",
+    "update": "Mettre à jour", "remove": "Retirer", "yes": "Oui", "no": "Non",
+    "all": "Tout", "none": "Aucun", "total": "Total", "amount": "Montant",
+    "date": "Date", "description": "Description", "category": "Catégorie",
+    "type": "Type", "status": "Statut", "actions": "Actions", "name": "Nom",
+    "email": "E-mail", "phone": "Téléphone", "password": "Mot de passe",
+    "submit": "Soumettre", "view": "Voir", "details": "Détails",
+    "today": "Aujourd'hui", "yesterday": "Hier", "thisWeek": "Cette semaine",
+    "thisMonth": "Ce mois", "thisYear": "Cette année",
+    "income": "Revenus", "expense": "Dépenses", "balance": "Solde",
+    "currency": "RWF", "noData": "Aucune donnée disponible",
+    "success": "Succès", "error": "Erreur", "warning": "Avertissement",
+    "signOut": "Déconnexion", "signIn": "Connexion", "profile": "Profil",
+    "settings": "Paramètres", "language": "Langue", "darkMode": "Mode sombre",
+    "lightMode": "Mode clair", "developedBy": "Développé par"
+  },
+  "nav": {
+    "dashboard": "Tableau de bord", "add": "Ajouter", "calendar": "Calendrier",
+    "transactions": "Transactions", "export": "Exporter", "savings": "Épargne",
+    "loans": "Prêts", "notes": "Notes", "categories": "Catégories",
+    "recurring": "Récurrents", "budgets": "Budgets", "backup": "Sauvegarde",
+    "profile": "Profil", "superAdmin": "Super Admin",
+    "main": "Principal", "manage": "Gérer", "more": "Plus"
+  },
+  "auth": {
+    "welcome": "Bienvenue sur CungaCash", "signInTitle": "Connectez-vous à votre compte",
+    "signUpTitle": "Créer votre compte", "emailLabel": "Adresse e-mail",
+    "passwordLabel": "Mot de passe", "forgotPassword": "Mot de passe oublié?",
+    "noAccount": "Pas de compte?", "haveAccount": "Vous avez déjà un compte?",
+    "createAccount": "Créer un compte", "signUp": "S'inscrire", "signingIn": "Connexion…",
+    "businessName": "Nom de l'entreprise", "fullName": "Nom complet", "phoneNumber": "Numéro de téléphone"
+  },
+  "dashboard": {
+    "title": "Tableau de bord", "todayIncome": "Revenus du jour",
+    "todayExpense": "Dépenses du jour", "netBalance": "Solde net",
+    "recentTransactions": "Transactions récentes", "viewAll": "Tout voir",
+    "monthSummary": "Résumé mensuel", "categoryBreakdown": "Répartition par catégorie",
+    "noTransactions": "Aucune transaction"
+  },
+  "transactions": {
+    "title": "Transactions", "addNew": "Ajouter une transaction",
+    "editTransaction": "Modifier la transaction", "deleteConfirm": "Supprimer cette transaction?",
+    "unitPrice": "Prix unitaire", "quantity": "Quantité", "totalAmount": "Montant total",
+    "paymentMethod": "Mode de paiement", "cash": "Espèces", "mobileMoney": "Mobile Money",
+    "bank": "Banque", "transactionDate": "Date de transaction",
+    "noResults": "Aucune transaction correspondante",
+    "incomeAdded": "Revenu ajouté", "expenseAdded": "Dépense ajoutée"
+  },
+  "savings": {
+    "title": "Épargne", "currentBalance": "Solde actuel", "goal": "Objectif",
+    "deposit": "Dépôt", "withdraw": "Retrait", "history": "Historique d'épargne",
+    "noAccount": "Aucun compte d'épargne", "createAccount": "Créer un compte d'épargne",
+    "depositAmount": "Montant du dépôt", "withdrawAmount": "Montant du retrait",
+    "note": "Note (optionnel)", "receiptNo": "N° de reçu"
+  },
+  "loans": {
+    "title": "Prêts", "given": "Accordés", "received": "Reçus",
+    "addLoan": "Ajouter un prêt", "personName": "Nom de la personne", "loanDate": "Date du prêt",
+    "originalAmount": "Montant initial", "remaining": "Restant",
+    "markPaid": "Marquer payé", "repayment": "Remboursement",
+    "pending": "En attente", "paid": "Payé", "noLoans": "Aucun prêt enregistré",
+    "actionHistory": "Historique des actions de prêt"
+  },
+  "notes": {
+    "title": "Notes quotidiennes", "todayNote": "Note du jour", "writePlaceholder": "Écrivez votre note du jour…", "saveNote": "Enregistrer la note", "noNotes": "Aucune note ce jour"
+  },
+  "categories": {
+    "title": "Catégories", "addCategory": "Ajouter une catégorie", "categoryName": "Nom de la catégorie", "incomeCategories": "Catégories de revenus", "expenseCategories": "Catégories de dépenses"
+  },
+  "budgets": {
+    "title": "Budgets", "monthlyLimit": "Plafond mensuel", "alertThreshold": "Seuil d'alerte (%)", "addBudget": "Ajouter un budget", "spent": "Dépensé", "remaining": "Restant"
+  },
+  "recurring": {
+    "title": "Transactions récurrentes", "frequency": "Fréquence", "daily": "Quotidien", "weekly": "Hebdomadaire", "monthly": "Mensuel", "yearly": "Annuel", "nextRun": "Prochaine exécution", "active": "Actif", "paused": "En pause"
+  },
+  "export": {
+    "title": "Exporter les données", "selectRange": "Sélectionner la période", "exportExcel": "Exporter en Excel", "exportPdf": "Exporter en PDF", "transactions": "Transactions", "savingsHistory": "Historique d'épargne", "loanHistory": "Historique des prêts", "from": "Du", "to": "Au"
+  },
+  "backup": {
+    "title": "Sauvegarde et restauration", "createBackup": "Créer une sauvegarde", "restoreBackup": "Restaurer depuis une sauvegarde", "downloadBackup": "Télécharger la sauvegarde", "uploadBackup": "Charger une sauvegarde"
+  },
+  "profile": {
+    "title": "Profil", "personalInfo": "Informations personnelles", "businessInfo": "Informations de l'entreprise", "changePassword": "Changer le mot de passe", "currentPassword": "Mot de passe actuel", "newPassword": "Nouveau mot de passe", "confirmPassword": "Confirmer le mot de passe", "avatarUrl": "URL de l'avatar", "updated": "Profil mis à jour"
+  },
+  "notifications": {
+    "title": "Notifications", "noNotifications": "Aucune notification", "alerts": "Alertes IA", "markRead": "Marquer comme lu", "enablePush": "Activer les notifications push", "pushEnabled": "Notifications push activées", "pushBlocked": "Notifications push bloquées par le navigateur"
+  },
+  "admin": {
+    "title": "Super Admin", "overview": "Vue d'ensemble", "tenants": "Locataires",
+    "systemHealth": "Santé du système", "roles": "Rôles", "quotas": "Quotas",
+    "passwordResets": "Réinit. mot de passe", "auditLogs": "Journaux d'audit",
+    "broadcasts": "Diffusions", "totalTenants": "Total locataires",
+    "totalUsers": "Total utilisateurs", "totalIncome": "Revenu total",
+    "totalExpense": "Dépense totale", "business": "Entreprise", "owner": "Propriétaire",
+    "users": "Utilisateurs", "joined": "Inscrit le", "tenantDetail": "Détail du locataire",
+    "backToTenants": "Retour aux locataires", "alerts": "Alertes", "noAlerts": "Aucune alerte",
+    "pendingQuotas": "Demandes de quota en attente", "tenantUsers": "Utilisateurs du locataire"
+  }
+}
