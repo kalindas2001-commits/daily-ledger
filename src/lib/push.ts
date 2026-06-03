@@ -50,14 +50,14 @@ export async function subscribeToPush(): Promise<boolean> {
   if (!sub) {
     sub = await reg.pushManager.subscribe({
       userVisibleOnly: true,
-      applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY),
+      applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY) as BufferSource,
     });
   }
 
   const j = sub.toJSON();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return false;
-  const { error } = await supabase.from('push_subscriptions').upsert({
+  const { error } = await (supabase as any).from('push_subscriptions').upsert({
     user_id: user.id,
     endpoint: sub.endpoint,
     p256dh: j.keys?.p256dh ?? '',
@@ -73,7 +73,7 @@ export async function unsubscribeFromPush(): Promise<void> {
   const reg = await navigator.serviceWorker.getRegistration();
   const sub = await reg?.pushManager.getSubscription();
   if (sub) {
-    await supabase.from('push_subscriptions').delete().eq('endpoint', sub.endpoint);
+    await (supabase as any).from('push_subscriptions').delete().eq('endpoint', sub.endpoint);
     await sub.unsubscribe();
   }
 }
