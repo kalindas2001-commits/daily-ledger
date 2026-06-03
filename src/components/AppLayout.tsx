@@ -58,7 +58,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         </div>
 
         <nav className="flex-1 p-3 space-y-0.5 overflow-y-auto">
-          <p className="px-3 pt-2 pb-1 text-[10px] font-semibold uppercase tracking-wider text-sidebar-foreground/40">Main</p>
+          <p className="px-3 pt-2 pb-1 text-[10px] font-semibold uppercase tracking-wider text-sidebar-foreground/40">{t('nav.main')}</p>
           {mainNav.map((item) => {
             const active = location.pathname === item.path;
             return (
@@ -71,7 +71,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
             );
           })}
 
-          <p className="px-3 pt-4 pb-1 text-[10px] font-semibold uppercase tracking-wider text-sidebar-foreground/40">Manage</p>
+          <p className="px-3 pt-4 pb-1 text-[10px] font-semibold uppercase tracking-wider text-sidebar-foreground/40">{t('nav.manage')}</p>
           {moreNavWithAdmin.map((item) => {
             const active = location.pathname === item.path;
             return (
@@ -89,14 +89,14 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
           <button onClick={toggle}
             className="flex items-center gap-3 px-3 py-2 rounded-lg text-xs text-sidebar-foreground/60 hover:text-sidebar-foreground hover:bg-sidebar-accent/40 transition-colors w-full">
             {theme === 'dark' ? <Sun className="w-3.5 h-3.5" /> : <Moon className="w-3.5 h-3.5" />}
-            <span>{theme === 'dark' ? 'Light Mode' : 'Dark Mode'}</span>
+            <span>{theme === 'dark' ? t('common.lightMode') : t('common.darkMode')}</span>
           </button>
           <a href="https://rossets.rw" target="_blank" rel="noopener noreferrer"
             className="flex items-center gap-3 px-3 py-2 rounded-lg text-xs text-sidebar-foreground/60 hover:text-sidebar-foreground hover:bg-sidebar-accent/40 transition-colors">
-            <ExternalLink className="w-3.5 h-3.5" /><span>Developed by <strong>rossets.rw</strong></span>
+            <ExternalLink className="w-3.5 h-3.5" /><span>{t('common.developedBy')} <strong>rossets.rw</strong></span>
           </a>
           <Button variant="ghost" className="w-full justify-start gap-3 text-sidebar-foreground hover:bg-sidebar-accent hover:text-destructive" onClick={signOut}>
-            <LogOut className="w-4 h-4" />Sign Out
+            <LogOut className="w-4 h-4" />{t("common.signOut")}
           </Button>
         </div>
       </aside>
@@ -114,7 +114,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
               <button onClick={() => setMobileOpen(false)} className="p-1 text-sidebar-foreground"><X className="w-5 h-5" /></button>
             </div>
             <nav className="p-3 space-y-0.5 overflow-y-auto max-h-[calc(100dvh-180px)]">
-              <p className="px-3 pt-2 pb-1 text-[10px] font-semibold uppercase tracking-wider text-sidebar-foreground/40">Manage</p>
+              <p className="px-3 pt-2 pb-1 text-[10px] font-semibold uppercase tracking-wider text-sidebar-foreground/40">{t('nav.manage')}</p>
               {moreNavWithAdmin.map((item) => {
                 const active = location.pathname === item.path;
                 return (
@@ -131,14 +131,14 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
               <button onClick={toggle}
                 className="flex items-center gap-3 px-3 py-2 rounded-lg text-xs text-sidebar-foreground/60 hover:text-sidebar-foreground transition-colors w-full">
                 {theme === 'dark' ? <Sun className="w-3.5 h-3.5" /> : <Moon className="w-3.5 h-3.5" />}
-                <span>{theme === 'dark' ? 'Light Mode' : 'Dark Mode'}</span>
+                <span>{theme === 'dark' ? t('common.lightMode') : t('common.darkMode')}</span>
               </button>
               <a href="https://rossets.rw" target="_blank" rel="noopener noreferrer"
                 className="flex items-center gap-3 px-3 py-2 rounded-lg text-xs text-sidebar-foreground/60 hover:text-sidebar-foreground transition-colors">
-                <ExternalLink className="w-3.5 h-3.5" /><span>Developed by <strong>rossets.rw</strong></span>
+                <ExternalLink className="w-3.5 h-3.5" /><span>{t('common.developedBy')} <strong>rossets.rw</strong></span>
               </a>
               <Button variant="ghost" className="w-full justify-start gap-3 text-sidebar-foreground hover:text-destructive" onClick={signOut}>
-                <LogOut className="w-4 h-4" />Sign Out
+                <LogOut className="w-4 h-4" />{t("common.signOut")}
               </Button>
             </div>
           </aside>
