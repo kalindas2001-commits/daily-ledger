@@ -52,6 +52,7 @@ export default function AlertsBell() {
             </div>
           ))}
         </div>
+        <div className="p-2 border-t"><PushSubscribeButton /></div>
       </PopoverContent>
     </Popover>
   );
