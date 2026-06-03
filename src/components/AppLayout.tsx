@@ -1,62 +1,49 @@
 import { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { useAuth } from '@/hooks/useAuth';
 import { useTheme } from '@/hooks/useTheme';
 import {
-  LayoutDashboard,
-  PlusCircle,
-  CalendarDays,
-  List,
-  LogOut,
-  Menu,
-  FileDown,
-  ExternalLink,
-  X,
-  Tag,
-  Repeat,
-  Target,
-  Database,
-  Moon,
-  Sun,
-  HandCoins,
-  StickyNote,
-  Shield,
-  UserCircle2,
-  PiggyBank,
-  Bell,
+  LayoutDashboard, PlusCircle, CalendarDays, List, LogOut, Menu, FileDown,
+  ExternalLink, X, Tag, Repeat, Target, Database, Moon, Sun, HandCoins,
+  StickyNote, Shield, UserCircle2, PiggyBank,
 } from 'lucide-react';
 import OfflineIndicator from './OfflineIndicator';
 import AlertsBell from './AlertsBell';
+import LanguageSwitcher from './LanguageSwitcher';
 import { Button } from '@/components/ui/button';
 import InfoBanner from './InfoBanner';
 
-const mainNav = [
-  { path: '/', label: 'Dashboard', icon: LayoutDashboard },
-  { path: '/add', label: 'Add', icon: PlusCircle },
-  { path: '/calendar', label: 'Calendar', icon: CalendarDays },
-  { path: '/transactions', label: 'Transactions', icon: List },
-  { path: '/export', label: 'Export', icon: FileDown },
+const mainNavCfg = [
+  { path: '/', key: 'dashboard', icon: LayoutDashboard },
+  { path: '/add', key: 'add', icon: PlusCircle },
+  { path: '/calendar', key: 'calendar', icon: CalendarDays },
+  { path: '/transactions', key: 'transactions', icon: List },
+  { path: '/export', key: 'export', icon: FileDown },
 ];
 
-const moreNav = [
-  { path: '/savings', label: 'Savings', icon: PiggyBank },
-  { path: '/loans', label: 'Loans', icon: HandCoins },
-  { path: '/notes', label: 'Notes', icon: StickyNote },
-  { path: '/categories', label: 'Categories', icon: Tag },
-  { path: '/recurring', label: 'Recurring', icon: Repeat },
-  { path: '/budgets', label: 'Budgets', icon: Target },
-  { path: '/backup', label: 'Backup', icon: Database },
-  { path: '/profile', label: 'Profile', icon: UserCircle2 },
+const moreNavCfg = [
+  { path: '/savings', key: 'savings', icon: PiggyBank },
+  { path: '/loans', key: 'loans', icon: HandCoins },
+  { path: '/notes', key: 'notes', icon: StickyNote },
+  { path: '/categories', key: 'categories', icon: Tag },
+  { path: '/recurring', key: 'recurring', icon: Repeat },
+  { path: '/budgets', key: 'budgets', icon: Target },
+  { path: '/backup', key: 'backup', icon: Database },
+  { path: '/profile', key: 'profile', icon: UserCircle2 },
 ];
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   const { signOut, isSuperAdmin } = useAuth();
   const { theme, toggle } = useTheme();
+  const { t } = useTranslation();
   const location = useLocation();
   const [mobileOpen, setMobileOpen] = useState(false);
 
+  const mainNav = mainNavCfg.map(i => ({ ...i, label: t(`nav.${i.key}`) }));
+  const moreNav = moreNavCfg.map(i => ({ ...i, label: t(`nav.${i.key}`) }));
   const moreNavWithAdmin = isSuperAdmin
-    ? [...moreNav, { path: '/admin', label: 'Super Admin', icon: Shield }]
+    ? [...moreNav, { path: '/admin', key: 'superAdmin', label: t('nav.superAdmin'), icon: Shield }]
     : moreNav;
   const allNav = [...mainNav, ...moreNavWithAdmin];
   const currentLabel = allNav.find((i) => i.path === location.pathname)?.label ?? 'CungaCash';
