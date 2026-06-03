@@ -154,6 +154,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
             <Menu className="w-5 h-5" />
           </button>
           <h1 className="text-base sm:text-lg font-semibold truncate flex-1">{currentLabel}</h1>
+          <LanguageSwitcher />
           <AlertsBell />
           <Link to="/profile" className="p-1.5 rounded-full hover:bg-muted transition-colors" aria-label="Profile">
             <UserCircle2 className="w-6 h-6 text-muted-foreground" />
