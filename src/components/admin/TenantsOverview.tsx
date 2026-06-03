@@ -6,7 +6,8 @@ import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { supabase } from '@/integrations/supabase/client';
-import { ChevronLeft, ChevronRight, Search, Building2, Users, TrendingUp, TrendingDown, Eye, Ban, CheckCircle2, ArrowUp, ArrowDown, ArrowUpDown } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Search, Building2, Users, TrendingUp, TrendingDown, Eye, Ban, CheckCircle2, ArrowUp, ArrowDown, ArrowUpDown, ExternalLink } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend } from 'recharts';
 import { format } from 'date-fns';
 import { toast } from 'sonner';
@@ -198,7 +199,12 @@ export default function TenantsOverview() {
                       <td className="py-2 px-2 text-right font-medium">{fmt(r.total_loans_pending)}</td>
                       <td className="py-2 pl-2 text-xs text-muted-foreground">{format(new Date(r.created_at), 'MMM d, yyyy')}</td>
                       <td className="py-2 pl-2">
-                        <Button size="sm" variant="ghost" onClick={() => openDrilldown(r)}><Eye className="w-3.5 h-3.5 mr-1" /> View</Button>
+                        <div className="flex gap-1">
+                          <Button size="sm" variant="ghost" onClick={() => openDrilldown(r)} title="Quick view"><Eye className="w-3.5 h-3.5" /></Button>
+                          <Link to={`/admin/tenants/${r.tenant_id}`}>
+                            <Button size="sm" variant="ghost" title="Open full page"><ExternalLink className="w-3.5 h-3.5" /></Button>
+                          </Link>
+                        </div>
                       </td>
                     </tr>
                   ))}
