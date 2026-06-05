@@ -20,6 +20,7 @@ import Profile from "./pages/Profile";
 import SavingsPage from "./pages/Savings";
 import Admin from "./pages/Admin";
 import TenantDetail from "./pages/admin/TenantDetail";
+import Alerts from "./pages/Alerts";
 import AppLayout from "./components/AppLayout";
 import WhatsNewDialog from "./components/WhatsNewDialog";
 import InfoPopup from "./components/InfoPopup";
@@ -60,6 +61,7 @@ function AppRoutes() {
         <Route path="/savings" element={<SavingsPage />} />
         <Route path="/admin" element={<Admin />} />
         <Route path="/admin/tenants/:id" element={<TenantDetail />} />
+        <Route path="/alerts" element={<Alerts />} />
         <Route path="/profile" element={<Profile />} />
         <Route path="/backup" element={<BackupRestore />} />
         <Route path="*" element={<NotFound />} />

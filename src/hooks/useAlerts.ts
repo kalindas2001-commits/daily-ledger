@@ -12,6 +12,7 @@ export interface Alert {
   message: string;
   read_at: string | null;
   created_at: string;
+  tenant_id?: string | null;
 }
 
 export function useAlerts() {
