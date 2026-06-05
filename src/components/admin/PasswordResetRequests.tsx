@@ -65,12 +65,25 @@ export default function PasswordResetRequests() {
 
   return (
     <div className="space-y-4">
+      <Card className={pending.length > 0 ? 'border-accent/40 bg-accent/5' : ''}>
+        <CardContent className="p-4 flex items-center gap-4">
+          <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${pending.length > 0 ? 'bg-accent/15' : 'bg-muted'}`}>
+            <KeyRound className={`w-6 h-6 ${pending.length > 0 ? 'text-accent' : 'text-muted-foreground'}`} />
+          </div>
+          <div className="flex-1">
+            <p className="text-xs text-muted-foreground uppercase tracking-wider">Pending requests</p>
+            <p className="text-3xl font-bold leading-none">{pending.length}</p>
+            <p className="text-[11px] text-muted-foreground mt-1">{pending.length === 0 ? 'All requests handled' : 'Approve or reject below'}</p>
+          </div>
+          <Button size="sm" variant="outline" onClick={reload}><RefreshCw className="w-4 h-4 mr-1" /> Refresh</Button>
+        </CardContent>
+      </Card>
+
       <Card>
         <CardHeader className="flex flex-row items-center justify-between pb-3">
           <CardTitle className="text-base flex items-center gap-2">
             <KeyRound className="w-4 h-4 text-primary" /> Password Reset Requests
           </CardTitle>
-          <Button size="sm" variant="ghost" onClick={reload}><RefreshCw className="w-4 h-4" /></Button>
         </CardHeader>
         <CardContent>
           {loading ? <p className="text-center text-muted-foreground py-6">Loading…</p> :

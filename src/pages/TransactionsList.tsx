@@ -152,7 +152,7 @@ export default function TransactionsList() {
                       <p className="text-sm font-medium truncate">{tx.category}</p>
                       <p className="text-xs text-muted-foreground">
                         {format(new Date(tx.transaction_date), 'MMM d, yyyy')}
-                        {(tx as any).transaction_time && ` · ${String((tx as any).transaction_time).slice(0,5)}`}
+                        {(tx as any).transaction_time && ` · ${format(new Date(`1970-01-01T${String((tx as any).transaction_time)}`), 'h:mm a')}`}
                         {' · '}{tx.payment_method}
                         {tx.description && ` · ${tx.description}`}
                       </p>

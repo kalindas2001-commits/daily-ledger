@@ -77,7 +77,15 @@ export default function BudgetsPage() {
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
                       {overThreshold && <AlertTriangle className={cn('w-4 h-4', overBudget ? 'text-destructive' : 'text-accent')} />}
-                      <span className="font-medium text-sm">{b.category}</span>
+                      <div>
+                        <span className="font-medium text-sm">{b.category}</span>
+                        {b.created_at && (
+                          <p className="text-[10px] text-muted-foreground">
+                            Set {format(new Date(b.created_at), 'MMM d, yyyy · h:mm a')}
+                            {b.updated_at && b.updated_at !== b.created_at && ` · Updated ${format(new Date(b.updated_at), 'MMM d, h:mm a')}`}
+                          </p>
+                        )}
+                      </div>
                     </div>
                     <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={() => deleteBudget.mutate(b.id)}>
                       <Trash2 className="w-3.5 h-3.5" />
