@@ -4,6 +4,7 @@ import { useAuth } from '@/hooks/useAuth';
 
 export interface TransactionInsert {
   transaction_date: string;
+  transaction_time?: string; // HH:MM:SS
   category: string;
   description?: string;
   quantity: number;
@@ -22,7 +23,9 @@ export function useTransactions(dateRange?: { from: string; to: string }) {
         .from('transactions')
         .select('*')
         .order('transaction_date', { ascending: false })
+        .order('transaction_time', { ascending: false })
         .order('created_at', { ascending: false });
+
 
       if (dateRange) {
         q = q.gte('transaction_date', dateRange.from).lte('transaction_date', dateRange.to);

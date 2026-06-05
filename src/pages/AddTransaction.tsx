@@ -21,8 +21,10 @@ export default function AddTransaction() {
   const { data: categories } = useCategories();
   const createTx = useCreateTransaction();
 
+  const nowHHMM = format(new Date(), 'HH:mm');
   const [type, setType] = useState<'INCOME' | 'EXPENSE'>('EXPENSE');
   const [date, setDate] = useState<Date>(new Date());
+  const [time, setTime] = useState<string>(nowHHMM);
   const [category, setCategory] = useState('');
   const [description, setDescription] = useState('');
   const [quantity, setQuantity] = useState(1);
@@ -40,6 +42,7 @@ export default function AddTransaction() {
     try {
       await createTx.mutateAsync({
         transaction_date: format(date, 'yyyy-MM-dd'),
+        transaction_time: time ? `${time}:00` : `${format(new Date(), 'HH:mm:ss')}`,
         category,
         description: description || undefined,
         quantity,
@@ -74,19 +77,25 @@ export default function AddTransaction() {
               ))}
             </div>
 
-            {/* Date */}
-            <div className="space-y-2">
-              <Label>Date</Label>
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Button variant="outline" className={cn('w-full justify-start text-left font-normal', !date && 'text-muted-foreground')}>
-                    <CalendarIcon className="mr-2 h-4 w-4" />{format(date, 'PPP')}
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-0" align="start">
-                  <Calendar mode="single" selected={date} onSelect={(d) => d && setDate(d)} initialFocus className="p-3 pointer-events-auto" />
-                </PopoverContent>
-              </Popover>
+            {/* Date & Time */}
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-2">
+                <Label>Date</Label>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button variant="outline" className={cn('w-full justify-start text-left font-normal', !date && 'text-muted-foreground')}>
+                      <CalendarIcon className="mr-2 h-4 w-4" />{format(date, 'PPP')}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0" align="start">
+                    <Calendar mode="single" selected={date} onSelect={(d) => d && setDate(d)} initialFocus className="p-3 pointer-events-auto" />
+                  </PopoverContent>
+                </Popover>
+              </div>
+              <div className="space-y-2">
+                <Label>Time</Label>
+                <Input type="time" value={time} onChange={(e) => setTime(e.target.value)} />
+              </div>
             </div>
 
             {/* Category */}
