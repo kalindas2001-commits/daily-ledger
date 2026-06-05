@@ -96,6 +96,7 @@ export default function Loans() {
         </div>
         <p className="text-xs text-muted-foreground mt-0.5">
           {format(new Date(loan.loan_date), 'MMM d, yyyy')}
+          {loan.created_at && ` · ${format(new Date(loan.created_at), 'h:mm a')}`}
           {loan.description && ` · ${loan.description}`}
         </p>
       </div>
@@ -221,7 +222,7 @@ export default function Loans() {
                           <div key={h.id} className="flex items-center justify-between py-2 border-b">
                             <div>
                               <span className="font-medium">{h.action === 'ADD' ? 'Increased' : h.action === 'FULL_REPAY' ? 'Fully repaid' : 'Partial paid'}</span>
-                              <span className="text-xs text-muted-foreground ml-2">{format(new Date(h.occurred_at), 'MMM d, yyyy HH:mm')} · #{h.receipt_no}</span>
+                              <span className="text-xs text-muted-foreground ml-2">{format(new Date(h.occurred_at), 'MMM d, yyyy h:mm a')} · #{h.receipt_no}</span>
                               {h.note && <p className="text-[11px] text-muted-foreground italic">{h.note}</p>}
                             </div>
                             <span className={cn('font-bold', h.action === 'ADD' ? 'text-expense' : 'text-income')}>

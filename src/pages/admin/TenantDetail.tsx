@@ -1,11 +1,12 @@
-import { useEffect, useState } from 'react';
-import { Link, useNavigate, useParams } from 'react-router-dom';
+import { useEffect, useRef, useState } from 'react';
+import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { cn } from '@/lib/utils';
 import { ArrowLeft, Building2, Users, TrendingUp, TrendingDown, AlertTriangle, Shield, Ban, CheckCircle2 } from 'lucide-react';
 import { format } from 'date-fns';
 import { toast } from 'sonner';
@@ -15,6 +16,9 @@ export default function TenantDetail() {
   const { isSuperAdmin, loading: authLoading } = useAuth();
   const navigate = useNavigate();
   const { t } = useTranslation();
+  const [params] = useSearchParams();
+  const focusAlertId = params.get('alert');
+  const alertRef = useRef<HTMLLIElement | null>(null);
   const [loading, setLoading] = useState(true);
   const [tenant, setTenant] = useState<any>(null);
   const [drill, setDrill] = useState<any>(null);
@@ -22,6 +26,16 @@ export default function TenantDetail() {
   const [roles, setRoles] = useState<any[]>([]);
   const [alerts, setAlerts] = useState<any[]>([]);
   const [quotas, setQuotas] = useState<any[]>([]);
+
+  useEffect(() => {
+    if (focusAlertId && alertRef.current) {
+      // small delay so layout settles after data load
+      const t = setTimeout(() => {
+        alertRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }, 150);
+      return () => clearTimeout(t);
+    }
+  }, [focusAlertId, alerts.length]);
 
   useEffect(() => {
     if (!id) return;
@@ -181,7 +195,12 @@ export default function TenantDetail() {
             {alerts.length === 0 ? <p className="text-center text-muted-foreground py-4 text-sm">{t('admin.noAlerts')}</p> : (
               <ul className="space-y-2 max-h-96 overflow-y-auto">
                 {alerts.map(a => (
-                  <li key={a.id} className="border rounded-lg p-3 text-sm">
+                  <li key={a.id}
+                      ref={a.id === focusAlertId ? alertRef : null}
+                      className={cn(
+                        'border rounded-lg p-3 text-sm transition-all',
+                        a.id === focusAlertId && 'ring-2 ring-primary bg-primary/5'
+                      )}>
                     <div className="flex items-start gap-2">
                       <div className={`w-1.5 h-1.5 rounded-full mt-1.5 shrink-0 ${
                         a.severity === 'critical' ? 'bg-destructive' : a.severity === 'warning' ? 'bg-amber-500' : 'bg-primary'
