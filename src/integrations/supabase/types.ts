@@ -684,6 +684,7 @@ export type Database = {
           tenant_id: string | null
           total_amount: number | null
           transaction_date: string
+          transaction_time: string
           type: Database["public"]["Enums"]["transaction_type"]
           unit_price: number
           user_id: string
@@ -698,6 +699,7 @@ export type Database = {
           tenant_id?: string | null
           total_amount?: number | null
           transaction_date: string
+          transaction_time?: string
           type: Database["public"]["Enums"]["transaction_type"]
           unit_price: number
           user_id: string
@@ -712,6 +714,7 @@ export type Database = {
           tenant_id?: string | null
           total_amount?: number | null
           transaction_date?: string
+          transaction_time?: string
           type?: Database["public"]["Enums"]["transaction_type"]
           unit_price?: number
           user_id?: string
