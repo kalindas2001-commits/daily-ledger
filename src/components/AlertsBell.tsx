@@ -31,13 +31,17 @@ export default function AlertsBell() {
       <PopoverContent className="w-80 p-0" align="end">
         <div className="p-3 border-b flex justify-between items-center">
           <h3 className="font-semibold text-sm">AI Alerts</h3>
-          <span className="text-xs text-muted-foreground">{alerts.length} total</span>
+          <button onClick={() => { setOpen(false); navigate('/alerts'); }}
+            className="text-xs text-primary hover:underline flex items-center gap-1">
+            View all <ExternalLink className="w-3 h-3" />
+          </button>
         </div>
         <div className="max-h-96 overflow-y-auto">
           {alerts.length === 0 ? (
             <p className="text-center text-sm text-muted-foreground py-8">No alerts yet</p>
-          ) : alerts.map(a => (
-            <div key={a.id} className={cn('p-3 border-b hover:bg-muted/40 group', !a.read_at && 'bg-primary/5')}>
+          ) : alerts.slice(0, 15).map(a => (
+            <div key={a.id} className={cn('p-3 border-b hover:bg-muted/40 group cursor-pointer', !a.read_at && 'bg-primary/5')}
+              onClick={() => { setOpen(false); navigate(`/alerts?id=${a.id}`); }}>
               <div className="flex items-start gap-2">
                 <div className={cn('w-1.5 h-1.5 rounded-full mt-1.5 shrink-0',
                   a.severity === 'critical' ? 'bg-destructive' : a.severity === 'warning' ? 'bg-amber-500' : 'bg-primary')} />
@@ -46,7 +50,7 @@ export default function AlertsBell() {
                   <p className="text-xs text-muted-foreground mt-0.5">{a.message}</p>
                   <p className="text-[10px] text-muted-foreground mt-1">{format(new Date(a.created_at), 'MMM d, HH:mm')}</p>
                 </div>
-                <div className="flex flex-col gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                <div className="flex flex-col gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity" onClick={(e) => e.stopPropagation()}>
                   {!a.read_at && <Button size="icon" variant="ghost" className="h-6 w-6" onClick={() => markRead.mutate(a.id)}><Check className="w-3 h-3" /></Button>}
                   <Button size="icon" variant="ghost" className="h-6 w-6 text-destructive" onClick={() => del.mutate(a.id)}><Trash2 className="w-3 h-3" /></Button>
                 </div>
