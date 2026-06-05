@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { Bell, Check, Trash2 } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { Bell, Check, Trash2, ExternalLink } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Button } from '@/components/ui/button';
 import { useAlerts, useMarkAlertRead, useDeleteAlert } from '@/hooks/useAlerts';
@@ -8,6 +9,7 @@ import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
 
 export default function AlertsBell() {
+  const navigate = useNavigate();
   const { data: alerts = [] } = useAlerts();
   const markRead = useMarkAlertRead();
   const del = useDeleteAlert();
