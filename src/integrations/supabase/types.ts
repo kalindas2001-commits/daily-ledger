@@ -643,6 +643,53 @@ export type Database = {
           },
         ]
       }
+      tenant_invites: {
+        Row: {
+          code: string
+          created_at: string
+          created_by: string
+          expires_at: string | null
+          id: string
+          max_uses: number
+          note: string | null
+          revoked: boolean
+          tenant_id: string
+          uses: number
+        }
+        Insert: {
+          code: string
+          created_at?: string
+          created_by: string
+          expires_at?: string | null
+          id?: string
+          max_uses?: number
+          note?: string | null
+          revoked?: boolean
+          tenant_id: string
+          uses?: number
+        }
+        Update: {
+          code?: string
+          created_at?: string
+          created_by?: string
+          expires_at?: string | null
+          id?: string
+          max_uses?: number
+          note?: string | null
+          revoked?: boolean
+          tenant_id?: string
+          uses?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tenant_invites_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       tenants: {
         Row: {
           business_name: string
@@ -747,6 +794,13 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      admin_create_invite: {
+        Args: { _expires_hours?: number; _max_uses?: number; _note?: string }
+        Returns: {
+          code: string
+          id: string
+        }[]
+      }
       admin_filtered_transactions: {
         Args: {
           _category?: string
@@ -773,6 +827,20 @@ export type Database = {
           total_tenants: number
           total_transactions: number
           total_users: number
+        }[]
+      }
+      admin_list_invites: {
+        Args: never
+        Returns: {
+          code: string
+          created_at: string
+          expires_at: string
+          id: string
+          max_uses: number
+          note: string
+          revoked: boolean
+          status: string
+          uses: number
         }[]
       }
       admin_list_users: {
@@ -805,6 +873,7 @@ export type Database = {
         Args: { _approve: boolean; _request_id: string }
         Returns: undefined
       }
+      admin_revoke_invite: { Args: { _id: string }; Returns: undefined }
       admin_revoke_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
@@ -875,6 +944,18 @@ export type Database = {
           tin_number: string
         }[]
       }
+      peek_invite: {
+        Args: { _code: string }
+        Returns: {
+          business_name: string
+          reason: string
+          valid: boolean
+        }[]
+      }
+      redeem_invite_for: {
+        Args: { _code: string; _user_id: string }
+        Returns: string
+      }
       request_password_reset: {
         Args: { _email: string; _phone: string }
         Returns: string
@@ -939,6 +1020,7 @@ export type Database = {
         Returns: undefined
       }
       tenant_drilldown: { Args: { _tenant_id: string }; Returns: Json }
+      tenant_has_seat: { Args: { _tid: string }; Returns: boolean }
       update_business_profile: {
         Args: { _business_name: string; _tin_number: string }
         Returns: undefined
