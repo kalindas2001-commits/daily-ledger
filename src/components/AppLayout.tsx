@@ -6,7 +6,7 @@ import { useTheme } from '@/hooks/useTheme';
 import {
   LayoutDashboard, PlusCircle, CalendarDays, List, LogOut, Menu, FileDown,
   ExternalLink, X, Tag, Repeat, Target, Database, Moon, Sun, HandCoins,
-  StickyNote, Shield, UserCircle2, PiggyBank,
+  StickyNote, Shield, UserCircle2, PiggyBank, Users,
 } from 'lucide-react';
 import OfflineIndicator from './OfflineIndicator';
 import AlertsBell from './AlertsBell';
@@ -34,7 +34,7 @@ const moreNavCfg = [
 ];
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
-  const { signOut, isSuperAdmin } = useAuth();
+  const { signOut, isSuperAdmin, isAdmin } = useAuth();
   const { theme, toggle } = useTheme();
   const { t } = useTranslation();
   const location = useLocation();
@@ -42,9 +42,10 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
 
   const mainNav = mainNavCfg.map(i => ({ ...i, label: t(`nav.${i.key}`) }));
   const moreNav = moreNavCfg.map(i => ({ ...i, label: t(`nav.${i.key}`) }));
-  const moreNavWithAdmin = isSuperAdmin
-    ? [...moreNav, { path: '/admin', key: 'superAdmin', label: t('nav.superAdmin'), icon: Shield }]
-    : moreNav;
+  const extras: any[] = [];
+  if (isAdmin && !isSuperAdmin) extras.push({ path: '/team', key: 'team', label: 'Team', icon: Users });
+  if (isSuperAdmin) extras.push({ path: '/admin', key: 'superAdmin', label: t('nav.superAdmin'), icon: Shield });
+  const moreNavWithAdmin = [...moreNav, ...extras];
   const allNav = [...mainNav, ...moreNavWithAdmin];
   const currentLabel = allNav.find((i) => i.path === location.pathname)?.label ?? 'CungaCash';
 
