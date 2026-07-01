@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react';
-import { format, startOfMonth, endOfMonth, differenceInDays } from 'date-fns';
+import { format, startOfMonth, endOfMonth, differenceInDays, subDays } from 'date-fns';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Calendar } from '@/components/ui/calendar';
@@ -8,26 +8,31 @@ import { CalendarIcon, FileDown, FileText, BarChart3, PiggyBank, HandCoins, File
 import { cn } from '@/lib/utils';
 import { useTransactions, useDailySummaries } from '@/hooks/useTransactions';
 import { useAuth } from '@/hooks/useAuth';
+import { useMyTenant } from '@/hooks/useTenant';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import * as XLSX from 'xlsx';
+import {
+  EnterpriseReport, makeReportId, detectDevice, newAuditTrailId,
+  NAVY, EMERALD, GOLD, CHARCOAL, MUTED, LIGHT, EXPENSE as R_EXPENSE,
+} from '@/lib/enterpriseReport';
 
-const PRIMARY: [number, number, number] = [13, 150, 104];
-const EXPENSE: [number, number, number] = [220, 38, 38];
-const INK: [number, number, number] = [30, 41, 59];
-const MUTED: [number, number, number] = [100, 116, 139];
+const PRIMARY = EMERALD;
+const EXPENSE = R_EXPENSE;
+const INK = CHARCOAL;
 
 // 12-color palette for chart slices
 const PALETTE: [number, number, number][] = [
-  [13, 150, 104], [220, 38, 38], [37, 99, 235], [217, 119, 6],
+  EMERALD, R_EXPENSE, [37, 99, 235], GOLD,
   [139, 92, 246], [14, 165, 233], [236, 72, 153], [5, 150, 105],
   [202, 138, 4], [124, 58, 237], [219, 39, 119], [2, 132, 199],
 ];
 
 export default function ExportPage() {
   const { user } = useAuth();
+  const { info: tenant } = useMyTenant();
   const [from, setFrom] = useState<Date>(startOfMonth(new Date()));
   const [to, setTo] = useState<Date>(endOfMonth(new Date()));
 
@@ -49,37 +54,24 @@ export default function ExportPage() {
 
   const fmt = (n: number) => Number(n).toLocaleString('en-RW', { maximumFractionDigits: 0 });
 
-  // ---------- Drawing helpers (vector charts in jsPDF) ----------
-  const drawLogo = (doc: jsPDF, x: number, y: number, size: number) => {
-    // Rounded green square with white "CC" monogram
-    doc.setFillColor(255, 255, 255);
-    doc.roundedRect(x, y, size, size, size * 0.22, size * 0.22, 'F');
-    doc.setFillColor(...PRIMARY);
-    doc.roundedRect(x + 0.5, y + 0.5, size - 1, size - 1, size * 0.2, size * 0.2, 'F');
-    doc.setTextColor(255, 255, 255);
-    doc.setFont('helvetica', 'bold');
-    doc.setFontSize(size * 0.55);
-    doc.text('CC', x + size / 2, y + size * 0.7, { align: 'center' });
-  };
-
+  // ---------- Chart primitives (accept a jsPDF instance) ----------
   const drawPie = (
     doc: jsPDF, cx: number, cy: number, r: number,
     slices: { label: string; value: number; color: [number, number, number] }[]
   ) => {
     const total = slices.reduce((s, x) => s + x.value, 0);
     if (total <= 0) {
-      doc.setDrawColor(...MUTED); doc.setFillColor(241, 245, 249);
+      doc.setDrawColor(...MUTED); doc.setFillColor(...LIGHT);
       doc.circle(cx, cy, r, 'F');
       return;
     }
     let startAngle = -Math.PI / 2;
-    const STEP = Math.PI / 90; // 2°
+    const STEP = Math.PI / 90;
     for (const s of slices) {
       if (s.value <= 0) continue;
       const sweep = (s.value / total) * Math.PI * 2;
       const endAngle = startAngle + sweep;
       doc.setFillColor(...s.color);
-      // Approximate slice with triangle fan
       let prevX = cx + Math.cos(startAngle) * r;
       let prevY = cy + Math.sin(startAngle) * r;
       for (let a = startAngle + STEP; a <= endAngle + 1e-6; a += STEP) {
@@ -90,10 +82,9 @@ export default function ExportPage() {
       }
       startAngle = endAngle;
     }
-    // Donut hole for modern look
     doc.setFillColor(255, 255, 255);
-    doc.circle(cx, cy, r * 0.45, 'F');
-    doc.setTextColor(...INK);
+    doc.circle(cx, cy, r * 0.5, 'F');
+    doc.setTextColor(...NAVY);
     doc.setFont('helvetica', 'bold'); doc.setFontSize(9);
     doc.text(`${fmt(total)}`, cx, cy - 1, { align: 'center' });
     doc.setFont('helvetica', 'normal'); doc.setFontSize(6); doc.setTextColor(...MUTED);
@@ -129,11 +120,9 @@ export default function ExportPage() {
     const padL = 14, padB = 10, padT = 4;
     const innerW = w - padL - 4;
     const innerH = h - padB - padT;
-    // Axes
     doc.setDrawColor(...MUTED); doc.setLineWidth(0.2);
     doc.line(x + padL, y + padT, x + padL, y + padT + innerH);
     doc.line(x + padL, y + padT + innerH, x + w - 2, y + padT + innerH);
-    // Y labels (3 ticks)
     doc.setFontSize(6); doc.setTextColor(...MUTED); doc.setFont('helvetica', 'normal');
     for (let i = 0; i <= 3; i++) {
       const v = (maxVal / 3) * i;
@@ -145,87 +134,26 @@ export default function ExportPage() {
         doc.setDrawColor(...MUTED);
       }
     }
-
     const slot = innerW / series.length;
     const barW = Math.min(8, (slot - 2) / 2);
     series.forEach((s, i) => {
       const cx = x + padL + slot * i + slot / 2;
       const ihh = (s.income / maxVal) * innerH;
       const ehh = (s.expense / maxVal) * innerH;
-      doc.setFillColor(...PRIMARY);
+      doc.setFillColor(...EMERALD);
       doc.rect(cx - barW - 0.5, y + padT + innerH - ihh, barW, ihh, 'F');
       doc.setFillColor(...EXPENSE);
       doc.rect(cx + 0.5, y + padT + innerH - ehh, barW, ehh, 'F');
       doc.setTextColor(...MUTED); doc.setFontSize(6);
       doc.text(s.label, cx, y + padT + innerH + 4, { align: 'center' });
     });
-    // Mini-legend
-    doc.setFillColor(...PRIMARY); doc.rect(x + w - 36, y + 1, 2.5, 2.5, 'F');
+    doc.setFillColor(...EMERALD); doc.rect(x + w - 36, y + 1, 2.5, 2.5, 'F');
     doc.setTextColor(...INK); doc.setFontSize(6); doc.text('Income', x + w - 32, y + 3);
     doc.setFillColor(...EXPENSE); doc.rect(x + w - 18, y + 1, 2.5, 2.5, 'F');
     doc.text('Expense', x + w - 14, y + 3);
   };
 
-  // ---------- Header / footer / summary ----------
-  const addHeader = (doc: jsPDF, title: string, profile: { name: string; email: string }) => {
-    const pageW = doc.internal.pageSize.getWidth();
-    doc.setFillColor(...PRIMARY);
-    doc.rect(0, 0, pageW, 42, 'F');
-    drawLogo(doc, 14, 8, 26);
-    doc.setTextColor(255, 255, 255);
-    doc.setFontSize(20); doc.setFont('helvetica', 'bold');
-    doc.text('CungaCash', 46, 18);
-    doc.setFontSize(11); doc.setFont('helvetica', 'normal');
-    doc.text(title, 46, 26);
-    doc.setFontSize(8);
-    doc.text(`${format(from, 'MMM d, yyyy')} – ${format(to, 'MMM d, yyyy')}`, 46, 32);
-    // Right side: user
-    doc.setFontSize(9); doc.setFont('helvetica', 'bold');
-    doc.text(profile.name, pageW - 14, 18, { align: 'right' });
-    doc.setFontSize(7); doc.setFont('helvetica', 'normal');
-    doc.text(profile.email, pageW - 14, 23, { align: 'right' });
-    doc.text(`Generated ${format(new Date(), 'MMM d, yyyy HH:mm')}`, pageW - 14, 28, { align: 'right' });
-  };
-
-  const addFooters = (doc: jsPDF) => {
-    const pageW = doc.internal.pageSize.getWidth();
-    const pageCount = doc.getNumberOfPages();
-    for (let i = 1; i <= pageCount; i++) {
-      doc.setPage(i);
-      const pageH = doc.internal.pageSize.getHeight();
-      doc.setDrawColor(230); doc.setLineWidth(0.2);
-      doc.line(14, pageH - 12, pageW - 14, pageH - 12);
-      doc.setFontSize(7); doc.setTextColor(...MUTED); doc.setFont('helvetica', 'normal');
-      doc.text('CungaCash · rossets.rw · info@rossets.rw', 14, pageH - 7);
-      doc.text(`Page ${i} of ${pageCount}`, pageW - 14, pageH - 7, { align: 'right' });
-    }
-  };
-
-  const addSummaryBoxes = (doc: jsPDF, y: number) => {
-    const pageW = doc.internal.pageSize.getWidth();
-    const boxW = (pageW - 42) / 3;
-    doc.setTextColor(0, 0, 0);
-
-    const boxes = [
-      { label: 'Total Income', val: totals.income, color: PRIMARY, bg: [236, 253, 245] },
-      { label: 'Total Expense', val: totals.expense, color: EXPENSE, bg: [254, 242, 242] },
-      { label: 'Net Balance', val: totals.net,
-        color: (totals.net >= 0 ? PRIMARY : EXPENSE) as [number, number, number],
-        bg: (totals.net >= 0 ? [236, 253, 245] : [254, 242, 242]) as number[] },
-    ];
-
-    boxes.forEach((b, i) => {
-      const x = 14 + (boxW + 7) * i;
-      doc.setFillColor(b.bg[0], b.bg[1], b.bg[2]);
-      doc.roundedRect(x, y, boxW, 26, 3, 3, 'F');
-      doc.setFontSize(8); doc.setTextColor(...MUTED); doc.setFont('helvetica', 'normal');
-      doc.text(b.label, x + boxW / 2, y + 9, { align: 'center' });
-      doc.setFontSize(14); doc.setTextColor(b.color[0], b.color[1], b.color[2]); doc.setFont('helvetica', 'bold');
-      doc.text(`${fmt(b.val)} RWF`, x + boxW / 2, y + 20, { align: 'center' });
-    });
-  };
-
-  // ---------- Smart insights ----------
+  // ---------- Smart insights (used in flagship report) ----------
   const computeInsights = () => {
     if (!transactions || transactions.length === 0) return [];
     const days = Math.max(1, differenceInDays(to, from) + 1);
@@ -241,51 +169,31 @@ export default function ExportPage() {
         incByCat[tx.category] = (incByCat[tx.category] ?? 0) + amt;
       }
     });
-
-    const insights: string[] = [];
+    const out: string[] = [];
     const savingRate = totals.income > 0 ? (totals.net / totals.income) * 100 : 0;
     if (totals.income > 0) {
-      if (savingRate >= 20) insights.push(`Strong savings rate of ${savingRate.toFixed(1)}% — you kept ${fmt(totals.net)} RWF of every income earned.`);
-      else if (savingRate >= 0) insights.push(`Modest savings rate of ${savingRate.toFixed(1)}%. Aim for 20%+ to build a healthy buffer.`);
-      else insights.push(`You spent ${(-savingRate).toFixed(1)}% more than you earned — net deficit of ${fmt(-totals.net)} RWF.`);
+      if (savingRate >= 20) out.push(`Strong savings rate of ${savingRate.toFixed(1)}% — you kept ${fmt(totals.net)} RWF of every income earned.`);
+      else if (savingRate >= 0) out.push(`Modest savings rate of ${savingRate.toFixed(1)}%. Aim for 20%+ to build a healthy buffer.`);
+      else out.push(`You spent ${(-savingRate).toFixed(1)}% more than you earned — net deficit of ${fmt(-totals.net)} RWF.`);
     }
-    insights.push(`Average daily spending: ${fmt(totals.expense / days)} RWF over ${days} day${days > 1 ? 's' : ''}.`);
+    out.push(`Average daily spending: ${fmt(totals.expense / days)} RWF over ${days} day${days > 1 ? 's' : ''}.`);
     const topExp = Object.entries(expByCat).sort((a, b) => b[1] - a[1])[0];
     if (topExp && totals.expense > 0) {
       const pct = (topExp[1] / totals.expense) * 100;
-      insights.push(`Largest expense category: "${topExp[0]}" at ${fmt(topExp[1])} RWF (${pct.toFixed(1)}% of spending).`);
+      out.push(`Largest expense category: "${topExp[0]}" at ${fmt(topExp[1])} RWF (${pct.toFixed(1)}% of spending).`);
     }
     const topInc = Object.entries(incByCat).sort((a, b) => b[1] - a[1])[0];
     if (topInc && totals.income > 0) {
       const pct = (topInc[1] / totals.income) * 100;
-      insights.push(`Top income source: "${topInc[0]}" contributing ${pct.toFixed(1)}% of total income.`);
+      out.push(`Top income source: "${topInc[0]}" contributing ${pct.toFixed(1)}% of total income.`);
     }
     const peak = Object.entries(dailyExp).sort((a, b) => b[1] - a[1])[0];
-    if (peak) {
-      insights.push(`Peak spending day: ${format(new Date(peak[0]), 'MMM d, yyyy')} with ${fmt(peak[1])} RWF.`);
-    }
-    insights.push(`${transactions.length} transaction${transactions.length > 1 ? 's' : ''} recorded across ${Object.keys(expByCat).length + Object.keys(incByCat).length} categories.`);
-    return insights;
+    if (peak) out.push(`Peak spending day: ${format(new Date(peak[0]), 'MMM d, yyyy')} with ${fmt(peak[1])} RWF.`);
+    out.push(`${transactions.length} transaction${transactions.length > 1 ? 's' : ''} recorded across ${Object.keys(expByCat).length + Object.keys(incByCat).length} categories.`);
+    return out;
   };
 
-  const drawInsights = (doc: jsPDF, y: number, insights: string[]) => {
-    const pageW = doc.internal.pageSize.getWidth();
-    doc.setFillColor(248, 250, 252);
-    doc.setDrawColor(226, 232, 240); doc.setLineWidth(0.2);
-    const h = 10 + insights.length * 5.5;
-    doc.roundedRect(14, y, pageW - 28, h, 2, 2, 'FD');
-    doc.setTextColor(...PRIMARY); doc.setFontSize(10); doc.setFont('helvetica', 'bold');
-    doc.text('Smart Insights', 18, y + 6);
-    doc.setTextColor(...INK); doc.setFontSize(8.5); doc.setFont('helvetica', 'normal');
-    insights.forEach((t, i) => {
-      doc.setTextColor(...PRIMARY); doc.text('•', 18, y + 12 + i * 5.5);
-      doc.setTextColor(...INK);
-      doc.text(t, 22, y + 12 + i * 5.5, { maxWidth: pageW - 44 });
-    });
-    return y + h + 6;
-  };
-
-  // ---------- Profile fetch ----------
+  // ---------- Profile / meta ----------
   const getProfile = async (): Promise<{ name: string; email: string }> => {
     if (!user) return { name: '—', email: '' };
     const { data } = await supabase.from('profiles').select('full_name').eq('user_id', user.id).maybeSingle();
@@ -293,104 +201,102 @@ export default function ExportPage() {
     return { name: data?.full_name?.trim() || fallback, email: user.email ?? '' };
   };
 
-  // ---------- Reports ----------
-  const exportTransactionsPDF = async () => {
-    if (!transactions || transactions.length === 0) { toast.error('No transactions to export'); return; }
+  const buildMeta = async (reportType: string, kindCode: string) => {
     const profile = await getProfile();
-    const doc = new jsPDF();
-    addHeader(doc, 'Transaction Report', profile);
-    addSummaryBoxes(doc, 50);
-
-    const tableData = transactions.map((tx) => [
-      format(new Date(tx.transaction_date), 'MMM d, yyyy'),
-      tx.type, tx.category, tx.description || '-',
-      String(tx.quantity ?? 1), `${fmt(tx.unit_price)} RWF`,
-      `${fmt(tx.total_amount ?? 0)} RWF`, tx.payment_method || '-',
-    ]);
-
-    autoTable(doc, {
-      startY: 82,
-      head: [['Date', 'Type', 'Category', 'Description', 'Qty', 'Unit Price', 'Total', 'Payment']],
-      body: tableData,
-      headStyles: { fillColor: PRIMARY, fontSize: 8, fontStyle: 'bold' },
-      bodyStyles: { fontSize: 7.5 },
-      alternateRowStyles: { fillColor: [248, 250, 252] },
-      styles: { cellPadding: 3, lineWidth: 0.1 },
-      columnStyles: { 4: { halign: 'center' }, 5: { halign: 'right' }, 6: { halign: 'right' } },
-      didParseCell: (data) => {
-        if (data.section === 'body' && data.column.index === 1) {
-          data.cell.styles.textColor = data.cell.raw === 'INCOME' ? PRIMARY : EXPENSE;
-          data.cell.styles.fontStyle = 'bold';
-        }
-      },
-    });
-
-    addFooters(doc);
-    doc.save(`CungaCash_Transactions_${fromStr}_${toStr}.pdf`);
-    toast.success('Transactions PDF downloaded');
+    return {
+      reportType,
+      company: tenant?.business_name?.trim() || profile.name || 'CungaCash User',
+      branch: 'Head Office',
+      periodFrom: from,
+      periodTo: to,
+      currency: 'RWF',
+      generatedBy: profile.name,
+      generatedByEmail: profile.email,
+      reportId: makeReportId(kindCode),
+      confidentiality: 'CONFIDENTIAL' as const,
+      version: '1.0',
+      revision: 0,
+      auditTrailId: newAuditTrailId(),
+      deviceName: detectDevice(),
+      userId: user?.id ?? '—',
+      watermark: 'CONFIDENTIAL' as const,
+      supportEmail: 'support@cungacash.com',
+      website: 'www.cungacash.com',
+    };
   };
 
-  const exportDailyReportPDF = async () => {
-    if (!summaries || summaries.length === 0) { toast.error('No daily data to export'); return; }
-    const profile = await getProfile();
-    const doc = new jsPDF();
-    addHeader(doc, 'Daily Summary Report', profile);
-    addSummaryBoxes(doc, 50);
-
-    // Mini bar chart of recent days (max 14)
-    const recent = summaries.slice(-14).map((s) => ({
-      label: format(new Date(s.summary_date), 'd/M'),
-      income: Number(s.total_income ?? 0),
-      expense: Number(s.total_expense ?? 0),
-    }));
-    const pageW = doc.internal.pageSize.getWidth();
-    doc.setTextColor(...INK); doc.setFontSize(10); doc.setFont('helvetica', 'bold');
-    doc.text('Daily Income vs Expense', 14, 86);
-    drawBars(doc, 14, 88, pageW - 28, 50, recent);
-
-    const tableData = summaries.map((s) => [
-      format(new Date(s.summary_date), 'EEE, MMM d, yyyy'),
-      `${fmt(s.total_income ?? 0)} RWF`, `${fmt(s.total_expense ?? 0)} RWF`, `${fmt(s.net_balance ?? 0)} RWF`,
-    ]);
-
-    autoTable(doc, {
-      startY: 145,
-      head: [['Date', 'Income', 'Expense', 'Net Balance']],
-      body: tableData,
-      headStyles: { fillColor: PRIMARY, fontSize: 9, fontStyle: 'bold' },
-      bodyStyles: { fontSize: 8.5 },
-      alternateRowStyles: { fillColor: [248, 250, 252] },
-      styles: { cellPadding: 4, lineWidth: 0.1 },
-      columnStyles: {
-        1: { halign: 'right', textColor: PRIMARY },
-        2: { halign: 'right', textColor: EXPENSE },
-        3: { halign: 'right' },
-      },
-      didParseCell: (data) => {
-        if (data.section === 'body' && data.column.index === 3) {
-          const val = parseFloat(String(data.cell.raw).replace(/[^0-9.-]/g, ''));
-          data.cell.styles.textColor = val >= 0 ? PRIMARY : EXPENSE;
-          data.cell.styles.fontStyle = 'bold';
-        }
-      },
-    });
-
-    addFooters(doc);
-    doc.save(`CungaCash_DailyReport_${fromStr}_${toStr}.pdf`);
-    toast.success('Daily report PDF downloaded');
+  /** Build scaffold: cover + confidentiality + TOC placeholder. Returns report. */
+  const openReport = async (reportType: string, kindCode: string) => {
+    const meta = await buildMeta(reportType, kindCode);
+    const report = new EnterpriseReport(meta);
+    // Hash payload accumulator — content signature
+    report.addToHash(`${totals.income}|${totals.expense}|${totals.net}|${transactions?.length ?? 0}`);
+    await report.computeHash();
+    await report.buildQr();
+    report.coverPage();
+    report.confidentialityNotice();
+    report.tocPagePlaceholder();
+    return report;
   };
 
+  const closeReport = (report: EnterpriseReport, extraNotes: Parameters<EnterpriseReport['notesSection']>[0] = {}) => {
+    report.notesSection(extraNotes);
+    report.approvalPage();
+    report.qrVerificationPage();
+    report.metadataPage();
+    return report;
+  };
+
+  // ---------- KPI helpers ----------
+  const kpiRow = (extra: { label: string; value: string; sub?: string; color?: [number,number,number] }[] = []) => [
+    { label: 'Total Income', value: `${fmt(totals.income)} RWF`, sub: 'Cash inflows in period', color: EMERALD },
+    { label: 'Total Expense', value: `${fmt(totals.expense)} RWF`, sub: 'Cash outflows in period', color: EXPENSE },
+    { label: 'Net Balance', value: `${fmt(totals.net)} RWF`, sub: totals.net >= 0 ? 'Surplus' : 'Deficit', color: totals.net >= 0 ? EMERALD : EXPENSE },
+    { label: 'Transactions', value: `${transactions?.length ?? 0}`, sub: 'Records processed', color: NAVY },
+    ...extra,
+  ];
+
+  // ---------- Comparative (prior period same length) ----------
+  const fetchPriorTotals = async () => {
+    if (!user) return { income: 0, expense: 0 };
+    const days = differenceInDays(to, from) + 1;
+    const priorTo = subDays(from, 1);
+    const priorFrom = subDays(priorTo, days - 1);
+    const { data } = await supabase
+      .from('transactions')
+      .select('type,total_amount')
+      .eq('user_id', user.id)
+      .gte('transaction_date', format(priorFrom, 'yyyy-MM-dd'))
+      .lte('transaction_date', format(priorTo, 'yyyy-MM-dd'));
+    let inc = 0, exp = 0;
+    (data ?? []).forEach((r: any) => {
+      if (r.type === 'INCOME') inc += Number(r.total_amount ?? 0);
+      else exp += Number(r.total_amount ?? 0);
+    });
+    return { income: inc, expense: exp, from: priorFrom, to: priorTo };
+  };
+
+  // ---------- FLAGSHIP: Smart Summary (full enterprise structure) ----------
   const exportMonthlySummaryPDF = async () => {
     if (!transactions || transactions.length === 0) { toast.error('No data to export'); return; }
-    const profile = await getProfile();
-    const doc = new jsPDF();
-    addHeader(doc, 'Financial Summary Report', profile);
-    addSummaryBoxes(doc, 50);
+    const report = await openReport('Financial Summary & Analysis', 'FS');
+    const d = report.doc;
 
-    // Insights
-    let y = drawInsights(doc, 80, computeInsights());
+    // 4. Executive Summary
+    let y = report.beginSection('Executive Summary');
+    d.setTextColor(...CHARCOAL); d.setFont('helvetica', 'normal'); d.setFontSize(10);
+    const days = differenceInDays(to, from) + 1;
+    const savingsRate = totals.income > 0 ? (totals.net / totals.income) * 100 : 0;
+    const summary = `This report presents the consolidated financial activity of ${report.meta.company} for the period ${format(from, 'dd MMM yyyy')} through ${format(to, 'dd MMM yyyy')} (${days} day${days > 1 ? 's' : ''}). During this window a total of ${transactions.length} financial transaction${transactions.length > 1 ? 's were' : ' was'} recorded, aggregating ${fmt(totals.income)} RWF in income and ${fmt(totals.expense)} RWF in expenses, resulting in a net ${totals.net >= 0 ? 'surplus' : 'deficit'} of ${fmt(Math.abs(totals.net))} RWF and an effective savings rate of ${savingsRate.toFixed(1)}%.`;
+    d.text(d.splitTextToSize(summary, report.pageW - 28), 14, y);
+    y += Math.ceil(summary.length / 90) * 5 + 10;
 
-    // Build category maps
+    // 5. KPI Dashboard
+    y = report.beginSection('KPI Dashboard');
+    report.drawKpiCards(y, kpiRow());
+
+    // 6. Charts & Graphs
+    y = report.beginSection('Charts & Graphs');
     const expenseMap: Record<string, number> = {};
     const incomeMap: Record<string, number> = {};
     const paymentMap: Record<string, number> = {};
@@ -400,88 +306,295 @@ export default function ExportPage() {
       else incomeMap[tx.category] = (incomeMap[tx.category] ?? 0) + amt;
       if (tx.payment_method) paymentMap[tx.payment_method] = (paymentMap[tx.payment_method] ?? 0) + amt;
     });
-
-    // ---- Pie charts: Expense and Income side-by-side
-    const pageW = doc.internal.pageSize.getWidth();
-    if (y > 180) { doc.addPage(); y = 20; }
-
-    doc.setTextColor(...INK); doc.setFontSize(11); doc.setFont('helvetica', 'bold');
-    doc.text('Expense Breakdown', 14, y);
-    doc.text('Income Breakdown', pageW / 2 + 4, y);
-    y += 4;
-
     const expSlices = Object.entries(expenseMap).sort((a, b) => b[1] - a[1])
       .slice(0, 8).map(([label, value], i) => ({ label, value, color: PALETTE[i % PALETTE.length] }));
     const incSlices = Object.entries(incomeMap).sort((a, b) => b[1] - a[1])
       .slice(0, 8).map(([label, value], i) => ({ label, value, color: PALETTE[i % PALETTE.length] }));
 
-    drawPie(doc, 36, y + 24, 22, expSlices);
-    drawLegend(doc, 62, y + 6, 28, expSlices, totals.expense);
-
-    drawPie(doc, pageW / 2 + 26, y + 24, 22, incSlices);
-    drawLegend(doc, pageW / 2 + 52, y + 6, 28, incSlices, totals.income);
-
+    d.setTextColor(...NAVY); d.setFont('helvetica', 'bold'); d.setFontSize(10);
+    d.text('Expense Breakdown', 14, y);
+    d.text('Income Breakdown', report.pageW / 2 + 4, y);
+    y += 4;
+    drawPie(d, 36, y + 24, 22, expSlices);
+    drawLegend(d, 62, y + 6, 28, expSlices, totals.expense);
+    drawPie(d, report.pageW / 2 + 26, y + 24, 22, incSlices);
+    drawLegend(d, report.pageW / 2 + 52, y + 6, 28, incSlices, totals.income);
     y += 60;
 
-    // Expense table
-    if (y > 240) { doc.addPage(); y = 20; }
+    if (summaries && summaries.length > 0) {
+      const recent = summaries.slice(-14).map((s) => ({
+        label: format(new Date(s.summary_date), 'd/M'),
+        income: Number(s.total_income ?? 0),
+        expense: Number(s.total_expense ?? 0),
+      }));
+      d.setTextColor(...NAVY); d.setFont('helvetica', 'bold'); d.setFontSize(10);
+      d.text('Daily Income vs Expense (last 14 days)', 14, y);
+      drawBars(d, 14, y + 2, report.pageW - 28, 55, recent);
+    }
+
+    // 7. Main Financial Report
+    y = report.beginSection('Main Financial Report');
     const expenseRows = Object.entries(expenseMap).sort((a, b) => b[1] - a[1]).map(([cat, amt]) => [
-      cat, `${fmt(amt)} RWF`, `${totals.expense > 0 ? ((amt / totals.expense) * 100).toFixed(1) : 0}%`
+      cat, `${fmt(amt)} RWF`, `${totals.expense > 0 ? ((amt / totals.expense) * 100).toFixed(1) : 0}%`,
     ]);
-    autoTable(doc, {
+    autoTable(d, {
       startY: y,
       head: [['Expense Category', 'Amount', '% of Total']],
       body: expenseRows,
-      headStyles: { fillColor: EXPENSE, fontSize: 8, fontStyle: 'bold' },
-      bodyStyles: { fontSize: 8 },
-      alternateRowStyles: { fillColor: [254, 242, 242] },
-      styles: { cellPadding: 3, lineWidth: 0.1 },
+      headStyles: { fillColor: NAVY, fontSize: 9, fontStyle: 'bold', textColor: [255,255,255] },
+      bodyStyles: { fontSize: 9, textColor: CHARCOAL },
+      alternateRowStyles: { fillColor: LIGHT },
+      styles: { cellPadding: 3, lineWidth: 0.1, lineColor: [220, 226, 232] },
       columnStyles: { 1: { halign: 'right' }, 2: { halign: 'center' } },
     });
-    y = (doc as any).lastAutoTable.finalY + 8;
-
+    y = (d as any).lastAutoTable.finalY + 6;
     if (Object.keys(incomeMap).length > 0) {
-      if (y > 250) { doc.addPage(); y = 20; }
-      const incomeRows = Object.entries(incomeMap).sort((a, b) => b[1] - a[1]).map(([cat, amt]) => [
-        cat, `${fmt(amt)} RWF`, `${totals.income > 0 ? ((amt / totals.income) * 100).toFixed(1) : 0}%`
-      ]);
-      autoTable(doc, {
+      autoTable(d, {
         startY: y,
         head: [['Income Category', 'Amount', '% of Total']],
-        body: incomeRows,
-        headStyles: { fillColor: PRIMARY, fontSize: 8, fontStyle: 'bold' },
-        bodyStyles: { fontSize: 8 },
+        body: Object.entries(incomeMap).sort((a, b) => b[1] - a[1]).map(([cat, amt]) => [
+          cat, `${fmt(amt)} RWF`, `${totals.income > 0 ? ((amt / totals.income) * 100).toFixed(1) : 0}%`,
+        ]),
+        headStyles: { fillColor: EMERALD, fontSize: 9, fontStyle: 'bold', textColor: [255,255,255] },
+        bodyStyles: { fontSize: 9, textColor: CHARCOAL },
         alternateRowStyles: { fillColor: [236, 253, 245] },
-        styles: { cellPadding: 3, lineWidth: 0.1 },
+        styles: { cellPadding: 3, lineWidth: 0.1, lineColor: [220, 226, 232] },
         columnStyles: { 1: { halign: 'right' }, 2: { halign: 'center' } },
       });
-      y = (doc as any).lastAutoTable.finalY + 8;
     }
 
+    // 8. Comparative Analysis
+    const prior = await fetchPriorTotals();
+    y = report.beginSection('Comparative Analysis');
+    const pctChange = (curr: number, prev: number) => {
+      if (prev === 0) return curr === 0 ? '0%' : '+∞';
+      const p = ((curr - prev) / prev) * 100;
+      return `${p >= 0 ? '+' : ''}${p.toFixed(1)}%`;
+    };
+    autoTable(d, {
+      startY: y,
+      head: [['Metric', 'Current Period', 'Prior Period', 'Change']],
+      body: [
+        ['Income', `${fmt(totals.income)} RWF`, `${fmt(prior.income)} RWF`, pctChange(totals.income, prior.income)],
+        ['Expense', `${fmt(totals.expense)} RWF`, `${fmt(prior.expense)} RWF`, pctChange(totals.expense, prior.expense)],
+        ['Net Balance', `${fmt(totals.net)} RWF`, `${fmt(prior.income - prior.expense)} RWF`, pctChange(totals.net, prior.income - prior.expense)],
+      ],
+      headStyles: { fillColor: NAVY, textColor: [255,255,255], fontSize: 9, fontStyle: 'bold' },
+      bodyStyles: { fontSize: 9, textColor: CHARCOAL },
+      styles: { cellPadding: 4, lineWidth: 0.1, lineColor: [220,226,232] },
+      columnStyles: { 1: { halign: 'right' }, 2: { halign: 'right' }, 3: { halign: 'center', fontStyle: 'bold' } },
+    });
+
+    // 9. AI Insights
+    y = report.beginSection('AI Insights');
+    const insights = computeInsights();
+    d.setTextColor(...CHARCOAL); d.setFont('helvetica', 'normal'); d.setFontSize(10);
+    insights.forEach((t) => {
+      y = report.ensureSpace(y, 12, 'AI Insights');
+      d.setFillColor(...LIGHT);
+      d.roundedRect(14, y - 4, report.pageW - 28, 10, 1.5, 1.5, 'F');
+      d.setTextColor(...EMERALD); d.setFont('helvetica', 'bold');
+      d.text('▸', 18, y + 2);
+      d.setTextColor(...CHARCOAL); d.setFont('helvetica', 'normal');
+      d.text(t, 24, y + 2, { maxWidth: report.pageW - 44 });
+      y += 12;
+    });
+
+    // 10. Risk Assessment
+    y = report.beginSection('Risk Assessment');
+    const risks: [string, string, string][] = [];
+    if (savingsRate < 0) risks.push(['Cash flow deficit', 'HIGH', 'Expenses exceed income; corrective action required.']);
+    else if (savingsRate < 10) risks.push(['Low savings buffer', 'MEDIUM', 'Savings rate below 10%; limited resilience to shocks.']);
+    else risks.push(['Savings adequacy', 'LOW', 'Savings rate is within a healthy range.']);
+    const topExpAmt = Math.max(0, ...Object.values(expenseMap));
+    if (totals.expense > 0 && topExpAmt / totals.expense > 0.5)
+      risks.push(['Expense concentration', 'MEDIUM', 'A single category exceeds 50% of expenses — diversify to reduce exposure.']);
+    if (transactions.length < 5) risks.push(['Data sufficiency', 'MEDIUM', 'Small transaction sample may not represent typical activity.']);
+    autoTable(d, {
+      startY: y,
+      head: [['Risk', 'Severity', 'Assessment']],
+      body: risks,
+      headStyles: { fillColor: NAVY, textColor: [255,255,255], fontSize: 9, fontStyle: 'bold' },
+      bodyStyles: { fontSize: 9, textColor: CHARCOAL },
+      styles: { cellPadding: 4, lineWidth: 0.1, lineColor: [220,226,232] },
+      columnStyles: { 1: { halign: 'center', fontStyle: 'bold' } },
+      didParseCell: (data) => {
+        if (data.section === 'body' && data.column.index === 1) {
+          const v = String(data.cell.raw);
+          data.cell.styles.textColor = v === 'HIGH' ? EXPENSE : v === 'MEDIUM' ? GOLD : EMERALD;
+        }
+      },
+    });
+
+    // 11. Detailed Transactions
+    y = report.beginSection('Detailed Transactions');
+    autoTable(d, {
+      startY: y,
+      head: [['Date', 'Type', 'Category', 'Description', 'Qty', 'Unit', 'Total', 'Payment']],
+      body: transactions.map((tx) => [
+        format(new Date(tx.transaction_date), 'yyyy-MM-dd'),
+        tx.type, tx.category, tx.description || '-',
+        String(tx.quantity ?? 1),
+        `${fmt(tx.unit_price)}`,
+        `${fmt(tx.total_amount ?? 0)}`,
+        tx.payment_method || '-',
+      ]),
+      headStyles: { fillColor: NAVY, textColor: [255,255,255], fontSize: 8, fontStyle: 'bold' },
+      bodyStyles: { fontSize: 7.5, textColor: CHARCOAL },
+      alternateRowStyles: { fillColor: LIGHT },
+      styles: { cellPadding: 2.5, lineWidth: 0.1, lineColor: [220,226,232] },
+      columnStyles: { 4: { halign: 'center' }, 5: { halign: 'right' }, 6: { halign: 'right' } },
+      didParseCell: (data) => {
+        if (data.section === 'body' && data.column.index === 1) {
+          data.cell.styles.textColor = data.cell.raw === 'INCOME' ? EMERALD : EXPENSE;
+          data.cell.styles.fontStyle = 'bold';
+        }
+      },
+      didDrawPage: () => {
+        report.drawInnerHeader('Detailed Transactions');
+        report.drawWatermark();
+      },
+      margin: { top: 22, bottom: 18 },
+    });
+
+    // 12. Supporting Schedules (payment methods)
     if (Object.keys(paymentMap).length > 0) {
-      if (y > 250) { doc.addPage(); y = 20; }
+      y = report.beginSection('Supporting Schedules');
+      d.setTextColor(...NAVY); d.setFont('helvetica', 'bold'); d.setFontSize(10);
+      d.text('Schedule A — Payment Method Breakdown', 14, y); y += 4;
       const totalAll = totals.income + totals.expense;
-      const payRows = Object.entries(paymentMap).sort((a, b) => b[1] - a[1]).map(([method, amt]) => [
-        method, `${fmt(amt)} RWF`, `${totalAll > 0 ? ((amt / totalAll) * 100).toFixed(1) : 0}%`
-      ]);
-      autoTable(doc, {
+      autoTable(d, {
         startY: y,
         head: [['Payment Method', 'Amount', '% of Total']],
-        body: payRows,
-        headStyles: { fillColor: MUTED, fontSize: 8, fontStyle: 'bold' },
-        bodyStyles: { fontSize: 8 },
-        alternateRowStyles: { fillColor: [248, 250, 252] },
-        styles: { cellPadding: 3, lineWidth: 0.1 },
+        body: Object.entries(paymentMap).sort((a, b) => b[1] - a[1]).map(([m, a]) => [
+          m, `${fmt(a)} RWF`, `${totalAll > 0 ? ((a / totalAll) * 100).toFixed(1) : 0}%`,
+        ]),
+        headStyles: { fillColor: NAVY, textColor: [255,255,255], fontSize: 9, fontStyle: 'bold' },
+        bodyStyles: { fontSize: 9, textColor: CHARCOAL },
+        alternateRowStyles: { fillColor: LIGHT },
+        styles: { cellPadding: 3, lineWidth: 0.1, lineColor: [220,226,232] },
         columnStyles: { 1: { halign: 'right' }, 2: { halign: 'center' } },
       });
     }
 
-    addFooters(doc);
-    doc.save(`CungaCash_Summary_${fromStr}_${toStr}.pdf`);
-    toast.success('Summary PDF downloaded');
+    // 16. Appendix
+    y = report.beginSection('Appendix');
+    d.setTextColor(...CHARCOAL); d.setFont('helvetica', 'normal'); d.setFontSize(9);
+    const glossary: [string, string][] = [
+      ['Savings Rate', 'Net balance divided by total income, expressed as a percentage.'],
+      ['Net Balance', 'Total income less total expenses over the stated period.'],
+      ['Expense Concentration', 'Share of total expenses attributable to the largest single category.'],
+      ['SHA-256', 'Cryptographic hash used to detect tampering in this document.'],
+      ['Audit Trail ID', 'Unique identifier linking this report to platform audit records.'],
+    ];
+    glossary.forEach(([term, def]) => {
+      y = report.ensureSpace(y, 10, 'Appendix');
+      d.setTextColor(...NAVY); d.setFont('helvetica', 'bold'); d.setFontSize(9);
+      d.text(term, 14, y);
+      d.setTextColor(...CHARCOAL); d.setFont('helvetica', 'normal');
+      const lines = d.splitTextToSize(def, report.pageW - 60);
+      d.text(lines, 55, y);
+      y += Math.max(6, lines.length * 5) + 1;
+    });
+
+    // 13-15. Notes, Approval, QR verification, 17. Metadata
+    closeReport(report);
+    report.save(`CungaCash_${report.meta.reportId}_${fromStr}_${toStr}.pdf`);
+    toast.success('Boardroom-quality summary downloaded');
   };
 
-  // ---------- Savings & Loans data ----------
+  // ---------- Transactions PDF ----------
+  const exportTransactionsPDF = async () => {
+    if (!transactions || transactions.length === 0) { toast.error('No transactions to export'); return; }
+    const report = await openReport('Transaction Register', 'TR');
+    const d = report.doc;
+
+    let y = report.beginSection('Executive Summary');
+    d.setTextColor(...CHARCOAL); d.setFont('helvetica', 'normal'); d.setFontSize(10);
+    const txt = `This register lists every financial transaction recorded on the CungaCash platform for ${report.meta.company} from ${format(from, 'dd MMM yyyy')} to ${format(to, 'dd MMM yyyy')}. It is intended as an official record for review, reconciliation and audit purposes.`;
+    d.text(d.splitTextToSize(txt, report.pageW - 28), 14, y);
+
+    y = report.beginSection('KPI Dashboard');
+    report.drawKpiCards(y, kpiRow());
+
+    y = report.beginSection('Detailed Transactions');
+    autoTable(d, {
+      startY: y,
+      head: [['Date', 'Type', 'Category', 'Description', 'Qty', 'Unit Price', 'Total', 'Payment']],
+      body: transactions.map((tx) => [
+        format(new Date(tx.transaction_date), 'yyyy-MM-dd'),
+        tx.type, tx.category, tx.description || '-',
+        String(tx.quantity ?? 1),
+        `${fmt(tx.unit_price)} RWF`,
+        `${fmt(tx.total_amount ?? 0)} RWF`,
+        tx.payment_method || '-',
+      ]),
+      headStyles: { fillColor: NAVY, textColor: [255,255,255], fontSize: 8, fontStyle: 'bold' },
+      bodyStyles: { fontSize: 8, textColor: CHARCOAL },
+      alternateRowStyles: { fillColor: LIGHT },
+      styles: { cellPadding: 3, lineWidth: 0.1, lineColor: [220,226,232] },
+      columnStyles: { 4: { halign: 'center' }, 5: { halign: 'right' }, 6: { halign: 'right' } },
+      didParseCell: (data) => {
+        if (data.section === 'body' && data.column.index === 1) {
+          data.cell.styles.textColor = data.cell.raw === 'INCOME' ? EMERALD : EXPENSE;
+          data.cell.styles.fontStyle = 'bold';
+        }
+      },
+      didDrawPage: () => { report.drawInnerHeader('Detailed Transactions'); report.drawWatermark(); },
+      margin: { top: 22, bottom: 18 },
+    });
+
+    closeReport(report);
+    report.save(`CungaCash_${report.meta.reportId}_${fromStr}_${toStr}.pdf`);
+    toast.success('Transactions PDF downloaded');
+  };
+
+  // ---------- Daily Report PDF ----------
+  const exportDailyReportPDF = async () => {
+    if (!summaries || summaries.length === 0) { toast.error('No daily data to export'); return; }
+    const report = await openReport('Daily Activity Statement', 'DA');
+    const d = report.doc;
+
+    let y = report.beginSection('KPI Dashboard');
+    y = report.drawKpiCards(y, kpiRow());
+
+    y = report.beginSection('Charts & Graphs');
+    const recent = summaries.slice(-14).map((s) => ({
+      label: format(new Date(s.summary_date), 'd/M'),
+      income: Number(s.total_income ?? 0),
+      expense: Number(s.total_expense ?? 0),
+    }));
+    d.setTextColor(...NAVY); d.setFont('helvetica', 'bold'); d.setFontSize(10);
+    d.text('Daily Income vs Expense (last 14 days)', 14, y);
+    drawBars(d, 14, y + 2, report.pageW - 28, 60, recent);
+
+    y = report.beginSection('Daily Detail');
+    autoTable(d, {
+      startY: y,
+      head: [['Date', 'Income', 'Expense', 'Net Balance']],
+      body: summaries.map((s) => [
+        format(new Date(s.summary_date), 'EEE, MMM d, yyyy'),
+        `${fmt(s.total_income ?? 0)} RWF`, `${fmt(s.total_expense ?? 0)} RWF`, `${fmt(s.net_balance ?? 0)} RWF`,
+      ]),
+      headStyles: { fillColor: NAVY, textColor: [255,255,255], fontSize: 9, fontStyle: 'bold' },
+      bodyStyles: { fontSize: 9, textColor: CHARCOAL },
+      alternateRowStyles: { fillColor: LIGHT },
+      styles: { cellPadding: 4, lineWidth: 0.1, lineColor: [220,226,232] },
+      columnStyles: {
+        1: { halign: 'right', textColor: EMERALD },
+        2: { halign: 'right', textColor: EXPENSE },
+        3: { halign: 'right', fontStyle: 'bold' },
+      },
+      didDrawPage: () => { report.drawInnerHeader('Daily Detail'); report.drawWatermark(); },
+      margin: { top: 22, bottom: 18 },
+    });
+
+    closeReport(report);
+    report.save(`CungaCash_${report.meta.reportId}_${fromStr}_${toStr}.pdf`);
+    toast.success('Daily report PDF downloaded');
+  };
+
+  // ---------- Savings / Loans data fetches ----------
   const fetchSavingsHistory = async () => {
     const [{ data: accts }, { data: txs }] = await Promise.all([
       supabase.from('savings_accounts').select('*').order('created_at', { ascending: false }),
@@ -504,7 +617,154 @@ export default function ExportPage() {
     return { loans: loans ?? [], ltxs: ltxs ?? [] };
   };
 
-  // ---------- Excel exports ----------
+  // ---------- Savings PDF ----------
+  const exportSavingsPDF = async () => {
+    const { accounts, txs } = await fetchSavingsHistory();
+    if (accounts.length === 0 && txs.length === 0) { toast.error('No savings data in this range'); return; }
+    const report = await openReport('Savings Statement', 'SV');
+    const d = report.doc;
+
+    const totalBalance = accounts.reduce((s, a: any) => s + Number(a.current_balance ?? 0), 0);
+    const deposits = txs.filter((t: any) => t.action === 'DEPOSIT').reduce((s, t: any) => s + Number(t.amount), 0);
+    const withdrawals = txs.filter((t: any) => t.action === 'WITHDRAW').reduce((s, t: any) => s + Number(t.amount), 0);
+
+    let y = report.beginSection('KPI Dashboard');
+    report.drawKpiCards(y, [
+      { label: 'Current Balance', value: `${fmt(totalBalance)} RWF`, sub: `${accounts.length} account${accounts.length !== 1 ? 's' : ''}`, color: EMERALD },
+      { label: 'Deposits', value: `${fmt(deposits)} RWF`, sub: 'Inflows in period', color: EMERALD },
+      { label: 'Withdrawals', value: `${fmt(withdrawals)} RWF`, sub: 'Outflows in period', color: EXPENSE },
+      { label: 'Net Change', value: `${fmt(deposits - withdrawals)} RWF`, sub: deposits - withdrawals >= 0 ? 'Growth' : 'Contraction', color: deposits - withdrawals >= 0 ? EMERALD : EXPENSE },
+    ]);
+
+    if (accounts.length > 0) {
+      y = report.beginSection('Savings Accounts');
+      autoTable(d, {
+        startY: y,
+        head: [['Account', 'Current Balance', 'Goal', 'Progress']],
+        body: accounts.map((a: any) => [
+          a.name,
+          `${fmt(a.current_balance)} RWF`,
+          a.goal_amount > 0 ? `${fmt(a.goal_amount)} RWF` : '—',
+          a.goal_amount > 0 ? `${Math.min(100, ((a.current_balance / a.goal_amount) * 100)).toFixed(1)}%` : '—',
+        ]),
+        headStyles: { fillColor: NAVY, textColor: [255,255,255], fontSize: 9, fontStyle: 'bold' },
+        bodyStyles: { fontSize: 9, textColor: CHARCOAL },
+        alternateRowStyles: { fillColor: LIGHT },
+        styles: { cellPadding: 3, lineWidth: 0.1, lineColor: [220,226,232] },
+        columnStyles: { 1: { halign: 'right' }, 2: { halign: 'right' }, 3: { halign: 'center' } },
+      });
+    }
+
+    if (txs.length > 0) {
+      y = report.beginSection('Transaction History');
+      const acctMap = new Map(accounts.map((a: any) => [a.id, a.name]));
+      autoTable(d, {
+        startY: y,
+        head: [['Date & Time', 'Account', 'Action', 'Amount', 'Receipt #', 'Note']],
+        body: txs.map((t: any) => [
+          format(new Date(t.occurred_at), 'yyyy-MM-dd HH:mm'),
+          acctMap.get(t.account_id) ?? '—',
+          t.action, `${fmt(t.amount)} RWF`, t.receipt_no, t.note ?? '',
+        ]),
+        headStyles: { fillColor: NAVY, textColor: [255,255,255], fontSize: 8, fontStyle: 'bold' },
+        bodyStyles: { fontSize: 7.5, textColor: CHARCOAL },
+        alternateRowStyles: { fillColor: LIGHT },
+        styles: { cellPadding: 2.5, lineWidth: 0.1, lineColor: [220,226,232] },
+        columnStyles: { 3: { halign: 'right' } },
+        didParseCell: (data) => {
+          if (data.section === 'body' && data.column.index === 2) {
+            data.cell.styles.textColor = data.cell.raw === 'DEPOSIT' ? EMERALD : EXPENSE;
+            data.cell.styles.fontStyle = 'bold';
+          }
+        },
+        didDrawPage: () => { report.drawInnerHeader('Transaction History'); report.drawWatermark(); },
+        margin: { top: 22, bottom: 18 },
+      });
+    }
+
+    closeReport(report);
+    report.save(`CungaCash_${report.meta.reportId}_${fromStr}_${toStr}.pdf`);
+    toast.success('Savings PDF downloaded');
+  };
+
+  // ---------- Loans PDF ----------
+  const exportLoansPDF = async () => {
+    const { loans, ltxs } = await fetchLoanHistory();
+    if (loans.length === 0 && ltxs.length === 0) { toast.error('No loan data in this range'); return; }
+    const report = await openReport('Loans & Repayments Statement', 'LN');
+    const d = report.doc;
+
+    const oweMe = loans.filter((l: any) => l.type === 'GIVEN' && l.status === 'PENDING').reduce((s, l: any) => s + Number(l.amount), 0);
+    const iOwe = loans.filter((l: any) => l.type === 'RECEIVED' && l.status === 'PENDING').reduce((s, l: any) => s + Number(l.amount), 0);
+    const repaid = ltxs.filter((t: any) => t.action !== 'ADD').reduce((s, t: any) => s + Number(t.amount), 0);
+
+    let y = report.beginSection('KPI Dashboard');
+    report.drawKpiCards(y, [
+      { label: 'People Owe Me', value: `${fmt(oweMe)} RWF`, sub: 'Outstanding receivables', color: EMERALD },
+      { label: 'I Owe', value: `${fmt(iOwe)} RWF`, sub: 'Outstanding payables', color: EXPENSE },
+      { label: 'Repayments', value: `${fmt(repaid)} RWF`, sub: 'Settled in period', color: EMERALD },
+      { label: 'Active Loans', value: `${loans.length}`, sub: 'Recorded', color: NAVY },
+    ]);
+
+    if (loans.length > 0) {
+      y = report.beginSection('Loan Ledger');
+      autoTable(d, {
+        startY: y,
+        head: [['Date', 'Person', 'Type', 'Outstanding', 'Status', 'Notes']],
+        body: loans.map((l: any) => [
+          format(new Date(l.loan_date), 'yyyy-MM-dd'),
+          l.person_name, l.type, `${fmt(l.amount)} RWF`, l.status, l.description ?? '',
+        ]),
+        headStyles: { fillColor: NAVY, textColor: [255,255,255], fontSize: 9, fontStyle: 'bold' },
+        bodyStyles: { fontSize: 8.5, textColor: CHARCOAL },
+        alternateRowStyles: { fillColor: LIGHT },
+        styles: { cellPadding: 3, lineWidth: 0.1, lineColor: [220,226,232] },
+        columnStyles: { 3: { halign: 'right' } },
+        didParseCell: (dc) => {
+          if (dc.section === 'body' && dc.column.index === 2) {
+            dc.cell.styles.textColor = dc.cell.raw === 'GIVEN' ? EMERALD : EXPENSE;
+            dc.cell.styles.fontStyle = 'bold';
+          }
+          if (dc.section === 'body' && dc.column.index === 4) {
+            dc.cell.styles.textColor = dc.cell.raw === 'PAID' ? EMERALD : MUTED;
+          }
+        },
+      });
+    }
+
+    if (ltxs.length > 0) {
+      y = report.beginSection('Action History');
+      const loanMap = new Map(loans.map((l: any) => [l.id, l.person_name]));
+      autoTable(d, {
+        startY: y,
+        head: [['Date & Time', 'Person', 'Action', 'Amount', 'Receipt #', 'Note']],
+        body: ltxs.map((t: any) => [
+          format(new Date(t.occurred_at), 'yyyy-MM-dd HH:mm'),
+          loanMap.get(t.loan_id) ?? '—',
+          t.action, `${fmt(t.amount)} RWF`, t.receipt_no, t.note ?? '',
+        ]),
+        headStyles: { fillColor: NAVY, textColor: [255,255,255], fontSize: 8, fontStyle: 'bold' },
+        bodyStyles: { fontSize: 7.5, textColor: CHARCOAL },
+        alternateRowStyles: { fillColor: LIGHT },
+        styles: { cellPadding: 2.5, lineWidth: 0.1, lineColor: [220,226,232] },
+        columnStyles: { 3: { halign: 'right' } },
+        didParseCell: (dc) => {
+          if (dc.section === 'body' && dc.column.index === 2) {
+            dc.cell.styles.textColor = dc.cell.raw === 'ADD' ? EXPENSE : EMERALD;
+            dc.cell.styles.fontStyle = 'bold';
+          }
+        },
+        didDrawPage: () => { report.drawInnerHeader('Action History'); report.drawWatermark(); },
+        margin: { top: 22, bottom: 18 },
+      });
+    }
+
+    closeReport(report);
+    report.save(`CungaCash_${report.meta.reportId}_${fromStr}_${toStr}.pdf`);
+    toast.success('Loans PDF downloaded');
+  };
+
+  // ---------- Excel exports (unchanged) ----------
   const exportTransactionsXLSX = async () => {
     if (!transactions || transactions.length === 0) { toast.error('No transactions to export'); return; }
     const profile = await getProfile();
@@ -528,91 +788,6 @@ export default function ExportPage() {
     XLSX.utils.book_append_sheet(wb, ws, 'Transactions');
     XLSX.writeFile(wb, `CungaCash_Transactions_${fromStr}_${toStr}.xlsx`);
     toast.success('Transactions Excel downloaded');
-  };
-
-  const exportSavingsPDF = async () => {
-    const profile = await getProfile();
-    const { accounts, txs } = await fetchSavingsHistory();
-    if (accounts.length === 0 && txs.length === 0) { toast.error('No savings data in this range'); return; }
-
-    const doc = new jsPDF();
-    addHeader(doc, 'Savings History Report', profile);
-
-    const totalBalance = accounts.reduce((s, a: any) => s + Number(a.current_balance ?? 0), 0);
-    const deposits = txs.filter((t: any) => t.action === 'DEPOSIT').reduce((s, t: any) => s + Number(t.amount), 0);
-    const withdrawals = txs.filter((t: any) => t.action === 'WITHDRAW').reduce((s, t: any) => s + Number(t.amount), 0);
-
-    const pageW = doc.internal.pageSize.getWidth();
-    const boxW = (pageW - 42) / 3;
-    const y0 = 50;
-    [
-      { label: 'Current Balance', val: totalBalance, color: PRIMARY, bg: [236, 253, 245] },
-      { label: 'Deposits', val: deposits, color: PRIMARY, bg: [236, 253, 245] },
-      { label: 'Withdrawals', val: withdrawals, color: EXPENSE, bg: [254, 242, 242] },
-    ].forEach((b, i) => {
-      const x = 14 + (boxW + 7) * i;
-      doc.setFillColor(b.bg[0], b.bg[1], b.bg[2]);
-      doc.roundedRect(x, y0, boxW, 26, 3, 3, 'F');
-      doc.setFontSize(8); doc.setTextColor(...MUTED); doc.setFont('helvetica', 'normal');
-      doc.text(b.label, x + boxW / 2, y0 + 9, { align: 'center' });
-      doc.setFontSize(13); doc.setTextColor(b.color[0], b.color[1], b.color[2]); doc.setFont('helvetica', 'bold');
-      doc.text(`${fmt(b.val)} RWF`, x + boxW / 2, y0 + 20, { align: 'center' });
-    });
-
-    let y = 86;
-    if (accounts.length > 0) {
-      doc.setTextColor(...INK); doc.setFontSize(11); doc.setFont('helvetica', 'bold');
-      doc.text('Savings Accounts', 14, y); y += 2;
-      autoTable(doc, {
-        startY: y + 2,
-        head: [['Account', 'Current Balance', 'Goal', 'Progress']],
-        body: accounts.map((a: any) => [
-          a.name,
-          `${fmt(a.current_balance)} RWF`,
-          a.goal_amount > 0 ? `${fmt(a.goal_amount)} RWF` : '—',
-          a.goal_amount > 0 ? `${Math.min(100, ((a.current_balance / a.goal_amount) * 100)).toFixed(1)}%` : '—',
-        ]),
-        headStyles: { fillColor: PRIMARY, fontSize: 8, fontStyle: 'bold' },
-        bodyStyles: { fontSize: 8 },
-        styles: { cellPadding: 3, lineWidth: 0.1 },
-        columnStyles: { 1: { halign: 'right' }, 2: { halign: 'right' }, 3: { halign: 'center' } },
-      });
-      y = (doc as any).lastAutoTable.finalY + 8;
-    }
-
-    if (txs.length > 0) {
-      if (y > 240) { doc.addPage(); y = 20; }
-      const acctMap = new Map(accounts.map((a: any) => [a.id, a.name]));
-      doc.setTextColor(...INK); doc.setFontSize(11); doc.setFont('helvetica', 'bold');
-      doc.text('Transaction History', 14, y);
-      autoTable(doc, {
-        startY: y + 2,
-        head: [['Date', 'Account', 'Action', 'Amount', 'Receipt #', 'Note']],
-        body: txs.map((t: any) => [
-          format(new Date(t.occurred_at), 'MMM d, yyyy HH:mm'),
-          acctMap.get(t.account_id) ?? '—',
-          t.action,
-          `${fmt(t.amount)} RWF`,
-          t.receipt_no,
-          t.note ?? '',
-        ]),
-        headStyles: { fillColor: PRIMARY, fontSize: 8, fontStyle: 'bold' },
-        bodyStyles: { fontSize: 7.5 },
-        alternateRowStyles: { fillColor: [248, 250, 252] },
-        styles: { cellPadding: 2.5, lineWidth: 0.1 },
-        columnStyles: { 3: { halign: 'right' } },
-        didParseCell: (d) => {
-          if (d.section === 'body' && d.column.index === 2) {
-            d.cell.styles.textColor = d.cell.raw === 'DEPOSIT' ? PRIMARY : EXPENSE;
-            d.cell.styles.fontStyle = 'bold';
-          }
-        },
-      });
-    }
-
-    addFooters(doc);
-    doc.save(`CungaCash_Savings_${fromStr}_${toStr}.pdf`);
-    toast.success('Savings PDF downloaded');
   };
 
   const exportSavingsXLSX = async () => {
@@ -641,97 +816,6 @@ export default function ExportPage() {
     XLSX.utils.book_append_sheet(wb, wsT, 'History');
     XLSX.writeFile(wb, `CungaCash_Savings_${fromStr}_${toStr}.xlsx`);
     toast.success('Savings Excel downloaded');
-  };
-
-  const exportLoansPDF = async () => {
-    const profile = await getProfile();
-    const { loans, ltxs } = await fetchLoanHistory();
-    if (loans.length === 0 && ltxs.length === 0) { toast.error('No loan data in this range'); return; }
-    const doc = new jsPDF();
-    addHeader(doc, 'Loans & Repayments Report', profile);
-
-    const oweMe = loans.filter((l: any) => l.type === 'GIVEN' && l.status === 'PENDING').reduce((s, l: any) => s + Number(l.amount), 0);
-    const iOwe = loans.filter((l: any) => l.type === 'RECEIVED' && l.status === 'PENDING').reduce((s, l: any) => s + Number(l.amount), 0);
-    const repaid = ltxs.filter((t: any) => t.action !== 'ADD').reduce((s, t: any) => s + Number(t.amount), 0);
-
-    const pageW = doc.internal.pageSize.getWidth();
-    const boxW = (pageW - 42) / 3;
-    const y0 = 50;
-    [
-      { label: 'People Owe Me', val: oweMe, color: PRIMARY, bg: [236, 253, 245] },
-      { label: 'I Owe', val: iOwe, color: EXPENSE, bg: [254, 242, 242] },
-      { label: 'Repayments (period)', val: repaid, color: PRIMARY, bg: [236, 253, 245] },
-    ].forEach((b, i) => {
-      const x = 14 + (boxW + 7) * i;
-      doc.setFillColor(b.bg[0], b.bg[1], b.bg[2]);
-      doc.roundedRect(x, y0, boxW, 26, 3, 3, 'F');
-      doc.setFontSize(8); doc.setTextColor(...MUTED); doc.setFont('helvetica', 'normal');
-      doc.text(b.label, x + boxW / 2, y0 + 9, { align: 'center' });
-      doc.setFontSize(13); doc.setTextColor(b.color[0], b.color[1], b.color[2]); doc.setFont('helvetica', 'bold');
-      doc.text(`${fmt(b.val)} RWF`, x + boxW / 2, y0 + 20, { align: 'center' });
-    });
-
-    let y = 86;
-    if (loans.length > 0) {
-      doc.setTextColor(...INK); doc.setFontSize(11); doc.setFont('helvetica', 'bold');
-      doc.text('Loans', 14, y);
-      autoTable(doc, {
-        startY: y + 2,
-        head: [['Date', 'Person', 'Type', 'Outstanding', 'Status', 'Notes']],
-        body: loans.map((l: any) => [
-          format(new Date(l.loan_date), 'MMM d, yyyy'),
-          l.person_name, l.type, `${fmt(l.amount)} RWF`, l.status, l.description ?? '',
-        ]),
-        headStyles: { fillColor: PRIMARY, fontSize: 8, fontStyle: 'bold' },
-        bodyStyles: { fontSize: 8 },
-        styles: { cellPadding: 3, lineWidth: 0.1 },
-        columnStyles: { 3: { halign: 'right' } },
-        didParseCell: (d) => {
-          if (d.section === 'body' && d.column.index === 2) {
-            d.cell.styles.textColor = d.cell.raw === 'GIVEN' ? PRIMARY : EXPENSE;
-            d.cell.styles.fontStyle = 'bold';
-          }
-          if (d.section === 'body' && d.column.index === 4) {
-            d.cell.styles.textColor = d.cell.raw === 'PAID' ? PRIMARY : MUTED;
-          }
-        },
-      });
-      y = (doc as any).lastAutoTable.finalY + 8;
-    }
-
-    if (ltxs.length > 0) {
-      if (y > 240) { doc.addPage(); y = 20; }
-      const loanMap = new Map(loans.map((l: any) => [l.id, l.person_name]));
-      doc.setTextColor(...INK); doc.setFontSize(11); doc.setFont('helvetica', 'bold');
-      doc.text('Action History', 14, y);
-      autoTable(doc, {
-        startY: y + 2,
-        head: [['Date', 'Person', 'Action', 'Amount', 'Receipt #', 'Note']],
-        body: ltxs.map((t: any) => [
-          format(new Date(t.occurred_at), 'MMM d, yyyy HH:mm'),
-          loanMap.get(t.loan_id) ?? '—',
-          t.action,
-          `${fmt(t.amount)} RWF`,
-          t.receipt_no,
-          t.note ?? '',
-        ]),
-        headStyles: { fillColor: PRIMARY, fontSize: 8, fontStyle: 'bold' },
-        bodyStyles: { fontSize: 7.5 },
-        alternateRowStyles: { fillColor: [248, 250, 252] },
-        styles: { cellPadding: 2.5, lineWidth: 0.1 },
-        columnStyles: { 3: { halign: 'right' } },
-        didParseCell: (d) => {
-          if (d.section === 'body' && d.column.index === 2) {
-            d.cell.styles.textColor = d.cell.raw === 'ADD' ? EXPENSE : PRIMARY;
-            d.cell.styles.fontStyle = 'bold';
-          }
-        },
-      });
-    }
-
-    addFooters(doc);
-    doc.save(`CungaCash_Loans_${fromStr}_${toStr}.pdf`);
-    toast.success('Loans PDF downloaded');
   };
 
   const exportLoansXLSX = async () => {
@@ -803,13 +887,13 @@ export default function ExportPage() {
         <h2 className="text-sm font-semibold text-muted-foreground mb-2 px-1">Transactions</h2>
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
           <ExportCard icon={FileDown} color="primary" title="Transactions PDF"
-            subtitle={txLoading ? 'Loading...' : `${transactions?.length ?? 0} records`} onClick={exportTransactionsPDF} />
+            subtitle={txLoading ? 'Loading...' : `${transactions?.length ?? 0} records · enterprise format`} onClick={exportTransactionsPDF} />
           <ExportCard icon={FileSpreadsheet} color="primary" title="Transactions Excel"
             subtitle="Spreadsheet (.xlsx)" onClick={exportTransactionsXLSX} />
           <ExportCard icon={FileText} color="accent" title="Daily Report PDF"
             subtitle={`${sumLoading ? '…' : (summaries?.length ?? 0)} days · with chart`} onClick={exportDailyReportPDF} />
-          <ExportCard icon={BarChart3} color="primary" title="Smart Summary"
-            subtitle="Pies + insights" onClick={exportMonthlySummaryPDF} />
+          <ExportCard icon={BarChart3} color="primary" title="Boardroom Report"
+            subtitle="Full 17-section enterprise PDF" onClick={exportMonthlySummaryPDF} />
         </div>
       </div>
 
@@ -817,7 +901,7 @@ export default function ExportPage() {
         <h2 className="text-sm font-semibold text-muted-foreground mb-2 px-1">Savings History</h2>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <ExportCard icon={PiggyBank} color="primary" title="Savings PDF"
-            subtitle="Accounts + history" onClick={exportSavingsPDF} />
+            subtitle="Accounts + history · enterprise" onClick={exportSavingsPDF} />
           <ExportCard icon={FileSpreadsheet} color="primary" title="Savings Excel"
             subtitle="Spreadsheet (.xlsx)" onClick={exportSavingsXLSX} />
         </div>
@@ -827,7 +911,7 @@ export default function ExportPage() {
         <h2 className="text-sm font-semibold text-muted-foreground mb-2 px-1">Loans & Repayments</h2>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <ExportCard icon={HandCoins} color="accent" title="Loans PDF"
-            subtitle="Outstanding + actions" onClick={exportLoansPDF} />
+            subtitle="Ledger + actions · enterprise" onClick={exportLoansPDF} />
           <ExportCard icon={FileSpreadsheet} color="accent" title="Loans Excel"
             subtitle="Spreadsheet (.xlsx)" onClick={exportLoansXLSX} />
         </div>
