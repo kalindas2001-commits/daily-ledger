@@ -25,7 +25,7 @@
     "transactions": "Transactions", "export": "Exporter", "savings": "Épargne",
     "loans": "Prêts", "notes": "Notes", "categories": "Catégories",
     "recurring": "Récurrents", "budgets": "Budgets", "backup": "Sauvegarde",
-    "profile": "Profil", "superAdmin": "Super Admin",
+    "profile": "Profil", "superAdmin": "Super Admin", "assist": "CungaCash Assist",
     "main": "Principal", "manage": "Gérer", "more": "Plus"
   },
   "auth": {

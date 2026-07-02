@@ -25,7 +25,7 @@
     "transactions": "Imikorere", "export": "Sohora", "savings": "Ubwizigame",
     "loans": "Inguzanyo", "notes": "Inyandiko", "categories": "Ibyiciro",
     "recurring": "Bisubirwamo", "budgets": "Ingengo y'imari", "backup": "Bika kopi",
-    "profile": "Umwirondoro", "superAdmin": "Umuyobozi mukuru",
+    "profile": "Umwirondoro", "superAdmin": "Umuyobozi mukuru", "assist": "CungaCash Assist",
     "main": "Ibikuru", "manage": "Gucunga", "more": "Birenzeho"
   },
   "auth": {
