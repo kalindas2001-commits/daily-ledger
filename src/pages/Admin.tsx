@@ -13,7 +13,8 @@ import RoleManagement from '@/components/admin/RoleManagement';
 import AuditLogs from '@/components/admin/AuditLogs';
 import SystemHealth from '@/components/admin/SystemHealth';
 import AdminNotificationsManager from '@/components/AdminNotificationsManager';
-import { Building2, LayoutDashboard, KeyRound, Bell, Users, Shield, ScrollText, Activity } from 'lucide-react';
+import AssistRequestsAdmin from '@/components/admin/AssistRequests';
+import { Building2, LayoutDashboard, KeyRound, Bell, Users, Shield, ScrollText, Activity, Sparkles } from 'lucide-react';
 
 export default function Admin() {
   const { isSuperAdmin, loading } = useAuth();
