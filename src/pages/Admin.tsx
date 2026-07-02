@@ -21,16 +21,22 @@ export default function Admin() {
   const { t } = useTranslation();
   const [pendingResets, setPendingResets] = useState(0);
   const [pendingQuotas, setPendingQuotas] = useState(0);
+  const [pendingAssist, setPendingAssist] = useState(0);
 
   useEffect(() => {
     if (!isSuperAdmin) return;
     let mounted = true;
     const load = async () => {
-      const { data } = await supabase.rpc('super_admin_platform_pulse');
-      if (mounted && data) {
+      const [{ data }, { count }] = await Promise.all([
+        supabase.rpc('super_admin_platform_pulse'),
+        supabase.from('assist_requests').select('*', { count: 'exact', head: true }).eq('status', 'pending'),
+      ]);
+      if (!mounted) return;
+      if (data) {
         setPendingResets(Number((data as any).pending_resets ?? 0));
         setPendingQuotas(Number((data as any).pending_quotas ?? 0));
       }
+      setPendingAssist(count ?? 0);
     };
     load();
     const t = setInterval(load, 30000);
