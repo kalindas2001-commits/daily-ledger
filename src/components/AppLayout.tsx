@@ -6,7 +6,7 @@ import { useTheme } from '@/hooks/useTheme';
 import {
   LayoutDashboard, PlusCircle, CalendarDays, List, LogOut, Menu, FileDown,
   ExternalLink, X, Tag, Repeat, Target, Database, Moon, Sun, HandCoins,
-  StickyNote, Shield, UserCircle2, PiggyBank, Users,
+  StickyNote, Shield, UserCircle2, PiggyBank, Users, Sparkles,
 } from 'lucide-react';
 import OfflineIndicator from './OfflineIndicator';
 import AlertsBell from './AlertsBell';
@@ -23,6 +23,7 @@ const mainNavCfg = [
 ];
 
 const moreNavCfg = [
+  { path: '/assist', key: 'assist', icon: Sparkles },
   { path: '/savings', key: 'savings', icon: PiggyBank },
   { path: '/loans', key: 'loans', icon: HandCoins },
   { path: '/notes', key: 'notes', icon: StickyNote },

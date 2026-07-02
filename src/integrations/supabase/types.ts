@@ -50,6 +50,68 @@ export type Database = {
         }
         Relationships: []
       }
+      assist_requests: {
+        Row: {
+          admin_notes: string | null
+          assigned_to: string | null
+          category_id: string
+          category_name: string
+          created_at: string
+          id: string
+          inputs: Json
+          notes: string | null
+          priority: string
+          service_id: string
+          service_name: string
+          status: string
+          tenant_id: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          admin_notes?: string | null
+          assigned_to?: string | null
+          category_id: string
+          category_name: string
+          created_at?: string
+          id?: string
+          inputs?: Json
+          notes?: string | null
+          priority?: string
+          service_id: string
+          service_name: string
+          status?: string
+          tenant_id?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          admin_notes?: string | null
+          assigned_to?: string | null
+          category_id?: string
+          category_name?: string
+          created_at?: string
+          id?: string
+          inputs?: Json
+          notes?: string | null
+          priority?: string
+          service_id?: string
+          service_name?: string
+          status?: string
+          tenant_id?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "assist_requests_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       audit_logs: {
         Row: {
           action: string

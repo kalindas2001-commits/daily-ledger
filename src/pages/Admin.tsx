@@ -13,23 +13,30 @@ import RoleManagement from '@/components/admin/RoleManagement';
 import AuditLogs from '@/components/admin/AuditLogs';
 import SystemHealth from '@/components/admin/SystemHealth';
 import AdminNotificationsManager from '@/components/AdminNotificationsManager';
-import { Building2, LayoutDashboard, KeyRound, Bell, Users, Shield, ScrollText, Activity } from 'lucide-react';
+import AssistRequestsAdmin from '@/components/admin/AssistRequests';
+import { Building2, LayoutDashboard, KeyRound, Bell, Users, Shield, ScrollText, Activity, Sparkles } from 'lucide-react';
 
 export default function Admin() {
   const { isSuperAdmin, loading } = useAuth();
   const { t } = useTranslation();
   const [pendingResets, setPendingResets] = useState(0);
   const [pendingQuotas, setPendingQuotas] = useState(0);
+  const [pendingAssist, setPendingAssist] = useState(0);
 
   useEffect(() => {
     if (!isSuperAdmin) return;
     let mounted = true;
     const load = async () => {
-      const { data } = await supabase.rpc('super_admin_platform_pulse');
-      if (mounted && data) {
+      const [{ data }, { count }] = await Promise.all([
+        supabase.rpc('super_admin_platform_pulse'),
+        supabase.from('assist_requests').select('*', { count: 'exact', head: true }).eq('status', 'pending'),
+      ]);
+      if (!mounted) return;
+      if (data) {
         setPendingResets(Number((data as any).pending_resets ?? 0));
         setPendingQuotas(Number((data as any).pending_quotas ?? 0));
       }
+      setPendingAssist(count ?? 0);
     };
     load();
     const t = setInterval(load, 30000);
@@ -56,6 +63,10 @@ export default function Admin() {
         </TabsTrigger>
         <TabsTrigger value="audit" className="gap-1.5"><ScrollText className="w-4 h-4" /> {t('admin.auditLogs')}</TabsTrigger>
         <TabsTrigger value="broadcasts" className="gap-1.5"><Bell className="w-4 h-4" /> {t('admin.broadcasts')}</TabsTrigger>
+        <TabsTrigger value="assist" className="gap-1.5">
+          <Sparkles className="w-4 h-4" /> Assist Requests
+          {pendingAssist > 0 && <Badge variant="destructive" className="ml-1 h-5 px-1.5 text-[10px]">{pendingAssist}</Badge>}
+        </TabsTrigger>
       </TabsList>
 
       <TabsContent value="overview"><PlatformOverview /></TabsContent>
@@ -66,6 +77,7 @@ export default function Admin() {
       <TabsContent value="resets"><PasswordResetRequests /></TabsContent>
       <TabsContent value="audit"><AuditLogs /></TabsContent>
       <TabsContent value="broadcasts"><AdminNotificationsManager /></TabsContent>
+      <TabsContent value="assist"><AssistRequestsAdmin /></TabsContent>
     </Tabs>
   );
 }
