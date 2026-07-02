@@ -63,6 +63,10 @@ export default function Admin() {
         </TabsTrigger>
         <TabsTrigger value="audit" className="gap-1.5"><ScrollText className="w-4 h-4" /> {t('admin.auditLogs')}</TabsTrigger>
         <TabsTrigger value="broadcasts" className="gap-1.5"><Bell className="w-4 h-4" /> {t('admin.broadcasts')}</TabsTrigger>
+        <TabsTrigger value="assist" className="gap-1.5">
+          <Sparkles className="w-4 h-4" /> Assist Requests
+          {pendingAssist > 0 && <Badge variant="destructive" className="ml-1 h-5 px-1.5 text-[10px]">{pendingAssist}</Badge>}
+        </TabsTrigger>
       </TabsList>
 
       <TabsContent value="overview"><PlatformOverview /></TabsContent>
@@ -73,6 +77,7 @@ export default function Admin() {
       <TabsContent value="resets"><PasswordResetRequests /></TabsContent>
       <TabsContent value="audit"><AuditLogs /></TabsContent>
       <TabsContent value="broadcasts"><AdminNotificationsManager /></TabsContent>
+      <TabsContent value="assist"><AssistRequestsAdmin /></TabsContent>
     </Tabs>
   );
 }
