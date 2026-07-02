@@ -23,6 +23,7 @@ const mainNavCfg = [
 ];
 
 const moreNavCfg = [
+  { path: '/assist', key: 'assist', icon: Sparkles },
   { path: '/savings', key: 'savings', icon: PiggyBank },
   { path: '/loans', key: 'loans', icon: HandCoins },
   { path: '/notes', key: 'notes', icon: StickyNote },
