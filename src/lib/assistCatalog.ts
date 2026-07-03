@@ -175,3 +175,94 @@ export const findService = (categoryId: string, serviceId: string) => {
   const svc = cat?.services.find(s => s.id === serviceId);
   return { category: cat, service: svc };
 };
+
+// ============ Service Input Schema =============
+export type AssistInputField = {
+  key: string;
+  label: string;
+  type: 'text' | 'number' | 'textarea' | 'select' | 'date' | 'email' | 'tel';
+  required?: boolean;
+  placeholder?: string;
+  options?: string[];
+};
+
+const BASE_INPUTS: AssistInputField[] = [
+  { key: 'contact_name',   label: 'Contact name',        type: 'text',  required: true },
+  { key: 'contact_phone',  label: 'Phone / WhatsApp',    type: 'tel',   required: true },
+  { key: 'contact_email',  label: 'Email',               type: 'email', required: true },
+  { key: 'business_size',  label: 'Business size',       type: 'select', options: ['micro','small','medium','large'] },
+];
+
+const CATEGORY_EXTRAS: Record<string, AssistInputField[]> = {
+  tax: [
+    { key: 'tin_number',     label: 'TIN / tax number',     type: 'text' },
+    { key: 'fiscal_year',    label: 'Fiscal year',          type: 'text', placeholder: 'e.g. 2024' },
+    { key: 'annual_revenue', label: 'Annual revenue (RWF)', type: 'number' },
+  ],
+  accounting: [
+    { key: 'accounting_system', label: 'Accounting system', type: 'text', placeholder: 'e.g. QuickBooks' },
+    { key: 'reporting_period',  label: 'Reporting period',  type: 'text', placeholder: 'e.g. Q3 2024' },
+  ],
+  audit: [
+    { key: 'audit_type',   label: 'Audit type',   type: 'select', options: ['internal','external','compliance','forensic'] },
+    { key: 'period_start', label: 'Period start', type: 'date' },
+    { key: 'period_end',   label: 'Period end',   type: 'date' },
+  ],
+  assets: [
+    { key: 'asset_class', label: 'Asset class',           type: 'text' },
+    { key: 'asset_value', label: 'Estimated value (RWF)', type: 'number' },
+  ],
+  fpa: [
+    { key: 'horizon_months', label: 'Planning horizon (months)', type: 'number' },
+    { key: 'target_kpi',     label: 'Target KPI',                type: 'text' },
+  ],
+  strategy: [
+    { key: 'industry',     label: 'Industry / sector', type: 'text' },
+    { key: 'market_scope', label: 'Market scope',      type: 'select', options: ['local','national','regional','international'] },
+  ],
+  hr: [
+    { key: 'headcount',  label: 'Employee headcount', type: 'number' },
+    { key: 'department', label: 'Department focus',   type: 'text' },
+  ],
+  procurement: [
+    { key: 'category_scope', label: 'Procurement category', type: 'text' },
+    { key: 'annual_spend',   label: 'Annual spend (RWF)',   type: 'number' },
+  ],
+  legal: [
+    { key: 'matter_type',    label: 'Matter type',        type: 'text' },
+    { key: 'urgency_reason', label: 'Reason for urgency', type: 'textarea' },
+  ],
+  erp: [
+    { key: 'current_system', label: 'Current system',  type: 'text' },
+    { key: 'user_count',     label: 'Number of users', type: 'number' },
+  ],
+  banking: [
+    { key: 'bank_name',     label: 'Primary bank',  type: 'text' },
+    { key: 'facility_type', label: 'Facility / need', type: 'text' },
+  ],
+  sales: [
+    { key: 'crm_in_use',    label: 'CRM in use',   type: 'text' },
+    { key: 'monthly_leads', label: 'Monthly leads', type: 'number' },
+  ],
+  inventory: [
+    { key: 'sku_count',       label: 'SKU count',   type: 'number' },
+    { key: 'warehouse_count', label: 'Warehouses',  type: 'number' },
+  ],
+  training: [
+    { key: 'audience_size', label: 'Audience size', type: 'number' },
+    { key: 'topic_focus',   label: 'Topic focus',   type: 'text' },
+  ],
+  executive: [
+    { key: 'strategic_goal', label: 'Strategic goal', type: 'textarea', required: true },
+    { key: 'board_deadline', label: 'Board deadline', type: 'date' },
+  ],
+};
+
+export function getServiceInputs(categoryId: string, _serviceId: string): AssistInputField[] {
+  return [
+    ...BASE_INPUTS,
+    ...(CATEGORY_EXTRAS[categoryId] ?? []),
+    { key: 'preferred_contact', label: 'Preferred contact', type: 'select', options: ['email','phone','whatsapp'] },
+  ];
+}
+
