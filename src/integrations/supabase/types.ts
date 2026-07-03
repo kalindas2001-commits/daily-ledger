@@ -50,13 +50,62 @@ export type Database = {
         }
         Relationships: []
       }
+      assist_deliverables: {
+        Row: {
+          admin_notes: string | null
+          content_type: string | null
+          created_at: string
+          file_name: string
+          id: string
+          kind: string
+          request_id: string
+          size_bytes: number | null
+          storage_path: string
+          uploaded_by: string | null
+        }
+        Insert: {
+          admin_notes?: string | null
+          content_type?: string | null
+          created_at?: string
+          file_name: string
+          id?: string
+          kind?: string
+          request_id: string
+          size_bytes?: number | null
+          storage_path: string
+          uploaded_by?: string | null
+        }
+        Update: {
+          admin_notes?: string | null
+          content_type?: string | null
+          created_at?: string
+          file_name?: string
+          id?: string
+          kind?: string
+          request_id?: string
+          size_bytes?: number | null
+          storage_path?: string
+          uploaded_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "assist_deliverables_request_id_fkey"
+            columns: ["request_id"]
+            isOneToOne: false
+            referencedRelation: "assist_requests"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       assist_requests: {
         Row: {
           admin_notes: string | null
           assigned_to: string | null
           category_id: string
           category_name: string
+          contact_email: string | null
           created_at: string
+          expert_type: string | null
           id: string
           inputs: Json
           notes: string | null
@@ -73,7 +122,9 @@ export type Database = {
           assigned_to?: string | null
           category_id: string
           category_name: string
+          contact_email?: string | null
           created_at?: string
+          expert_type?: string | null
           id?: string
           inputs?: Json
           notes?: string | null
@@ -90,7 +141,9 @@ export type Database = {
           assigned_to?: string | null
           category_id?: string
           category_name?: string
+          contact_email?: string | null
           created_at?: string
+          expert_type?: string | null
           id?: string
           inputs?: Json
           notes?: string | null
@@ -108,6 +161,47 @@ export type Database = {
             columns: ["tenant_id"]
             isOneToOne: false
             referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      assist_status_history: {
+        Row: {
+          admin_notes: string | null
+          changed_by: string | null
+          created_at: string
+          event: string
+          from_status: string | null
+          id: string
+          request_id: string
+          to_status: string
+        }
+        Insert: {
+          admin_notes?: string | null
+          changed_by?: string | null
+          created_at?: string
+          event?: string
+          from_status?: string | null
+          id?: string
+          request_id: string
+          to_status: string
+        }
+        Update: {
+          admin_notes?: string | null
+          changed_by?: string | null
+          created_at?: string
+          event?: string
+          from_status?: string | null
+          id?: string
+          request_id?: string
+          to_status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "assist_status_history_request_id_fkey"
+            columns: ["request_id"]
+            isOneToOne: false
+            referencedRelation: "assist_requests"
             referencedColumns: ["id"]
           },
         ]
@@ -984,6 +1078,7 @@ export type Database = {
           total_savings: number
         }[]
       }
+      assist_expert_for_category: { Args: { _cat: string }; Returns: string }
       get_my_tenant: { Args: never; Returns: string }
       has_role: {
         Args: {
