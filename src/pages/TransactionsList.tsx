@@ -7,10 +7,11 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Textarea } from '@/components/ui/textarea';
-import { Trash2, Search, Pencil } from 'lucide-react';
+import { Trash2, Search, Pencil, Eye } from 'lucide-react';
 import { useTransactions, useDeleteTransaction, useUpdateTransaction, useCategories } from '@/hooks/useTransactions';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
+import TransactionDetailDialog from '@/components/TransactionDetailDialog';
 
 const PAYMENT_METHODS = ['Cash', 'Mobile Money', 'Bank Transfer', 'Card'];
 
@@ -35,6 +36,9 @@ export default function TransactionsList() {
   const [editQuantity, setEditQuantity] = useState(1);
   const [editUnitPrice, setEditUnitPrice] = useState(0);
   const [editPayment, setEditPayment] = useState('Cash');
+
+  // Detail dialog
+  const [detailTx, setDetailTx] = useState<any | null>(null);
 
   const filtered = useMemo(() => {
     if (!transactions) return [];
@@ -145,20 +149,21 @@ export default function TransactionsList() {
           ) : (
             <div className="space-y-2">
               {filtered.map((tx) => (
-                <div key={tx.id} className="flex items-center justify-between p-3 rounded-lg hover:bg-muted transition-colors group">
+                <div key={tx.id} className="flex items-center justify-between p-3 rounded-lg hover:bg-muted transition-colors group cursor-pointer" onClick={() => setDetailTx(tx)}>
                   <div className="flex items-center gap-3 min-w-0">
                     <div className={cn('w-2 h-2 rounded-full shrink-0', tx.type === 'INCOME' ? 'bg-income' : 'bg-expense')} />
                     <div className="min-w-0">
-                      <p className="text-sm font-medium truncate">{tx.category}</p>
+                      <p className="text-sm font-medium truncate">{tx.category}{(tx as any).subcategory && <span className="text-muted-foreground"> · {(tx as any).subcategory}</span>}</p>
                       <p className="text-xs text-muted-foreground">
                         {format(new Date(tx.transaction_date), 'MMM d, yyyy')}
                         {(tx as any).transaction_time && ` · ${format(new Date(`1970-01-01T${String((tx as any).transaction_time)}`), 'h:mm a')}`}
                         {' · '}{tx.payment_method}
+                        {(tx as any).merchant_name && ` · ${(tx as any).merchant_name}`}
                         {tx.description && ` · ${tx.description}`}
                       </p>
                     </div>
                   </div>
-                  <div className="flex items-center gap-2 shrink-0">
+                  <div className="flex items-center gap-2 shrink-0" onClick={e => e.stopPropagation()}>
                     <div className="text-right">
                       <p className={cn('text-sm font-semibold', tx.type === 'INCOME' ? 'text-income' : 'text-expense')}>
                         {tx.type === 'INCOME' ? '+' : '-'}{fmt(tx.total_amount ?? 0)} RWF
@@ -167,6 +172,9 @@ export default function TransactionsList() {
                         <p className="text-xs text-muted-foreground">{tx.quantity} × {fmt(tx.unit_price)}</p>
                       )}
                     </div>
+                    <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setDetailTx(tx)}>
+                      <Eye className="w-4 h-4" />
+                    </Button>
                     <Button variant="ghost" size="icon" className="sm:opacity-0 sm:group-hover:opacity-100 h-8 w-8" onClick={() => openEdit(tx)}>
                       <Pencil className="w-3.5 h-3.5" />
                     </Button>
@@ -180,6 +188,8 @@ export default function TransactionsList() {
           )}
         </CardContent>
       </Card>
+
+      <TransactionDetailDialog open={!!detailTx} onOpenChange={(o) => !o && setDetailTx(null)} tx={detailTx} />
 
       {/* Edit Dialog */}
       <Dialog open={editOpen} onOpenChange={setEditOpen}>
