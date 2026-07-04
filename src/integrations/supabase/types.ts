@@ -14,6 +14,81 @@ export type Database = {
   }
   public: {
     Tables: {
+      accounts: {
+        Row: {
+          account_number: string | null
+          color: string | null
+          created_at: string
+          currency: string
+          current_balance: number
+          icon: string | null
+          id: string
+          is_archived: boolean
+          kind: string
+          name: string
+          tenant_id: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          account_number?: string | null
+          color?: string | null
+          created_at?: string
+          currency?: string
+          current_balance?: number
+          icon?: string | null
+          id?: string
+          is_archived?: boolean
+          kind?: string
+          name: string
+          tenant_id?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          account_number?: string | null
+          color?: string | null
+          created_at?: string
+          currency?: string
+          current_balance?: number
+          icon?: string | null
+          id?: string
+          is_archived?: boolean
+          kind?: string
+          name?: string
+          tenant_id?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      achievement_badges: {
+        Row: {
+          badge_code: string
+          description: string | null
+          earned_at: string
+          id: string
+          title: string
+          user_id: string
+        }
+        Insert: {
+          badge_code: string
+          description?: string | null
+          earned_at?: string
+          id?: string
+          title: string
+          user_id: string
+        }
+        Update: {
+          badge_code?: string
+          description?: string | null
+          earned_at?: string
+          id?: string
+          title?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       alerts: {
         Row: {
           category: string | null
@@ -361,6 +436,105 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      financial_goals: {
+        Row: {
+          category: string | null
+          color: string | null
+          created_at: string
+          current_amount: number
+          icon: string | null
+          id: string
+          name: string
+          notes: string | null
+          status: string
+          target_amount: number
+          target_date: string | null
+          tenant_id: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          category?: string | null
+          color?: string | null
+          created_at?: string
+          current_amount?: number
+          icon?: string | null
+          id?: string
+          name: string
+          notes?: string | null
+          status?: string
+          target_amount: number
+          target_date?: string | null
+          tenant_id?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          category?: string | null
+          color?: string | null
+          created_at?: string
+          current_amount?: number
+          icon?: string | null
+          id?: string
+          name?: string
+          notes?: string | null
+          status?: string
+          target_amount?: number
+          target_date?: string | null
+          tenant_id?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      goal_contributions: {
+        Row: {
+          amount: number
+          contributed_on: string
+          created_at: string
+          goal_id: string
+          id: string
+          note: string | null
+          transaction_id: string | null
+          user_id: string
+        }
+        Insert: {
+          amount: number
+          contributed_on?: string
+          created_at?: string
+          goal_id: string
+          id?: string
+          note?: string | null
+          transaction_id?: string | null
+          user_id: string
+        }
+        Update: {
+          amount?: number
+          contributed_on?: string
+          created_at?: string
+          goal_id?: string
+          id?: string
+          note?: string | null
+          transaction_id?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "goal_contributions_goal_id_fkey"
+            columns: ["goal_id"]
+            isOneToOne: false
+            referencedRelation: "financial_goals"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "goal_contributions_transaction_id_fkey"
+            columns: ["transaction_id"]
+            isOneToOne: false
+            referencedRelation: "transactions"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       loan_transactions: {
         Row: {
@@ -799,6 +973,51 @@ export type Database = {
           },
         ]
       }
+      spending_challenges: {
+        Row: {
+          category: string | null
+          challenge_type: string
+          created_at: string
+          end_date: string
+          id: string
+          name: string
+          progress: number | null
+          start_date: string
+          status: string
+          target_amount: number | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          category?: string | null
+          challenge_type?: string
+          created_at?: string
+          end_date: string
+          id?: string
+          name: string
+          progress?: number | null
+          start_date: string
+          status?: string
+          target_amount?: number | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          category?: string | null
+          challenge_type?: string
+          created_at?: string
+          end_date?: string
+          id?: string
+          name?: string
+          progress?: number | null
+          start_date?: string
+          status?: string
+          target_amount?: number | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       tenant_invites: {
         Row: {
           code: string
@@ -876,47 +1095,160 @@ export type Database = {
         }
         Relationships: []
       }
+      transaction_attachments: {
+        Row: {
+          created_at: string
+          file_name: string
+          id: string
+          kind: string | null
+          mime_type: string | null
+          size_bytes: number | null
+          storage_path: string
+          transaction_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          file_name: string
+          id?: string
+          kind?: string | null
+          mime_type?: string | null
+          size_bytes?: number | null
+          storage_path: string
+          transaction_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          file_name?: string
+          id?: string
+          kind?: string | null
+          mime_type?: string | null
+          size_bytes?: number | null
+          storage_path?: string
+          transaction_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "transaction_attachments_transaction_id_fkey"
+            columns: ["transaction_id"]
+            isOneToOne: false
+            referencedRelation: "transactions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       transactions: {
         Row: {
+          account_id: string | null
           category: string
+          city: string | null
+          country: string | null
           created_at: string | null
+          currency: string
           description: string | null
+          discount: number | null
+          district: string | null
+          exchange_rate: number | null
+          final_amount: number | null
           id: string
+          income_source: string | null
+          life_event: string | null
+          merchant_location: string | null
+          merchant_name: string | null
+          merchant_phone: string | null
+          mood: string | null
+          notes: string | null
+          original_amount: number | null
           payment_method: string | null
+          place_type: string | null
+          purpose: string | null
           quantity: number | null
+          status: string
+          subcategory: string | null
+          tags: string[] | null
+          tax_amount: number | null
           tenant_id: string | null
           total_amount: number | null
           transaction_date: string
+          transaction_fee: number | null
           transaction_time: string
           type: Database["public"]["Enums"]["transaction_type"]
           unit_price: number
           user_id: string
         }
         Insert: {
+          account_id?: string | null
           category: string
+          city?: string | null
+          country?: string | null
           created_at?: string | null
+          currency?: string
           description?: string | null
+          discount?: number | null
+          district?: string | null
+          exchange_rate?: number | null
+          final_amount?: number | null
           id?: string
+          income_source?: string | null
+          life_event?: string | null
+          merchant_location?: string | null
+          merchant_name?: string | null
+          merchant_phone?: string | null
+          mood?: string | null
+          notes?: string | null
+          original_amount?: number | null
           payment_method?: string | null
+          place_type?: string | null
+          purpose?: string | null
           quantity?: number | null
+          status?: string
+          subcategory?: string | null
+          tags?: string[] | null
+          tax_amount?: number | null
           tenant_id?: string | null
           total_amount?: number | null
           transaction_date: string
+          transaction_fee?: number | null
           transaction_time?: string
           type: Database["public"]["Enums"]["transaction_type"]
           unit_price: number
           user_id: string
         }
         Update: {
+          account_id?: string | null
           category?: string
+          city?: string | null
+          country?: string | null
           created_at?: string | null
+          currency?: string
           description?: string | null
+          discount?: number | null
+          district?: string | null
+          exchange_rate?: number | null
+          final_amount?: number | null
           id?: string
+          income_source?: string | null
+          life_event?: string | null
+          merchant_location?: string | null
+          merchant_name?: string | null
+          merchant_phone?: string | null
+          mood?: string | null
+          notes?: string | null
+          original_amount?: number | null
           payment_method?: string | null
+          place_type?: string | null
+          purpose?: string | null
           quantity?: number | null
+          status?: string
+          subcategory?: string | null
+          tags?: string[] | null
+          tax_amount?: number | null
           tenant_id?: string | null
           total_amount?: number | null
           transaction_date?: string
+          transaction_fee?: number | null
           transaction_time?: string
           type?: Database["public"]["Enums"]["transaction_type"]
           unit_price?: number

@@ -18,6 +18,8 @@ import Loans from "./pages/Loans";
 import DailyNotes from "./pages/DailyNotes";
 import Profile from "./pages/Profile";
 import SavingsPage from "./pages/Savings";
+import AccountsPage from "./pages/Accounts";
+import GoalsPage from "./pages/Goals";
 import Admin from "./pages/Admin";
 import TenantDetail from "./pages/admin/TenantDetail";
 import Team from "./pages/Team";
@@ -61,6 +63,8 @@ function AppRoutes() {
         <Route path="/loans" element={<Loans />} />
         <Route path="/notes" element={<DailyNotes />} />
         <Route path="/savings" element={<SavingsPage />} />
+        <Route path="/accounts" element={<AccountsPage />} />
+        <Route path="/goals" element={<GoalsPage />} />
         <Route path="/admin" element={<Admin />} />
         <Route path="/admin/tenants/:id" element={<TenantDetail />} />
         <Route path="/team" element={<Team />} />

@@ -11,6 +11,28 @@ export interface TransactionInsert {
   unit_price: number;
   payment_method: string;
   type: 'INCOME' | 'EXPENSE';
+  // Extended Personal Financial Record fields (all optional)
+  status?: string;
+  currency?: string;
+  transaction_fee?: number;
+  discount?: number;
+  tax_amount?: number;
+  final_amount?: number;
+  account_id?: string;
+  subcategory?: string;
+  merchant_name?: string;
+  merchant_phone?: string;
+  merchant_location?: string;
+  country?: string;
+  city?: string;
+  district?: string;
+  place_type?: string;
+  purpose?: string;
+  income_source?: string;
+  mood?: string;
+  life_event?: string;
+  tags?: string[];
+  notes?: string;
 }
 
 export function useTransactions(dateRange?: { from: string; to: string }) {
