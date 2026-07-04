@@ -11,3 +11,4 @@ Primary #0d9668 green. PWA installable (manifest only, no SW).
 - [Branding](mem://design/branding) — J.LucTRACKER name, JL logo, rossets.rw developer credit
 - [Full feature set](mem://features/full-feature-set) — Categories, edit tx, recurring, budgets, date range, backup, dark mode, RWF currency
 - [Loans & Notes](mem://features/loans-notes) — Loans (given/received, mark as paid), daily journal notes
+- [Personal Financial Records](mem://features/personal-financial-records) — Enriched transaction model, accounts, goals, attachments, one-click report; phases 2-4 pending
