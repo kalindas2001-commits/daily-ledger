@@ -845,7 +845,173 @@ export default function ExportPage() {
   };
 
 
-  return (
+  // ---------- Additional data fetchers ----------
+  const fetchAccounts = async () => {
+    const { data } = await supabase.from('accounts').select('*').eq('is_archived', false).order('created_at');
+    return data ?? [];
+  };
+  const fetchGoals = async () => {
+    const { data } = await supabase.from('financial_goals').select('*').order('created_at', { ascending: false });
+    return data ?? [];
+  };
+  const fetchBudgets = async () => {
+    const { data } = await supabase.from('budgets').select('*').order('category');
+    return data ?? [];
+  };
+  const fetchRecurring = async () => {
+    const { data } = await supabase.from('recurring_transactions').select('*').order('next_run_date');
+    return data ?? [];
+  };
+
+  // ---------- Accounts PDF ----------
+  const exportAccountsPDF = async () => {
+    const accounts = await fetchAccounts();
+    if (!accounts.length) { toast.error('No accounts to export'); return; }
+    const report = await openReport('Accounts Portfolio Statement', 'AC');
+    const d = report.doc;
+    const total = accounts.reduce((s: number, a: any) => s + Number(a.current_balance ?? 0), 0);
+
+    let y = report.beginSection('KPI Dashboard');
+    report.drawKpiCards(y, [
+      { label: 'Portfolio Value', value: `${fmt(total)} RWF`, sub: 'All active accounts', color: EMERALD },
+      { label: 'Accounts', value: `${accounts.length}`, sub: 'Active', color: NAVY },
+      { label: 'Account Types', value: `${new Set(accounts.map((a: any) => a.kind)).size}`, sub: 'Diversification', color: GOLD },
+      { label: 'Currency', value: 'RWF', sub: 'Base currency', color: NAVY },
+    ]);
+
+    y = report.beginSection('Accounts Ledger');
+    autoTable(d, {
+      startY: y,
+      head: [['Account', 'Type', 'Number', 'Current Balance', '% of Portfolio']],
+      body: accounts.map((a: any) => [
+        a.name, a.kind, a.account_number ?? '—',
+        `${fmt(Number(a.current_balance))} RWF`,
+        `${total > 0 ? ((Number(a.current_balance) / total) * 100).toFixed(1) : 0}%`,
+      ]),
+      headStyles: { fillColor: NAVY, textColor: [255,255,255], fontSize: 9, fontStyle: 'bold' },
+      bodyStyles: { fontSize: 9, textColor: CHARCOAL },
+      alternateRowStyles: { fillColor: LIGHT },
+      styles: { cellPadding: 3, lineWidth: 0.1, lineColor: [220,226,232] },
+      columnStyles: { 3: { halign: 'right' }, 4: { halign: 'center' } },
+    });
+
+    closeReport(report);
+    report.save(`CungaCash_${report.meta.reportId}_${fromStr}_${toStr}.pdf`);
+    toast.success('Accounts PDF downloaded');
+  };
+
+  const exportAccountsXLSX = async () => {
+    const accounts = await fetchAccounts();
+    if (!accounts.length) { toast.error('No accounts'); return; }
+    const profile = await getProfile();
+    const wb = XLSX.utils.book_new();
+    const meta = [['CungaCash — Accounts'], ['User', profile.name], ['Generated', format(new Date(), 'yyyy-MM-dd HH:mm')], []];
+    const rows = [['Name', 'Type', 'Number', 'Currency', 'Balance (RWF)'],
+      ...accounts.map((a: any) => [a.name, a.kind, a.account_number ?? '', a.currency, Number(a.current_balance)])];
+    const ws = XLSX.utils.aoa_to_sheet([...meta, ...rows]);
+    ws['!cols'] = [{ wch: 24 }, { wch: 14 }, { wch: 20 }, { wch: 8 }, { wch: 16 }];
+    XLSX.utils.book_append_sheet(wb, ws, 'Accounts');
+    XLSX.writeFile(wb, `CungaCash_Accounts_${fromStr}_${toStr}.xlsx`);
+    toast.success('Accounts Excel downloaded');
+  };
+
+  // ---------- Goals PDF ----------
+  const exportGoalsPDF = async () => {
+    const goals = await fetchGoals();
+    if (!goals.length) { toast.error('No goals to export'); return; }
+    const report = await openReport('Financial Goals Statement', 'GL');
+    const d = report.doc;
+    const totalTarget = goals.reduce((s: number, g: any) => s + Number(g.target_amount ?? 0), 0);
+    const totalCurrent = goals.reduce((s: number, g: any) => s + Number(g.current_amount ?? 0), 0);
+    const completed = goals.filter((g: any) => g.status === 'completed').length;
+
+    let y = report.beginSection('KPI Dashboard');
+    report.drawKpiCards(y, [
+      { label: 'Total Target', value: `${fmt(totalTarget)} RWF`, sub: 'Combined objective', color: NAVY },
+      { label: 'Saved So Far', value: `${fmt(totalCurrent)} RWF`, sub: 'Current progress', color: EMERALD },
+      { label: 'Progress', value: `${totalTarget > 0 ? ((totalCurrent / totalTarget) * 100).toFixed(1) : 0}%`, sub: 'Overall completion', color: GOLD },
+      { label: 'Completed', value: `${completed}/${goals.length}`, sub: 'Goals achieved', color: EMERALD },
+    ]);
+
+    y = report.beginSection('Goals Detail');
+    autoTable(d, {
+      startY: y,
+      head: [['Goal', 'Category', 'Target', 'Current', 'Progress', 'Target Date', 'Status']],
+      body: goals.map((g: any) => [
+        g.name, g.category ?? '—',
+        `${fmt(Number(g.target_amount))} RWF`,
+        `${fmt(Number(g.current_amount))} RWF`,
+        `${g.target_amount > 0 ? ((g.current_amount / g.target_amount) * 100).toFixed(1) : 0}%`,
+        g.target_date ? format(new Date(g.target_date), 'yyyy-MM-dd') : '—',
+        g.status,
+      ]),
+      headStyles: { fillColor: NAVY, textColor: [255,255,255], fontSize: 9, fontStyle: 'bold' },
+      bodyStyles: { fontSize: 8.5, textColor: CHARCOAL },
+      alternateRowStyles: { fillColor: LIGHT },
+      styles: { cellPadding: 3, lineWidth: 0.1, lineColor: [220,226,232] },
+      columnStyles: { 2: { halign: 'right' }, 3: { halign: 'right' }, 4: { halign: 'center' } },
+    });
+
+    closeReport(report);
+    report.save(`CungaCash_${report.meta.reportId}_${fromStr}_${toStr}.pdf`);
+    toast.success('Goals PDF downloaded');
+  };
+
+  const exportGoalsXLSX = async () => {
+    const goals = await fetchGoals();
+    if (!goals.length) { toast.error('No goals'); return; }
+    const wb = XLSX.utils.book_new();
+    const rows = [['Name', 'Category', 'Target (RWF)', 'Current (RWF)', 'Progress %', 'Target Date', 'Status', 'Notes'],
+      ...goals.map((g: any) => [
+        g.name, g.category ?? '', Number(g.target_amount), Number(g.current_amount),
+        g.target_amount > 0 ? Number(((g.current_amount / g.target_amount) * 100).toFixed(2)) : 0,
+        g.target_date ?? '', g.status, g.notes ?? '',
+      ])];
+    const ws = XLSX.utils.aoa_to_sheet(rows);
+    ws['!cols'] = [{ wch: 22 }, { wch: 14 }, { wch: 14 }, { wch: 14 }, { wch: 10 }, { wch: 12 }, { wch: 10 }, { wch: 30 }];
+    XLSX.utils.book_append_sheet(wb, ws, 'Goals');
+    XLSX.writeFile(wb, `CungaCash_Goals_${fromStr}_${toStr}.xlsx`);
+    toast.success('Goals Excel downloaded');
+  };
+
+  // ---------- Budgets + Recurring Excel ----------
+  const exportBudgetsRecurringXLSX = async () => {
+    const [budgets, recurring] = await Promise.all([fetchBudgets(), fetchRecurring()]);
+    if (!budgets.length && !recurring.length) { toast.error('No budgets or recurring items'); return; }
+    const wb = XLSX.utils.book_new();
+    if (budgets.length) {
+      const rows = [['Category', 'Monthly Limit (RWF)', 'Alert Threshold %'],
+        ...budgets.map((b: any) => [b.category, Number(b.monthly_limit), Number(b.alert_threshold ?? 80)])];
+      const ws = XLSX.utils.aoa_to_sheet(rows);
+      ws['!cols'] = [{ wch: 24 }, { wch: 16 }, { wch: 14 }];
+      XLSX.utils.book_append_sheet(wb, ws, 'Budgets');
+    }
+    if (recurring.length) {
+      const rows = [['Description', 'Type', 'Category', 'Amount (RWF)', 'Frequency', 'Next Run', 'Active'],
+        ...recurring.map((r: any) => [
+          r.description ?? '', r.type, r.category,
+          Number(r.quantity ?? 1) * Number(r.unit_price ?? 0),
+          r.frequency, r.next_run_date, r.is_active ? 'Yes' : 'No',
+        ])];
+      const ws = XLSX.utils.aoa_to_sheet(rows);
+      ws['!cols'] = [{ wch: 26 }, { wch: 10 }, { wch: 18 }, { wch: 14 }, { wch: 12 }, { wch: 12 }, { wch: 8 }];
+      XLSX.utils.book_append_sheet(wb, ws, 'Recurring');
+    }
+    XLSX.writeFile(wb, `CungaCash_Budgets_Recurring_${fromStr}_${toStr}.xlsx`);
+    toast.success('Budgets & Recurring downloaded');
+  };
+
+  // ---------- Range presets ----------
+  const applyPreset = (preset: 'today' | '7d' | '30d' | 'mtd' | 'ytd') => {
+    const now = new Date();
+    if (preset === 'today') { setFrom(now); setTo(now); }
+    else if (preset === '7d') { setFrom(subDays(now, 6)); setTo(now); }
+    else if (preset === '30d') { setFrom(subDays(now, 29)); setTo(now); }
+    else if (preset === 'mtd') { setFrom(startOfMonth(now)); setTo(now); }
+    else if (preset === 'ytd') { setFrom(startOfYear(now)); setTo(now); }
+  };
+
+
     <div className="max-w-2xl mx-auto space-y-6">
       <Card>
         <CardHeader>
