@@ -90,18 +90,10 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         </nav>
 
         <div className="p-3 border-t border-sidebar-border space-y-1">
-          <button onClick={toggle}
-            className="flex items-center gap-3 px-3 py-2 rounded-lg text-xs text-sidebar-foreground/60 hover:text-sidebar-foreground hover:bg-sidebar-accent/40 transition-colors w-full">
-            {theme === 'dark' ? <Sun className="w-3.5 h-3.5" /> : <Moon className="w-3.5 h-3.5" />}
-            <span>{theme === 'dark' ? t('common.lightMode') : t('common.darkMode')}</span>
-          </button>
           <a href="https://rossets.rw" target="_blank" rel="noopener noreferrer"
             className="flex items-center gap-3 px-3 py-2 rounded-lg text-xs text-sidebar-foreground/60 hover:text-sidebar-foreground hover:bg-sidebar-accent/40 transition-colors">
             <ExternalLink className="w-3.5 h-3.5" /><span>{t('common.developedBy')} <strong>rossets.rw</strong></span>
           </a>
-          <Button variant="ghost" className="w-full justify-start gap-3 text-sidebar-foreground hover:bg-sidebar-accent hover:text-destructive" onClick={signOut}>
-            <LogOut className="w-4 h-4" />{t("common.signOut")}
-          </Button>
         </div>
       </aside>
 
