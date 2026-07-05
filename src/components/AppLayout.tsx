@@ -37,7 +37,7 @@ const moreNavCfg = [
 ];
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
-  const { signOut, isSuperAdmin, isAdmin } = useAuth();
+  const { isSuperAdmin, isAdmin } = useAuth();
   const { theme, toggle } = useTheme();
   const { t } = useTranslation();
   const location = useLocation();
