@@ -4,7 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { useAuth } from '@/hooks/useAuth';
 import { useTheme } from '@/hooks/useTheme';
 import {
-  LayoutDashboard, PlusCircle, CalendarDays, List, LogOut, Menu, FileDown,
+  LayoutDashboard, PlusCircle, CalendarDays, List, Menu, FileDown,
   ExternalLink, X, Tag, Repeat, Target, Database, Moon, Sun, HandCoins,
   StickyNote, Shield, UserCircle2, PiggyBank, Users, Sparkles, Wallet, Trophy,
 } from 'lucide-react';
@@ -37,7 +37,7 @@ const moreNavCfg = [
 ];
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
-  const { signOut, isSuperAdmin, isAdmin } = useAuth();
+  const { isSuperAdmin, isAdmin } = useAuth();
   const { theme, toggle } = useTheme();
   const { t } = useTranslation();
   const location = useLocation();
@@ -90,18 +90,10 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         </nav>
 
         <div className="p-3 border-t border-sidebar-border space-y-1">
-          <button onClick={toggle}
-            className="flex items-center gap-3 px-3 py-2 rounded-lg text-xs text-sidebar-foreground/60 hover:text-sidebar-foreground hover:bg-sidebar-accent/40 transition-colors w-full">
-            {theme === 'dark' ? <Sun className="w-3.5 h-3.5" /> : <Moon className="w-3.5 h-3.5" />}
-            <span>{theme === 'dark' ? t('common.lightMode') : t('common.darkMode')}</span>
-          </button>
           <a href="https://rossets.rw" target="_blank" rel="noopener noreferrer"
             className="flex items-center gap-3 px-3 py-2 rounded-lg text-xs text-sidebar-foreground/60 hover:text-sidebar-foreground hover:bg-sidebar-accent/40 transition-colors">
             <ExternalLink className="w-3.5 h-3.5" /><span>{t('common.developedBy')} <strong>rossets.rw</strong></span>
           </a>
-          <Button variant="ghost" className="w-full justify-start gap-3 text-sidebar-foreground hover:bg-sidebar-accent hover:text-destructive" onClick={signOut}>
-            <LogOut className="w-4 h-4" />{t("common.signOut")}
-          </Button>
         </div>
       </aside>
 
@@ -109,7 +101,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
       {mobileOpen && (
         <>
           <div className="fixed inset-0 z-40 bg-foreground/30 backdrop-blur-sm lg:hidden" onClick={() => setMobileOpen(false)} />
-          <aside className="fixed inset-y-0 left-0 z-50 w-72 bg-sidebar text-sidebar-foreground shadow-2xl lg:hidden animate-fade-in">
+          <aside className="fixed inset-y-0 left-0 z-50 w-72 bg-sidebar text-sidebar-foreground shadow-2xl lg:hidden">
             <div className="flex items-center justify-between p-5 border-b border-sidebar-border">
               <div className="flex items-center gap-3">
                 <img src="/icon-192.png" alt="CungaCash" className="w-8 h-8 rounded-xl" />
@@ -117,7 +109,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
               </div>
               <button onClick={() => setMobileOpen(false)} className="p-1 text-sidebar-foreground"><X className="w-5 h-5" /></button>
             </div>
-            <nav className="p-3 space-y-0.5 overflow-y-auto max-h-[calc(100dvh-180px)]">
+            <nav className="p-3 space-y-0.5 overflow-y-auto max-h-[calc(100dvh-120px)]">
               <p className="px-3 pt-2 pb-1 text-[10px] font-semibold uppercase tracking-wider text-sidebar-foreground/40">{t('nav.manage')}</p>
               {moreNavWithAdmin.map((item) => {
                 const active = location.pathname === item.path;
@@ -131,19 +123,11 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                 );
               })}
             </nav>
-            <div className="absolute bottom-0 left-0 right-0 p-3 border-t border-sidebar-border space-y-1">
-              <button onClick={toggle}
-                className="flex items-center gap-3 px-3 py-2 rounded-lg text-xs text-sidebar-foreground/60 hover:text-sidebar-foreground transition-colors w-full">
-                {theme === 'dark' ? <Sun className="w-3.5 h-3.5" /> : <Moon className="w-3.5 h-3.5" />}
-                <span>{theme === 'dark' ? t('common.lightMode') : t('common.darkMode')}</span>
-              </button>
+            <div className="absolute bottom-0 left-0 right-0 p-3 border-t border-sidebar-border">
               <a href="https://rossets.rw" target="_blank" rel="noopener noreferrer"
                 className="flex items-center gap-3 px-3 py-2 rounded-lg text-xs text-sidebar-foreground/60 hover:text-sidebar-foreground transition-colors">
                 <ExternalLink className="w-3.5 h-3.5" /><span>{t('common.developedBy')} <strong>rossets.rw</strong></span>
               </a>
-              <Button variant="ghost" className="w-full justify-start gap-3 text-sidebar-foreground hover:text-destructive" onClick={signOut}>
-                <LogOut className="w-4 h-4" />{t("common.signOut")}
-              </Button>
             </div>
           </aside>
         </>
@@ -153,11 +137,19 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
       <main className="flex-1 flex flex-col overflow-hidden">
         <OfflineIndicator />
         <InfoBanner />
-        <header className="sticky top-0 z-30 flex items-center gap-3 px-4 sm:px-6 py-3 bg-background/80 backdrop-blur-md border-b shrink-0">
+        <header className="sticky top-0 z-30 flex items-center gap-2 sm:gap-3 px-4 sm:px-6 py-3 bg-background/80 backdrop-blur-md border-b shrink-0">
           <button className="lg:hidden p-1.5 rounded-lg hover:bg-muted transition-colors" onClick={() => setMobileOpen(true)}>
             <Menu className="w-5 h-5" />
           </button>
           <h1 className="text-base sm:text-lg font-semibold truncate flex-1">{currentLabel}</h1>
+          <button
+            onClick={toggle}
+            aria-label={theme === 'dark' ? t('common.lightMode') : t('common.darkMode')}
+            title={theme === 'dark' ? t('common.lightMode') : t('common.darkMode')}
+            className="p-1.5 rounded-full hover:bg-muted transition-colors text-muted-foreground"
+          >
+            {theme === 'dark' ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
+          </button>
           <LanguageSwitcher />
           <AlertsBell />
           <Link to="/profile" className="p-1.5 rounded-full hover:bg-muted transition-colors" aria-label="Profile">
