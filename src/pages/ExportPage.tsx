@@ -1,10 +1,10 @@
 import { useState, useMemo } from 'react';
-import { format, startOfMonth, endOfMonth, differenceInDays, subDays } from 'date-fns';
+import { format, startOfMonth, endOfMonth, differenceInDays, subDays, startOfYear } from 'date-fns';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { CalendarIcon, FileDown, FileText, BarChart3, PiggyBank, HandCoins, FileSpreadsheet } from 'lucide-react';
+import { CalendarIcon, FileDown, FileText, BarChart3, PiggyBank, HandCoins, FileSpreadsheet, Wallet, Trophy } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useTransactions, useDailySummaries } from '@/hooks/useTransactions';
 import { useAuth } from '@/hooks/useAuth';
