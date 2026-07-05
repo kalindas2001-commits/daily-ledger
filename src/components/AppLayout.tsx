@@ -4,7 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { useAuth } from '@/hooks/useAuth';
 import { useTheme } from '@/hooks/useTheme';
 import {
-  LayoutDashboard, PlusCircle, CalendarDays, List, LogOut, Menu, FileDown,
+  LayoutDashboard, PlusCircle, CalendarDays, List, Menu, FileDown,
   ExternalLink, X, Tag, Repeat, Target, Database, Moon, Sun, HandCoins,
   StickyNote, Shield, UserCircle2, PiggyBank, Users, Sparkles, Wallet, Trophy,
 } from 'lucide-react';
