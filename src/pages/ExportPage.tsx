@@ -1012,19 +1012,26 @@ export default function ExportPage() {
   };
 
 
+  return (
     <div className="max-w-2xl mx-auto space-y-6">
       <Card>
         <CardHeader>
           <CardTitle className="text-base">Select Date Range</CardTitle>
           <CardDescription>Choose the period for your export</CardDescription>
         </CardHeader>
-        <CardContent>
+        <CardContent className="space-y-4">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <DatePicker label="From" date={from} onChange={setFrom} />
             <DatePicker label="To" date={to} onChange={setTo} />
           </div>
+          <div className="flex flex-wrap gap-2">
+            {([['today','Today'],['7d','Last 7 days'],['30d','Last 30 days'],['mtd','Month to date'],['ytd','Year to date']] as const).map(([k, label]) => (
+              <Button key={k} size="sm" variant="outline" onClick={() => applyPreset(k)}>{label}</Button>
+            ))}
+          </div>
         </CardContent>
       </Card>
+
 
       {transactions && (
         <div className="grid grid-cols-3 gap-3">
