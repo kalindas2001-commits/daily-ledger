@@ -1089,11 +1089,36 @@ export default function ExportPage() {
             subtitle="Spreadsheet (.xlsx)" onClick={exportLoansXLSX} />
         </div>
       </div>
+      <div>
+        <h2 className="text-sm font-semibold text-muted-foreground mb-2 px-1">Accounts Portfolio</h2>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <ExportCard icon={Wallet} color="primary" title="Accounts PDF"
+            subtitle="Portfolio ledger · enterprise" onClick={exportAccountsPDF} />
+          <ExportCard icon={FileSpreadsheet} color="primary" title="Accounts Excel"
+            subtitle="Spreadsheet (.xlsx)" onClick={exportAccountsXLSX} />
+        </div>
+      </div>
+
+      <div>
+        <h2 className="text-sm font-semibold text-muted-foreground mb-2 px-1">Financial Goals</h2>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <ExportCard icon={Trophy} color="accent" title="Goals PDF"
+            subtitle="Progress statement · enterprise" onClick={exportGoalsPDF} />
+          <ExportCard icon={FileSpreadsheet} color="accent" title="Goals Excel"
+            subtitle="Spreadsheet (.xlsx)" onClick={exportGoalsXLSX} />
+        </div>
+      </div>
+
+      <div>
+        <h2 className="text-sm font-semibold text-muted-foreground mb-2 px-1">Budgets & Recurring</h2>
+        <div className="grid grid-cols-1 gap-3">
+          <ExportCard icon={FileSpreadsheet} color="primary" title="Budgets & Recurring Excel"
+            subtitle="Two-sheet workbook with plans" onClick={exportBudgetsRecurringXLSX} />
+        </div>
+      </div>
     </div>
   );
 }
-
-function ExportCard({ icon: Icon, color, title, subtitle, onClick }: {
   icon: any; color: 'primary' | 'accent'; title: string; subtitle: string; onClick: () => void;
 }) {
   return (
