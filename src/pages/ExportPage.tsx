@@ -1119,6 +1119,8 @@ export default function ExportPage() {
     </div>
   );
 }
+
+function ExportCard({ icon: Icon, color, title, subtitle, onClick }: {
   icon: any; color: 'primary' | 'accent'; title: string; subtitle: string; onClick: () => void;
 }) {
   return (
