@@ -1008,14 +1008,27 @@ export default function ExportPage() {
   };
 
   // ---------- Range presets ----------
-  const applyPreset = (preset: 'today' | '7d' | '30d' | 'mtd' | 'ytd') => {
+  const applyPreset = (p: 'today' | '7d' | '30d' | 'mtd' | 'ytd') => {
     const now = new Date();
-    if (preset === 'today') { setFrom(now); setTo(now); }
-    else if (preset === '7d') { setFrom(subDays(now, 6)); setTo(now); }
-    else if (preset === '30d') { setFrom(subDays(now, 29)); setTo(now); }
-    else if (preset === 'mtd') { setFrom(startOfMonth(now)); setTo(now); }
-    else if (preset === 'ytd') { setFrom(startOfYear(now)); setTo(now); }
+    if (p === 'today') { setFrom(now); setTo(now); }
+    else if (p === '7d') { setFrom(subDays(now, 6)); setTo(now); }
+    else if (p === '30d') { setFrom(subDays(now, 29)); setTo(now); }
+    else if (p === 'mtd') { setFrom(startOfMonth(now)); setTo(now); }
+    else if (p === 'ytd') { setFrom(startOfYear(now)); setTo(now); }
+    setPreset(p === 'today' ? 'today' : p === '7d' ? 'last-7-days' : p === '30d' ? 'last-30-days' : p === 'mtd' ? 'month-to-date' : 'year-to-date');
   };
+
+  const runExport = async (id: string, fn: () => Promise<void>, label: string) => {
+    setBusy(id);
+    try {
+      await fn();
+    } catch (e: any) {
+      toast.error(`${label} failed: ${e?.message ?? 'Unknown error'}`);
+    } finally {
+      setBusy(null);
+    }
+  };
+
 
 
   return (
