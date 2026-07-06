@@ -10,8 +10,8 @@ export default function LanguageSwitcher() {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger className="p-1.5 rounded-full hover:bg-muted transition-colors flex items-center gap-1" aria-label={t('common.language')}>
-        <Globe className="w-5 h-5 text-muted-foreground" />
-        <span className="text-xs font-medium hidden sm:inline">{current.flag}</span>
+        <Globe className="w-4 h-4 text-muted-foreground" />
+        <span className="text-base leading-none">{current.flag}</span>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-44">
         {SUPPORTED_LANGUAGES.map(lang => (
