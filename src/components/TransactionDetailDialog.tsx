@@ -32,10 +32,19 @@ interface Props {
 export default function TransactionDetailDialog({ open, onOpenChange, tx }: Props) {
   const { data: attachments } = useAttachments(tx?.id);
   const { data: accounts } = useAccounts();
+  const { data: myRequests } = useMyEditRequests(tx?.id);
   const upload = useUploadAttachment();
   const del = useDeleteAttachment();
+  const createEditRequest = useCreateEditRequest();
+
+  const [editOpen, setEditOpen] = useState(false);
+  const [editForm, setEditForm] = useState<Record<string, string>>({});
+  const [editReason, setEditReason] = useState('');
+  const [confirmSubmit, setConfirmSubmit] = useState(false);
 
   if (!tx) return null;
+
+  const pendingRequest = myRequests?.find(r => r.status === 'pending');
 
   const account = accounts?.find(a => a.id === tx.account_id);
   const dow = tx.transaction_date ? format(new Date(tx.transaction_date), 'EEEE') : '';
