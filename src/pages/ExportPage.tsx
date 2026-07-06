@@ -35,9 +35,15 @@ export default function ExportPage() {
   const { info: tenant } = useMyTenant();
   const [from, setFrom] = useState<Date>(startOfMonth(new Date()));
   const [to, setTo] = useState<Date>(endOfMonth(new Date()));
+  const [preset, setPreset] = useState<string>('mtd');
+  const [busy, setBusy] = useState<string | null>(null);
 
   const fromStr = format(from, 'yyyy-MM-dd');
   const toStr = format(to, 'yyyy-MM-dd');
+
+  // e.g. "last-7-days_2026-06-29_to_2026-07-06" or "custom_..._to_..."
+  const rangeSlug = () => `${preset || 'custom'}_${fromStr}_to_${toStr}`;
+  const outName = (kind: string, ext: 'pdf' | 'xlsx') => `cungacash-${kind}_${rangeSlug()}.${ext}`;
 
   const { data: transactions, isLoading: txLoading } = useTransactions({ from: fromStr, to: toStr });
   const { data: summaries, isLoading: sumLoading } = useDailySummaries(fromStr, toStr);
