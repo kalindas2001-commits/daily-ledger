@@ -6,7 +6,7 @@ import { useTheme } from '@/hooks/useTheme';
 import {
   LayoutDashboard, PlusCircle, CalendarDays, List, Menu, FileDown,
   ExternalLink, X, Tag, Repeat, Target, Database, Moon, Sun, HandCoins,
-  StickyNote, Shield, UserCircle2, PiggyBank, Users, Sparkles, Wallet, Trophy,
+  StickyNote, Shield, UserCircle2, PiggyBank, Users, LifeBuoy, Wallet, Trophy,
 } from 'lucide-react';
 import OfflineIndicator from './OfflineIndicator';
 import AlertsBell from './AlertsBell';
@@ -25,7 +25,6 @@ const mainNavCfg = [
 const moreNavCfg = [
   { path: '/accounts', key: 'accounts', icon: Wallet, fallback: 'Accounts' },
   { path: '/goals', key: 'goals', icon: Trophy, fallback: 'Goals' },
-  { path: '/assist', key: 'assist', icon: Sparkles },
   { path: '/savings', key: 'savings', icon: PiggyBank },
   { path: '/loans', key: 'loans', icon: HandCoins },
   { path: '/notes', key: 'notes', icon: StickyNote },
@@ -34,6 +33,10 @@ const moreNavCfg = [
   { path: '/budgets', key: 'budgets', icon: Target },
   { path: '/backup', key: 'backup', icon: Database },
   { path: '/profile', key: 'profile', icon: UserCircle2 },
+];
+
+const assistanceNavCfg = [
+  { path: '/assist', key: 'assist', icon: LifeBuoy, fallback: 'CungaCash Assist' },
 ];
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
@@ -45,11 +48,12 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
 
   const mainNav = mainNavCfg.map(i => ({ ...i, label: t(`nav.${i.key}`) }));
   const moreNav = moreNavCfg.map(i => ({ ...i, label: (i as any).fallback ? ((t as any)(`nav.${i.key}`, { defaultValue: (i as any).fallback })) : t(`nav.${i.key}`) }));
+  const assistanceNav = assistanceNavCfg.map(i => ({ ...i, label: (i as any).fallback ? ((t as any)(`nav.${i.key}`, { defaultValue: (i as any).fallback })) : t(`nav.${i.key}`) }));
   const extras: any[] = [];
   if (isAdmin && !isSuperAdmin) extras.push({ path: '/team', key: 'team', label: 'Team', icon: Users });
   if (isSuperAdmin) extras.push({ path: '/admin', key: 'superAdmin', label: t('nav.superAdmin'), icon: Shield });
   const moreNavWithAdmin = [...moreNav, ...extras];
-  const allNav = [...mainNav, ...moreNavWithAdmin];
+  const allNav = [...mainNav, ...moreNavWithAdmin, ...assistanceNav];
   const currentLabel = allNav.find((i) => i.path === location.pathname)?.label ?? 'CungaCash';
 
   return (
@@ -87,6 +91,19 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
               </Link>
             );
           })}
+
+          <p className="px-3 pt-4 pb-1 text-[10px] font-semibold uppercase tracking-wider text-sidebar-foreground/40">{(t as any)('nav.assistance', { defaultValue: 'Assistance' })}</p>
+          {assistanceNav.map((item) => {
+            const active = location.pathname === item.path;
+            return (
+              <Link key={item.path} to={item.path}
+                className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-150 ${
+                  active ? 'bg-sidebar-accent text-sidebar-primary shadow-sm' : 'text-sidebar-foreground hover:bg-sidebar-accent/60 hover:text-sidebar-accent-foreground'
+                }`}>
+                <item.icon className="w-[18px] h-[18px] text-primary" />{item.label}
+              </Link>
+            );
+          })}
         </nav>
 
         <div className="p-3 border-t border-sidebar-border space-y-1">
@@ -119,6 +136,18 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                       active ? 'bg-sidebar-accent text-sidebar-primary' : 'text-sidebar-foreground hover:bg-sidebar-accent/60'
                     }`}>
                     <item.icon className="w-5 h-5" />{item.label}
+                  </Link>
+                );
+              })}
+              <p className="px-3 pt-4 pb-1 text-[10px] font-semibold uppercase tracking-wider text-sidebar-foreground/40">{(t as any)('nav.assistance', { defaultValue: 'Assistance' })}</p>
+              {assistanceNav.map((item) => {
+                const active = location.pathname === item.path;
+                return (
+                  <Link key={item.path} to={item.path} onClick={() => setMobileOpen(false)}
+                    className={`flex items-center gap-3 px-3 py-3 rounded-lg text-sm font-medium transition-colors ${
+                      active ? 'bg-sidebar-accent text-sidebar-primary' : 'text-sidebar-foreground hover:bg-sidebar-accent/60'
+                    }`}>
+                    <item.icon className="w-5 h-5 text-primary" />{item.label}
                   </Link>
                 );
               })}

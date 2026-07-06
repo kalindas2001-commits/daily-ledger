@@ -1,17 +1,25 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { format } from 'date-fns';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { Card, CardContent } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { Label } from '@/components/ui/label';
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { toast } from 'sonner';
 import {
   Wallet, MapPin, Store, Tag as TagIcon, HeartPulse, CalendarClock, Receipt, Paperclip,
-  FileText, Download, Trash2, CheckCircle2, Upload, Sparkles, Copy,
+  FileText, Download, Trash2, CheckCircle2, Upload, Sparkles, Copy, PencilLine, Clock,
 } from 'lucide-react';
 import { useAttachments, useUploadAttachment, useDeleteAttachment, getSignedUrl } from '@/hooks/useAttachments';
 import { useAccounts } from '@/hooks/useAccounts';
+import { useCreateEditRequest, useMyEditRequests } from '@/hooks/useEditRequests';
 
 const fmt = (n: number) => Number(n ?? 0).toLocaleString('en-RW', { minimumFractionDigits: 0 });
 
@@ -24,10 +32,19 @@ interface Props {
 export default function TransactionDetailDialog({ open, onOpenChange, tx }: Props) {
   const { data: attachments } = useAttachments(tx?.id);
   const { data: accounts } = useAccounts();
+  const { data: myRequests } = useMyEditRequests(tx?.id);
   const upload = useUploadAttachment();
   const del = useDeleteAttachment();
+  const createEditRequest = useCreateEditRequest();
+
+  const [editOpen, setEditOpen] = useState(false);
+  const [editForm, setEditForm] = useState<Record<string, string>>({});
+  const [editReason, setEditReason] = useState('');
+  const [confirmSubmit, setConfirmSubmit] = useState(false);
 
   if (!tx) return null;
+
+  const pendingRequest = myRequests?.find(r => r.status === 'pending');
 
   const account = accounts?.find(a => a.id === tx.account_id);
   const dow = tx.transaction_date ? format(new Date(tx.transaction_date), 'EEEE') : '';
@@ -215,10 +232,98 @@ export default function TransactionDetailDialog({ open, onOpenChange, tx }: Prop
           </ol>
         </div>
 
-        <div className="flex gap-2 pt-2">
+        {pendingRequest && (
+          <>
+            <Separator />
+            <div className="rounded-lg border border-primary/40 bg-primary/5 p-3 text-sm">
+              <p className="font-medium flex items-center gap-1.5"><Clock className="w-4 h-4 text-primary" /> Edit request pending admin review</p>
+              <p className="text-xs text-muted-foreground mt-1">Submitted {format(new Date(pendingRequest.created_at), 'PPp')}. You cannot submit another until this one is reviewed.</p>
+            </div>
+          </>
+        )}
+
+        <div className="flex gap-2 pt-2 flex-wrap">
           <Button onClick={generateReport} className="flex-1"><FileText className="w-4 h-4 mr-2" /> Generate Report</Button>
+          <Button
+            variant="outline"
+            onClick={() => {
+              setEditForm({
+                category: tx.category ?? '',
+                description: tx.description ?? '',
+                unit_price: String(tx.unit_price ?? ''),
+                quantity: String(tx.quantity ?? ''),
+                transaction_date: tx.transaction_date ?? '',
+                notes: tx.notes ?? '',
+              });
+              setEditReason('');
+              setEditOpen(true);
+            }}
+            disabled={!!pendingRequest}
+            title={pendingRequest ? 'Pending request awaiting review' : 'Request an admin-approved edit'}
+          >
+            <PencilLine className="w-4 h-4 mr-2" /> Request edit
+          </Button>
           <Button variant="outline" onClick={() => onOpenChange(false)}>Close</Button>
         </div>
+
+        {/* Edit-request dialog */}
+        <Dialog open={editOpen} onOpenChange={setEditOpen}>
+          <DialogContent className="max-w-lg">
+            <DialogHeader><DialogTitle>Request an edit</DialogTitle></DialogHeader>
+            <p className="text-xs text-muted-foreground -mt-2">
+              Your admin must approve changes to a completed transaction. Only fill the fields you want to change.
+            </p>
+            <div className="space-y-3">
+              <div className="grid grid-cols-2 gap-2">
+                <div><Label className="text-xs">Date</Label><Input type="date" value={editForm.transaction_date ?? ''} onChange={e => setEditForm(f => ({ ...f, transaction_date: e.target.value }))} /></div>
+                <div><Label className="text-xs">Category</Label><Input value={editForm.category ?? ''} onChange={e => setEditForm(f => ({ ...f, category: e.target.value }))} /></div>
+                <div><Label className="text-xs">Quantity</Label><Input type="number" value={editForm.quantity ?? ''} onChange={e => setEditForm(f => ({ ...f, quantity: e.target.value }))} /></div>
+                <div><Label className="text-xs">Unit price (RWF)</Label><Input type="number" value={editForm.unit_price ?? ''} onChange={e => setEditForm(f => ({ ...f, unit_price: e.target.value }))} /></div>
+              </div>
+              <div><Label className="text-xs">Description</Label><Input value={editForm.description ?? ''} onChange={e => setEditForm(f => ({ ...f, description: e.target.value }))} /></div>
+              <div><Label className="text-xs">Notes</Label><Textarea rows={2} value={editForm.notes ?? ''} onChange={e => setEditForm(f => ({ ...f, notes: e.target.value }))} /></div>
+              <div><Label className="text-xs">Reason for this edit *</Label><Textarea rows={2} value={editReason} onChange={e => setEditReason(e.target.value)} placeholder="Why does this need to change?" /></div>
+            </div>
+            <div className="flex justify-end gap-2 pt-2">
+              <Button variant="outline" onClick={() => setEditOpen(false)}>Cancel</Button>
+              <Button onClick={() => setConfirmSubmit(true)} disabled={!editReason.trim()}>Submit request</Button>
+            </div>
+          </DialogContent>
+        </Dialog>
+
+        <AlertDialog open={confirmSubmit} onOpenChange={setConfirmSubmit}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Submit edit request?</AlertDialogTitle>
+              <AlertDialogDescription>
+                Your admin will review the proposed changes. The transaction will not update until approved.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancel</AlertDialogCancel>
+              <AlertDialogAction onClick={async () => {
+                // Build diff — only changed fields
+                const changes: Record<string, any> = {};
+                const cmpKeys: (keyof typeof editForm)[] = ['category', 'description', 'unit_price', 'quantity', 'transaction_date', 'notes'];
+                for (const k of cmpKeys) {
+                  const v = editForm[k];
+                  if (v === undefined || v === null) continue;
+                  const trimmed = String(v).trim();
+                  const original = tx[k] ?? '';
+                  if (String(original) !== trimmed && trimmed !== '') {
+                    changes[k] = trimmed;
+                  }
+                }
+                if (Object.keys(changes).length === 0) { toast.error('No changes to request'); setConfirmSubmit(false); return; }
+                try {
+                  await createEditRequest.mutateAsync({ transaction_id: tx.id, requested_changes: changes, reason: editReason });
+                  toast.success('Edit request sent for admin approval');
+                  setConfirmSubmit(false); setEditOpen(false);
+                } catch (e: any) { toast.error(e.message); }
+              }}>Submit</AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </DialogContent>
     </Dialog>
   );

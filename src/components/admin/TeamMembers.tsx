@@ -9,8 +9,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { supabase } from '@/integrations/supabase/client';
 import { useMyTenant } from '@/hooks/useTenant';
 import { toast } from 'sonner';
-import { UserPlus, KeyRound, Copy, Ban, RefreshCw, Users, AlertCircle } from 'lucide-react';
+import { UserPlus, KeyRound, Copy, Ban, RefreshCw, Users, AlertCircle, Eye, TrendingUp, TrendingDown } from 'lucide-react';
 import { format } from 'date-fns';
+import UserTransactionsDrawer from '@/components/admin/UserTransactionsDrawer';
 
 interface Invite {
   id: string; code: string; max_uses: number; uses: number;
@@ -20,6 +21,7 @@ interface Invite {
 interface Member {
   id: string; email: string; full_name: string; is_admin: boolean;
   is_disabled: boolean; created_at: string;
+  tx_count?: number; total_income?: number; total_expense?: number;
 }
 
 export default function TeamMembers() {
@@ -43,6 +45,10 @@ export default function TeamMembers() {
   const [invHours, setInvHours] = useState(168);
   const [invNote, setInvNote] = useState('');
   const [invLoading, setInvLoading] = useState(false);
+
+  // Transaction viewer
+  const [viewer, setViewer] = useState<{ userId: string | null; name?: string } | null>(null);
+
 
   const load = async () => {
     setLoading(true);
@@ -234,25 +240,47 @@ export default function TeamMembers() {
           {loading ? <p className="text-muted-foreground text-sm">Loading…</p> :
            members.length === 0 ? <p className="text-muted-foreground text-sm">No members.</p> : (
             <div className="space-y-2">
-              {members.map(m => (
-                <div key={m.id} className="flex items-center justify-between gap-2 p-2.5 rounded-lg border bg-card">
-                  <div className="min-w-0">
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <span className="font-medium text-sm truncate">{m.full_name || m.email}</span>
-                      {m.is_admin && <Badge className="text-[10px]">Admin</Badge>}
-                      {m.is_disabled && <Badge variant="destructive" className="text-[10px]">Disabled</Badge>}
+              {members.map(m => {
+                const fmt = (n: any) => Number(n ?? 0).toLocaleString('en-RW');
+                return (
+                  <div key={m.id} className="p-3 rounded-lg border bg-card">
+                    <div className="flex items-center justify-between gap-2 flex-wrap">
+                      <div className="min-w-0">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className="font-medium text-sm truncate">{m.full_name || m.email}</span>
+                          {m.is_admin && <Badge className="text-[10px]">Admin</Badge>}
+                          {m.is_disabled && <Badge variant="destructive" className="text-[10px]">Disabled</Badge>}
+                        </div>
+                        <div className="text-[11px] text-muted-foreground truncate">{m.email}</div>
+                      </div>
+                      <div className="flex gap-1.5">
+                        <Button size="sm" variant="outline" onClick={() => setViewer({ userId: m.id, name: m.full_name || m.email })}>
+                          <Eye className="w-3.5 h-3.5 mr-1" /> View
+                        </Button>
+                        <Button size="sm" variant="outline" onClick={() => toggleDisable(m)}>
+                          {m.is_disabled ? 'Enable' : 'Disable'}
+                        </Button>
+                      </div>
                     </div>
-                    <div className="text-[11px] text-muted-foreground truncate">{m.email}</div>
+                    <div className="flex gap-3 mt-2 text-[11px] text-muted-foreground">
+                      <span className="flex items-center gap-1"><TrendingUp className="w-3 h-3 text-income" /> {fmt(m.total_income)} RWF</span>
+                      <span className="flex items-center gap-1"><TrendingDown className="w-3 h-3 text-expense" /> {fmt(m.total_expense)} RWF</span>
+                      <span>· {m.tx_count ?? 0} tx</span>
+                    </div>
                   </div>
-                  <Button size="sm" variant="outline" onClick={() => toggleDisable(m)}>
-                    {m.is_disabled ? 'Enable' : 'Disable'}
-                  </Button>
-                </div>
-              ))}
+                );
+              })}
             </div>
           )}
         </CardContent>
       </Card>
+
+      <UserTransactionsDrawer
+        open={!!viewer}
+        onOpenChange={(o) => !o && setViewer(null)}
+        userId={viewer?.userId ?? null}
+        userName={viewer?.name}
+      />
     </div>
   );
 }

@@ -35,9 +35,15 @@ export default function ExportPage() {
   const { info: tenant } = useMyTenant();
   const [from, setFrom] = useState<Date>(startOfMonth(new Date()));
   const [to, setTo] = useState<Date>(endOfMonth(new Date()));
+  const [preset, setPreset] = useState<string>('mtd');
+  const [busy, setBusy] = useState<string | null>(null);
 
   const fromStr = format(from, 'yyyy-MM-dd');
   const toStr = format(to, 'yyyy-MM-dd');
+
+  // e.g. "last-7-days_2026-06-29_to_2026-07-06" or "custom_..._to_..."
+  const rangeSlug = () => `${preset || 'custom'}_${fromStr}_to_${toStr}`;
+  const outName = (kind: string, ext: 'pdf' | 'xlsx') => `cungacash-${kind}_${rangeSlug()}.${ext}`;
 
   const { data: transactions, isLoading: txLoading } = useTransactions({ from: fromStr, to: toStr });
   const { data: summaries, isLoading: sumLoading } = useDailySummaries(fromStr, toStr);
@@ -499,7 +505,7 @@ export default function ExportPage() {
 
     // 13-15. Notes, Approval, QR verification, 17. Metadata
     closeReport(report);
-    report.save(`CungaCash_${report.meta.reportId}_${fromStr}_${toStr}.pdf`);
+    report.save(outName(`${report.meta.reportId.toLowerCase()}`, "pdf"));
     toast.success('Boardroom-quality summary downloaded');
   };
 
@@ -545,7 +551,7 @@ export default function ExportPage() {
     });
 
     closeReport(report);
-    report.save(`CungaCash_${report.meta.reportId}_${fromStr}_${toStr}.pdf`);
+    report.save(outName(`${report.meta.reportId.toLowerCase()}`, "pdf"));
     toast.success('Transactions PDF downloaded');
   };
 
@@ -590,7 +596,7 @@ export default function ExportPage() {
     });
 
     closeReport(report);
-    report.save(`CungaCash_${report.meta.reportId}_${fromStr}_${toStr}.pdf`);
+    report.save(outName(`${report.meta.reportId.toLowerCase()}`, "pdf"));
     toast.success('Daily report PDF downloaded');
   };
 
@@ -683,7 +689,7 @@ export default function ExportPage() {
     }
 
     closeReport(report);
-    report.save(`CungaCash_${report.meta.reportId}_${fromStr}_${toStr}.pdf`);
+    report.save(outName(`${report.meta.reportId.toLowerCase()}`, "pdf"));
     toast.success('Savings PDF downloaded');
   };
 
@@ -760,7 +766,7 @@ export default function ExportPage() {
     }
 
     closeReport(report);
-    report.save(`CungaCash_${report.meta.reportId}_${fromStr}_${toStr}.pdf`);
+    report.save(outName(`${report.meta.reportId.toLowerCase()}`, "pdf"));
     toast.success('Loans PDF downloaded');
   };
 
@@ -786,7 +792,7 @@ export default function ExportPage() {
     const ws = XLSX.utils.aoa_to_sheet([...meta, ...rows]);
     ws['!cols'] = [{ wch: 14 }, { wch: 10 }, { wch: 20 }, { wch: 30 }, { wch: 8 }, { wch: 14 }, { wch: 14 }, { wch: 14 }];
     XLSX.utils.book_append_sheet(wb, ws, 'Transactions');
-    XLSX.writeFile(wb, `CungaCash_Transactions_${fromStr}_${toStr}.xlsx`);
+    XLSX.writeFile(wb, outName("transactions", "xlsx"));
     toast.success('Transactions Excel downloaded');
   };
 
@@ -814,7 +820,7 @@ export default function ExportPage() {
     wsT['!cols'] = [{ wch: 18 }, { wch: 24 }, { wch: 12 }, { wch: 14 }, { wch: 24 }, { wch: 30 }];
     XLSX.utils.book_append_sheet(wb, wsA, 'Accounts');
     XLSX.utils.book_append_sheet(wb, wsT, 'History');
-    XLSX.writeFile(wb, `CungaCash_Savings_${fromStr}_${toStr}.xlsx`);
+    XLSX.writeFile(wb, outName("savings", "xlsx"));
     toast.success('Savings Excel downloaded');
   };
 
@@ -840,7 +846,7 @@ export default function ExportPage() {
     wsT['!cols'] = [{ wch: 18 }, { wch: 22 }, { wch: 12 }, { wch: 14 }, { wch: 24 }, { wch: 30 }];
     XLSX.utils.book_append_sheet(wb, wsL, 'Loans');
     XLSX.utils.book_append_sheet(wb, wsT, 'Action History');
-    XLSX.writeFile(wb, `CungaCash_Loans_${fromStr}_${toStr}.xlsx`);
+    XLSX.writeFile(wb, outName("loans", "xlsx"));
     toast.success('Loans Excel downloaded');
   };
 
@@ -896,7 +902,7 @@ export default function ExportPage() {
     });
 
     closeReport(report);
-    report.save(`CungaCash_${report.meta.reportId}_${fromStr}_${toStr}.pdf`);
+    report.save(outName(`${report.meta.reportId.toLowerCase()}`, "pdf"));
     toast.success('Accounts PDF downloaded');
   };
 
@@ -911,7 +917,7 @@ export default function ExportPage() {
     const ws = XLSX.utils.aoa_to_sheet([...meta, ...rows]);
     ws['!cols'] = [{ wch: 24 }, { wch: 14 }, { wch: 20 }, { wch: 8 }, { wch: 16 }];
     XLSX.utils.book_append_sheet(wb, ws, 'Accounts');
-    XLSX.writeFile(wb, `CungaCash_Accounts_${fromStr}_${toStr}.xlsx`);
+    XLSX.writeFile(wb, outName("accounts", "xlsx"));
     toast.success('Accounts Excel downloaded');
   };
 
@@ -953,7 +959,7 @@ export default function ExportPage() {
     });
 
     closeReport(report);
-    report.save(`CungaCash_${report.meta.reportId}_${fromStr}_${toStr}.pdf`);
+    report.save(outName(`${report.meta.reportId.toLowerCase()}`, "pdf"));
     toast.success('Goals PDF downloaded');
   };
 
@@ -970,7 +976,7 @@ export default function ExportPage() {
     const ws = XLSX.utils.aoa_to_sheet(rows);
     ws['!cols'] = [{ wch: 22 }, { wch: 14 }, { wch: 14 }, { wch: 14 }, { wch: 10 }, { wch: 12 }, { wch: 10 }, { wch: 30 }];
     XLSX.utils.book_append_sheet(wb, ws, 'Goals');
-    XLSX.writeFile(wb, `CungaCash_Goals_${fromStr}_${toStr}.xlsx`);
+    XLSX.writeFile(wb, outName("goals", "xlsx"));
     toast.success('Goals Excel downloaded');
   };
 
@@ -997,19 +1003,32 @@ export default function ExportPage() {
       ws['!cols'] = [{ wch: 26 }, { wch: 10 }, { wch: 18 }, { wch: 14 }, { wch: 12 }, { wch: 12 }, { wch: 8 }];
       XLSX.utils.book_append_sheet(wb, ws, 'Recurring');
     }
-    XLSX.writeFile(wb, `CungaCash_Budgets_Recurring_${fromStr}_${toStr}.xlsx`);
+    XLSX.writeFile(wb, outName("budgets-recurring", "xlsx"));
     toast.success('Budgets & Recurring downloaded');
   };
 
   // ---------- Range presets ----------
-  const applyPreset = (preset: 'today' | '7d' | '30d' | 'mtd' | 'ytd') => {
+  const applyPreset = (p: 'today' | '7d' | '30d' | 'mtd' | 'ytd') => {
     const now = new Date();
-    if (preset === 'today') { setFrom(now); setTo(now); }
-    else if (preset === '7d') { setFrom(subDays(now, 6)); setTo(now); }
-    else if (preset === '30d') { setFrom(subDays(now, 29)); setTo(now); }
-    else if (preset === 'mtd') { setFrom(startOfMonth(now)); setTo(now); }
-    else if (preset === 'ytd') { setFrom(startOfYear(now)); setTo(now); }
+    if (p === 'today') { setFrom(now); setTo(now); }
+    else if (p === '7d') { setFrom(subDays(now, 6)); setTo(now); }
+    else if (p === '30d') { setFrom(subDays(now, 29)); setTo(now); }
+    else if (p === 'mtd') { setFrom(startOfMonth(now)); setTo(now); }
+    else if (p === 'ytd') { setFrom(startOfYear(now)); setTo(now); }
+    setPreset(p === 'today' ? 'today' : p === '7d' ? 'last-7-days' : p === '30d' ? 'last-30-days' : p === 'mtd' ? 'month-to-date' : 'year-to-date');
   };
+
+  const runExport = async (id: string, fn: () => Promise<void>, label: string) => {
+    setBusy(id);
+    try {
+      await fn();
+    } catch (e: any) {
+      toast.error(`${label} failed: ${e?.message ?? 'Unknown error'}`);
+    } finally {
+      setBusy(null);
+    }
+  };
+
 
 
   return (
