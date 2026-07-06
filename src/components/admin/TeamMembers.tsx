@@ -9,8 +9,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { supabase } from '@/integrations/supabase/client';
 import { useMyTenant } from '@/hooks/useTenant';
 import { toast } from 'sonner';
-import { UserPlus, KeyRound, Copy, Ban, RefreshCw, Users, AlertCircle } from 'lucide-react';
+import { UserPlus, KeyRound, Copy, Ban, RefreshCw, Users, AlertCircle, Eye, TrendingUp, TrendingDown } from 'lucide-react';
 import { format } from 'date-fns';
+import UserTransactionsDrawer from '@/components/admin/UserTransactionsDrawer';
 
 interface Invite {
   id: string; code: string; max_uses: number; uses: number;
@@ -20,6 +21,7 @@ interface Invite {
 interface Member {
   id: string; email: string; full_name: string; is_admin: boolean;
   is_disabled: boolean; created_at: string;
+  tx_count?: number; total_income?: number; total_expense?: number;
 }
 
 export default function TeamMembers() {
