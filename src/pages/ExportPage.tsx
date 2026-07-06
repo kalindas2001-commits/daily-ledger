@@ -505,7 +505,7 @@ export default function ExportPage() {
 
     // 13-15. Notes, Approval, QR verification, 17. Metadata
     closeReport(report);
-    report.save(`CungaCash_${report.meta.reportId}_${fromStr}_${toStr}.pdf`);
+    report.save(outName(`${report.meta.reportId.toLowerCase()}`, "pdf"));
     toast.success('Boardroom-quality summary downloaded');
   };
 
@@ -551,7 +551,7 @@ export default function ExportPage() {
     });
 
     closeReport(report);
-    report.save(`CungaCash_${report.meta.reportId}_${fromStr}_${toStr}.pdf`);
+    report.save(outName(`${report.meta.reportId.toLowerCase()}`, "pdf"));
     toast.success('Transactions PDF downloaded');
   };
 
@@ -596,7 +596,7 @@ export default function ExportPage() {
     });
 
     closeReport(report);
-    report.save(`CungaCash_${report.meta.reportId}_${fromStr}_${toStr}.pdf`);
+    report.save(outName(`${report.meta.reportId.toLowerCase()}`, "pdf"));
     toast.success('Daily report PDF downloaded');
   };
 
@@ -689,7 +689,7 @@ export default function ExportPage() {
     }
 
     closeReport(report);
-    report.save(`CungaCash_${report.meta.reportId}_${fromStr}_${toStr}.pdf`);
+    report.save(outName(`${report.meta.reportId.toLowerCase()}`, "pdf"));
     toast.success('Savings PDF downloaded');
   };
 
@@ -766,7 +766,7 @@ export default function ExportPage() {
     }
 
     closeReport(report);
-    report.save(`CungaCash_${report.meta.reportId}_${fromStr}_${toStr}.pdf`);
+    report.save(outName(`${report.meta.reportId.toLowerCase()}`, "pdf"));
     toast.success('Loans PDF downloaded');
   };
 
@@ -902,7 +902,7 @@ export default function ExportPage() {
     });
 
     closeReport(report);
-    report.save(`CungaCash_${report.meta.reportId}_${fromStr}_${toStr}.pdf`);
+    report.save(outName(`${report.meta.reportId.toLowerCase()}`, "pdf"));
     toast.success('Accounts PDF downloaded');
   };
 
@@ -959,7 +959,7 @@ export default function ExportPage() {
     });
 
     closeReport(report);
-    report.save(`CungaCash_${report.meta.reportId}_${fromStr}_${toStr}.pdf`);
+    report.save(outName(`${report.meta.reportId.toLowerCase()}`, "pdf"));
     toast.success('Goals PDF downloaded');
   };
 
