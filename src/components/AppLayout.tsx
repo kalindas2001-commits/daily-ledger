@@ -139,6 +139,18 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                   </Link>
                 );
               })}
+              <p className="px-3 pt-4 pb-1 text-[10px] font-semibold uppercase tracking-wider text-sidebar-foreground/40">{(t as any)('nav.assistance', { defaultValue: 'Assistance' })}</p>
+              {assistanceNav.map((item) => {
+                const active = location.pathname === item.path;
+                return (
+                  <Link key={item.path} to={item.path} onClick={() => setMobileOpen(false)}
+                    className={`flex items-center gap-3 px-3 py-3 rounded-lg text-sm font-medium transition-colors ${
+                      active ? 'bg-sidebar-accent text-sidebar-primary' : 'text-sidebar-foreground hover:bg-sidebar-accent/60'
+                    }`}>
+                    <item.icon className="w-5 h-5 text-primary" />{item.label}
+                  </Link>
+                );
+              })}
             </nav>
             <div className="absolute bottom-0 left-0 right-0 p-3 border-t border-sidebar-border">
               <a href="https://rossets.rw" target="_blank" rel="noopener noreferrer"
