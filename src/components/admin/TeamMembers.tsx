@@ -46,6 +46,10 @@ export default function TeamMembers() {
   const [invNote, setInvNote] = useState('');
   const [invLoading, setInvLoading] = useState(false);
 
+  // Transaction viewer
+  const [viewer, setViewer] = useState<{ userId: string | null; name?: string } | null>(null);
+
+
   const load = async () => {
     setLoading(true);
     const [u, i] = await Promise.all([
