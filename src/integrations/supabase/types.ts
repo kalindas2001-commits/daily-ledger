@@ -1139,6 +1139,59 @@ export type Database = {
           },
         ]
       }
+      transaction_edit_requests: {
+        Row: {
+          admin_notes: string | null
+          created_at: string
+          id: string
+          reason: string | null
+          requested_changes: Json
+          reviewed_at: string | null
+          reviewed_by: string | null
+          status: string
+          tenant_id: string | null
+          transaction_id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          admin_notes?: string | null
+          created_at?: string
+          id?: string
+          reason?: string | null
+          requested_changes?: Json
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
+          tenant_id?: string | null
+          transaction_id: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          admin_notes?: string | null
+          created_at?: string
+          id?: string
+          reason?: string | null
+          requested_changes?: Json
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
+          tenant_id?: string | null
+          transaction_id?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "transaction_edit_requests_transaction_id_fkey"
+            columns: ["transaction_id"]
+            isOneToOne: false
+            referencedRelation: "transactions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       transactions: {
         Row: {
           account_id: string | null
@@ -1317,6 +1370,23 @@ export type Database = {
           total_users: number
         }[]
       }
+      admin_list_edit_requests: {
+        Args: never
+        Returns: {
+          admin_notes: string
+          created_at: string
+          full_name: string
+          id: string
+          reason: string
+          requested_changes: Json
+          reviewed_at: string
+          reviewed_by: string
+          status: string
+          transaction_id: string
+          tx_snapshot: Json
+          user_id: string
+        }[]
+      }
       admin_list_invites: {
         Args: never
         Returns: {
@@ -1329,6 +1399,26 @@ export type Database = {
           revoked: boolean
           status: string
           uses: number
+        }[]
+      }
+      admin_list_tenant_transactions: {
+        Args: { _end_date?: string; _start_date?: string; _user_id?: string }
+        Returns: {
+          account_id: string
+          category: string
+          created_at: string
+          description: string
+          email: string
+          full_name: string
+          id: string
+          notes: string
+          quantity: number
+          status: string
+          total_amount: number
+          transaction_date: string
+          type: Database["public"]["Enums"]["transaction_type"]
+          unit_price: number
+          user_id: string
         }[]
       }
       admin_list_users: {
@@ -1409,6 +1499,10 @@ export type Database = {
           total_loans_pending: number
           total_savings: number
         }[]
+      }
+      apply_transaction_edit_request: {
+        Args: { _admin_notes?: string; _approve: boolean; _request_id: string }
+        Returns: undefined
       }
       assist_expert_for_category: { Args: { _cat: string }; Returns: string }
       get_my_tenant: { Args: never; Returns: string }
