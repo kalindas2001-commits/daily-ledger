@@ -6,7 +6,7 @@ import { useTheme } from '@/hooks/useTheme';
 import {
   LayoutDashboard, PlusCircle, CalendarDays, List, Menu, FileDown,
   ExternalLink, X, Tag, Repeat, Target, Database, Moon, Sun, HandCoins,
-  StickyNote, Shield, UserCircle2, PiggyBank, Users, Sparkles, Wallet, Trophy,
+  StickyNote, Shield, UserCircle2, PiggyBank, Users, LifeBuoy, Wallet, Trophy,
 } from 'lucide-react';
 import OfflineIndicator from './OfflineIndicator';
 import AlertsBell from './AlertsBell';
@@ -25,7 +25,6 @@ const mainNavCfg = [
 const moreNavCfg = [
   { path: '/accounts', key: 'accounts', icon: Wallet, fallback: 'Accounts' },
   { path: '/goals', key: 'goals', icon: Trophy, fallback: 'Goals' },
-  { path: '/assist', key: 'assist', icon: Sparkles },
   { path: '/savings', key: 'savings', icon: PiggyBank },
   { path: '/loans', key: 'loans', icon: HandCoins },
   { path: '/notes', key: 'notes', icon: StickyNote },
@@ -34,6 +33,10 @@ const moreNavCfg = [
   { path: '/budgets', key: 'budgets', icon: Target },
   { path: '/backup', key: 'backup', icon: Database },
   { path: '/profile', key: 'profile', icon: UserCircle2 },
+];
+
+const assistanceNavCfg = [
+  { path: '/assist', key: 'assist', icon: LifeBuoy, fallback: 'CungaCash Assist' },
 ];
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
