@@ -91,6 +91,19 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
               </Link>
             );
           })}
+
+          <p className="px-3 pt-4 pb-1 text-[10px] font-semibold uppercase tracking-wider text-sidebar-foreground/40">{(t as any)('nav.assistance', { defaultValue: 'Assistance' })}</p>
+          {assistanceNav.map((item) => {
+            const active = location.pathname === item.path;
+            return (
+              <Link key={item.path} to={item.path}
+                className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-150 ${
+                  active ? 'bg-sidebar-accent text-sidebar-primary shadow-sm' : 'text-sidebar-foreground hover:bg-sidebar-accent/60 hover:text-sidebar-accent-foreground'
+                }`}>
+                <item.icon className="w-[18px] h-[18px] text-primary" />{item.label}
+              </Link>
+            );
+          })}
         </nav>
 
         <div className="p-3 border-t border-sidebar-border space-y-1">
