@@ -792,7 +792,7 @@ export default function ExportPage() {
     const ws = XLSX.utils.aoa_to_sheet([...meta, ...rows]);
     ws['!cols'] = [{ wch: 14 }, { wch: 10 }, { wch: 20 }, { wch: 30 }, { wch: 8 }, { wch: 14 }, { wch: 14 }, { wch: 14 }];
     XLSX.utils.book_append_sheet(wb, ws, 'Transactions');
-    XLSX.writeFile(wb, `CungaCash_Transactions_${fromStr}_${toStr}.xlsx`);
+    XLSX.writeFile(wb, outName("transactions", "xlsx"));
     toast.success('Transactions Excel downloaded');
   };
 
@@ -820,7 +820,7 @@ export default function ExportPage() {
     wsT['!cols'] = [{ wch: 18 }, { wch: 24 }, { wch: 12 }, { wch: 14 }, { wch: 24 }, { wch: 30 }];
     XLSX.utils.book_append_sheet(wb, wsA, 'Accounts');
     XLSX.utils.book_append_sheet(wb, wsT, 'History');
-    XLSX.writeFile(wb, `CungaCash_Savings_${fromStr}_${toStr}.xlsx`);
+    XLSX.writeFile(wb, outName("savings", "xlsx"));
     toast.success('Savings Excel downloaded');
   };
 
@@ -846,7 +846,7 @@ export default function ExportPage() {
     wsT['!cols'] = [{ wch: 18 }, { wch: 22 }, { wch: 12 }, { wch: 14 }, { wch: 24 }, { wch: 30 }];
     XLSX.utils.book_append_sheet(wb, wsL, 'Loans');
     XLSX.utils.book_append_sheet(wb, wsT, 'Action History');
-    XLSX.writeFile(wb, `CungaCash_Loans_${fromStr}_${toStr}.xlsx`);
+    XLSX.writeFile(wb, outName("loans", "xlsx"));
     toast.success('Loans Excel downloaded');
   };
 
@@ -917,7 +917,7 @@ export default function ExportPage() {
     const ws = XLSX.utils.aoa_to_sheet([...meta, ...rows]);
     ws['!cols'] = [{ wch: 24 }, { wch: 14 }, { wch: 20 }, { wch: 8 }, { wch: 16 }];
     XLSX.utils.book_append_sheet(wb, ws, 'Accounts');
-    XLSX.writeFile(wb, `CungaCash_Accounts_${fromStr}_${toStr}.xlsx`);
+    XLSX.writeFile(wb, outName("accounts", "xlsx"));
     toast.success('Accounts Excel downloaded');
   };
 
@@ -976,7 +976,7 @@ export default function ExportPage() {
     const ws = XLSX.utils.aoa_to_sheet(rows);
     ws['!cols'] = [{ wch: 22 }, { wch: 14 }, { wch: 14 }, { wch: 14 }, { wch: 10 }, { wch: 12 }, { wch: 10 }, { wch: 30 }];
     XLSX.utils.book_append_sheet(wb, ws, 'Goals');
-    XLSX.writeFile(wb, `CungaCash_Goals_${fromStr}_${toStr}.xlsx`);
+    XLSX.writeFile(wb, outName("goals", "xlsx"));
     toast.success('Goals Excel downloaded');
   };
 
@@ -1003,7 +1003,7 @@ export default function ExportPage() {
       ws['!cols'] = [{ wch: 26 }, { wch: 10 }, { wch: 18 }, { wch: 14 }, { wch: 12 }, { wch: 12 }, { wch: 8 }];
       XLSX.utils.book_append_sheet(wb, ws, 'Recurring');
     }
-    XLSX.writeFile(wb, `CungaCash_Budgets_Recurring_${fromStr}_${toStr}.xlsx`);
+    XLSX.writeFile(wb, outName("budgets-recurring", "xlsx"));
     toast.success('Budgets & Recurring downloaded');
   };
 
