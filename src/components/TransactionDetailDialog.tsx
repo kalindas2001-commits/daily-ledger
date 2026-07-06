@@ -1,17 +1,25 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { format } from 'date-fns';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { Card, CardContent } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { Label } from '@/components/ui/label';
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { toast } from 'sonner';
 import {
   Wallet, MapPin, Store, Tag as TagIcon, HeartPulse, CalendarClock, Receipt, Paperclip,
-  FileText, Download, Trash2, CheckCircle2, Upload, Sparkles, Copy,
+  FileText, Download, Trash2, CheckCircle2, Upload, Sparkles, Copy, PencilLine, Clock,
 } from 'lucide-react';
 import { useAttachments, useUploadAttachment, useDeleteAttachment, getSignedUrl } from '@/hooks/useAttachments';
 import { useAccounts } from '@/hooks/useAccounts';
+import { useCreateEditRequest, useMyEditRequests } from '@/hooks/useEditRequests';
 
 const fmt = (n: number) => Number(n ?? 0).toLocaleString('en-RW', { minimumFractionDigits: 0 });
 
