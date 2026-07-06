@@ -48,11 +48,12 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
 
   const mainNav = mainNavCfg.map(i => ({ ...i, label: t(`nav.${i.key}`) }));
   const moreNav = moreNavCfg.map(i => ({ ...i, label: (i as any).fallback ? ((t as any)(`nav.${i.key}`, { defaultValue: (i as any).fallback })) : t(`nav.${i.key}`) }));
+  const assistanceNav = assistanceNavCfg.map(i => ({ ...i, label: (i as any).fallback ? ((t as any)(`nav.${i.key}`, { defaultValue: (i as any).fallback })) : t(`nav.${i.key}`) }));
   const extras: any[] = [];
   if (isAdmin && !isSuperAdmin) extras.push({ path: '/team', key: 'team', label: 'Team', icon: Users });
   if (isSuperAdmin) extras.push({ path: '/admin', key: 'superAdmin', label: t('nav.superAdmin'), icon: Shield });
   const moreNavWithAdmin = [...moreNav, ...extras];
-  const allNav = [...mainNav, ...moreNavWithAdmin];
+  const allNav = [...mainNav, ...moreNavWithAdmin, ...assistanceNav];
   const currentLabel = allNav.find((i) => i.path === location.pathname)?.label ?? 'CungaCash';
 
   return (
