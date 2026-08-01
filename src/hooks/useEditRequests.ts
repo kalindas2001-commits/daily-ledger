@@ -87,6 +87,32 @@ export function useReviewEditRequest() {
   });
 }
 
+/** User: live in-app alerts when my edit request is approved / rejected / gets notes */
+export function useMyEditRequestAlerts() {
+  const { user } = useAuth();
+  const qc = useQueryClient();
+  useEffect(() => {
+    if (!user) return;
+    const channel = supabase
+      .channel(`edit_requests_mine_${user.id}`)
+      .on('postgres_changes',
+        { event: 'UPDATE', schema: 'public', table: 'transaction_edit_requests', filter: `user_id=eq.${user.id}` },
+        (payload) => {
+          const r: any = payload.new;
+          const note = r.admin_notes ? `Admin note: ${r.admin_notes}` : undefined;
+          if (r.status === 'approved') toast.success('Edit request approved — changes applied', { description: note });
+          else if (r.status === 'rejected') toast.error('Edit request declined', { description: note });
+          else if (note) toast('Admin added a note to your edit request', { description: r.admin_notes });
+          qc.invalidateQueries({ queryKey: ['edit_requests'] });
+          qc.invalidateQueries({ queryKey: ['transactions'] });
+        })
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, [user, qc]);
+}
+
+
+
 /** Realtime: pending count badge for admins */
 export function useEditRequestsRealtime(onChange: () => void) {
   useEffect(() => {
