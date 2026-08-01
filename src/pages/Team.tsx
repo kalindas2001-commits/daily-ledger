@@ -78,6 +78,9 @@ function TeamOverview({ onOpenAll, onOpenUser }: { onOpenAll: () => void; onOpen
 export default function TeamPage() {
   const { isAdmin, loading } = useAuth();
   const [allOpen, setAllOpen] = useState(false);
+  const [focus, setFocus] = useState<{ id: string; name: string } | null>(null);
+  const { data: requests } = useTenantEditRequests();
+  const pendingCount = (requests ?? []).filter((r: any) => r.status === 'pending').length;
   if (loading) return <div className="text-center py-12 text-muted-foreground">Loading…</div>;
   if (!isAdmin) return <Navigate to="/" replace />;
   return (
@@ -90,10 +93,17 @@ export default function TeamPage() {
         <TabsList className="grid w-full grid-cols-4">
           <TabsTrigger value="overview"><LayoutDashboard className="w-4 h-4 mr-1.5" /> Overview</TabsTrigger>
           <TabsTrigger value="members"><Users className="w-4 h-4 mr-1.5" /> Members</TabsTrigger>
-          <TabsTrigger value="edits"><PencilLine className="w-4 h-4 mr-1.5" /> Edit Requests</TabsTrigger>
+          <TabsTrigger value="edits" className="relative">
+            <PencilLine className="w-4 h-4 mr-1.5" /> Edits
+            {pendingCount > 0 && (
+              <span className="ml-1.5 inline-flex items-center justify-center min-w-[18px] h-[18px] px-1 rounded-full bg-primary text-primary-foreground text-[10px] font-bold">{pendingCount}</span>
+            )}
+          </TabsTrigger>
           <TabsTrigger value="transactions"><ListChecks className="w-4 h-4 mr-1.5" /> Transactions</TabsTrigger>
         </TabsList>
-        <TabsContent value="overview" className="mt-4"><TeamOverview onOpenAll={() => setAllOpen(true)} /></TabsContent>
+        <TabsContent value="overview" className="mt-4">
+          <TeamOverview onOpenAll={() => setAllOpen(true)} onOpenUser={(id, name) => setFocus({ id, name })} />
+        </TabsContent>
         <TabsContent value="members" className="mt-4"><TeamMembers /></TabsContent>
         <TabsContent value="edits" className="mt-4"><EditRequestsQueue /></TabsContent>
         <TabsContent value="transactions" className="mt-4">
@@ -104,6 +114,13 @@ export default function TeamPage() {
         </TabsContent>
       </Tabs>
       <UserTransactionsDrawer open={allOpen} onOpenChange={setAllOpen} userId={null} userName="Team" />
+      <UserTransactionsDrawer
+        open={!!focus}
+        onOpenChange={(o) => { if (!o) setFocus(null); }}
+        userId={focus?.id ?? null}
+        userName={focus?.name}
+      />
     </div>
   );
+
 }
