@@ -37,6 +37,22 @@ export default function ExportPage() {
   const [to, setTo] = useState<Date>(endOfMonth(new Date()));
   const [preset, setPreset] = useState<string>('mtd');
   const [busy, setBusy] = useState<string | null>(null);
+  const [exportState, setExportState] = useState<Record<string, 'loading' | 'done' | 'error'>>({});
+  const [exportError, setExportError] = useState<Record<string, string>>({});
+
+  const run = (id: string, fn: () => any) => async () => {
+    setExportState(s => ({ ...s, [id]: 'loading' }));
+    setExportError(e => ({ ...e, [id]: '' }));
+    try {
+      await fn();
+      setExportState(s => ({ ...s, [id]: 'done' }));
+      setTimeout(() => setExportState(s => ({ ...s, [id]: undefined as any })), 3000);
+    } catch (err: any) {
+      setExportState(s => ({ ...s, [id]: 'error' }));
+      setExportError(e => ({ ...e, [id]: err?.message ?? 'Export failed' }));
+    }
+  };
+
 
   const fromStr = format(from, 'yyyy-MM-dd');
   const toStr = format(to, 'yyyy-MM-dd');
