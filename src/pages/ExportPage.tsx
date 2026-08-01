@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Button } from '@/components/ui/button';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { CalendarIcon, FileDown, FileText, BarChart3, PiggyBank, HandCoins, FileSpreadsheet, Wallet, Trophy } from 'lucide-react';
+import { CalendarIcon, FileDown, FileText, BarChart3, PiggyBank, HandCoins, FileSpreadsheet, Wallet, Trophy, Loader2, CheckCircle2, AlertCircle, RotateCcw } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useTransactions, useDailySummaries } from '@/hooks/useTransactions';
 import { useAuth } from '@/hooks/useAuth';
@@ -37,6 +37,22 @@ export default function ExportPage() {
   const [to, setTo] = useState<Date>(endOfMonth(new Date()));
   const [preset, setPreset] = useState<string>('mtd');
   const [busy, setBusy] = useState<string | null>(null);
+  const [exportState, setExportState] = useState<Record<string, 'loading' | 'done' | 'error'>>({});
+  const [exportError, setExportError] = useState<Record<string, string>>({});
+
+  const run = (id: string, fn: () => any) => async () => {
+    setExportState(s => ({ ...s, [id]: 'loading' }));
+    setExportError(e => ({ ...e, [id]: '' }));
+    try {
+      await fn();
+      setExportState(s => ({ ...s, [id]: 'done' }));
+      setTimeout(() => setExportState(s => ({ ...s, [id]: undefined as any })), 3000);
+    } catch (err: any) {
+      setExportState(s => ({ ...s, [id]: 'error' }));
+      setExportError(e => ({ ...e, [id]: err?.message ?? 'Export failed' }));
+    }
+  };
+
 
   const fromStr = format(from, 'yyyy-MM-dd');
   const toStr = format(to, 'yyyy-MM-dd');
@@ -1079,13 +1095,17 @@ export default function ExportPage() {
         <h2 className="text-sm font-semibold text-muted-foreground mb-2 px-1">Transactions</h2>
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
           <ExportCard icon={FileDown} color="primary" title="Transactions PDF"
-            subtitle={txLoading ? 'Loading...' : `${transactions?.length ?? 0} records · enterprise format`} onClick={exportTransactionsPDF} />
+            subtitle={txLoading ? 'Loading...' : `${transactions?.length ?? 0} records · enterprise format`}
+            status={exportState['tx-pdf']} error={exportError['tx-pdf']} onClick={run('tx-pdf', exportTransactionsPDF)} />
           <ExportCard icon={FileSpreadsheet} color="primary" title="Transactions Excel"
-            subtitle="Spreadsheet (.xlsx)" onClick={exportTransactionsXLSX} />
+            subtitle="Spreadsheet (.xlsx)"
+            status={exportState['tx-xlsx']} error={exportError['tx-xlsx']} onClick={run('tx-xlsx', exportTransactionsXLSX)} />
           <ExportCard icon={FileText} color="accent" title="Daily Report PDF"
-            subtitle={`${sumLoading ? '…' : (summaries?.length ?? 0)} days · with chart`} onClick={exportDailyReportPDF} />
+            subtitle={`${sumLoading ? '…' : (summaries?.length ?? 0)} days · with chart`}
+            status={exportState['daily-pdf']} error={exportError['daily-pdf']} onClick={run('daily-pdf', exportDailyReportPDF)} />
           <ExportCard icon={BarChart3} color="primary" title="Boardroom Report"
-            subtitle="Full 17-section enterprise PDF" onClick={exportMonthlySummaryPDF} />
+            subtitle="Full 17-section enterprise PDF"
+            status={exportState['board-pdf']} error={exportError['board-pdf']} onClick={run('board-pdf', exportMonthlySummaryPDF)} />
         </div>
       </div>
 
@@ -1093,9 +1113,11 @@ export default function ExportPage() {
         <h2 className="text-sm font-semibold text-muted-foreground mb-2 px-1">Savings History</h2>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <ExportCard icon={PiggyBank} color="primary" title="Savings PDF"
-            subtitle="Accounts + history · enterprise" onClick={exportSavingsPDF} />
+            subtitle="Accounts + history · enterprise"
+            status={exportState['sav-pdf']} error={exportError['sav-pdf']} onClick={run('sav-pdf', exportSavingsPDF)} />
           <ExportCard icon={FileSpreadsheet} color="primary" title="Savings Excel"
-            subtitle="Spreadsheet (.xlsx)" onClick={exportSavingsXLSX} />
+            subtitle="Spreadsheet (.xlsx)"
+            status={exportState['sav-xlsx']} error={exportError['sav-xlsx']} onClick={run('sav-xlsx', exportSavingsXLSX)} />
         </div>
       </div>
 
@@ -1103,18 +1125,22 @@ export default function ExportPage() {
         <h2 className="text-sm font-semibold text-muted-foreground mb-2 px-1">Loans & Repayments</h2>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <ExportCard icon={HandCoins} color="accent" title="Loans PDF"
-            subtitle="Ledger + actions · enterprise" onClick={exportLoansPDF} />
+            subtitle="Ledger + actions · enterprise"
+            status={exportState['loan-pdf']} error={exportError['loan-pdf']} onClick={run('loan-pdf', exportLoansPDF)} />
           <ExportCard icon={FileSpreadsheet} color="accent" title="Loans Excel"
-            subtitle="Spreadsheet (.xlsx)" onClick={exportLoansXLSX} />
+            subtitle="Spreadsheet (.xlsx)"
+            status={exportState['loan-xlsx']} error={exportError['loan-xlsx']} onClick={run('loan-xlsx', exportLoansXLSX)} />
         </div>
       </div>
       <div>
         <h2 className="text-sm font-semibold text-muted-foreground mb-2 px-1">Accounts Portfolio</h2>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <ExportCard icon={Wallet} color="primary" title="Accounts PDF"
-            subtitle="Portfolio ledger · enterprise" onClick={exportAccountsPDF} />
+            subtitle="Portfolio ledger · enterprise"
+            status={exportState['acc-pdf']} error={exportError['acc-pdf']} onClick={run('acc-pdf', exportAccountsPDF)} />
           <ExportCard icon={FileSpreadsheet} color="primary" title="Accounts Excel"
-            subtitle="Spreadsheet (.xlsx)" onClick={exportAccountsXLSX} />
+            subtitle="Spreadsheet (.xlsx)"
+            status={exportState['acc-xlsx']} error={exportError['acc-xlsx']} onClick={run('acc-xlsx', exportAccountsXLSX)} />
         </div>
       </div>
 
@@ -1122,9 +1148,11 @@ export default function ExportPage() {
         <h2 className="text-sm font-semibold text-muted-foreground mb-2 px-1">Financial Goals</h2>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <ExportCard icon={Trophy} color="accent" title="Goals PDF"
-            subtitle="Progress statement · enterprise" onClick={exportGoalsPDF} />
+            subtitle="Progress statement · enterprise"
+            status={exportState['goal-pdf']} error={exportError['goal-pdf']} onClick={run('goal-pdf', exportGoalsPDF)} />
           <ExportCard icon={FileSpreadsheet} color="accent" title="Goals Excel"
-            subtitle="Spreadsheet (.xlsx)" onClick={exportGoalsXLSX} />
+            subtitle="Spreadsheet (.xlsx)"
+            status={exportState['goal-xlsx']} error={exportError['goal-xlsx']} onClick={run('goal-xlsx', exportGoalsXLSX)} />
         </div>
       </div>
 
@@ -1132,31 +1160,50 @@ export default function ExportPage() {
         <h2 className="text-sm font-semibold text-muted-foreground mb-2 px-1">Budgets & Recurring</h2>
         <div className="grid grid-cols-1 gap-3">
           <ExportCard icon={FileSpreadsheet} color="primary" title="Budgets & Recurring Excel"
-            subtitle="Two-sheet workbook with plans" onClick={exportBudgetsRecurringXLSX} />
+            subtitle="Two-sheet workbook with plans"
+            status={exportState['bud-xlsx']} error={exportError['bud-xlsx']} onClick={run('bud-xlsx', exportBudgetsRecurringXLSX)} />
         </div>
       </div>
     </div>
   );
 }
 
-function ExportCard({ icon: Icon, color, title, subtitle, onClick }: {
+function ExportCard({ icon: Icon, color, title, subtitle, onClick, status, error }: {
   icon: any; color: 'primary' | 'accent'; title: string; subtitle: string; onClick: () => void;
+  status?: 'loading' | 'done' | 'error'; error?: string;
 }) {
+  const loading = status === 'loading';
   return (
-    <Card className="hover:shadow-md transition-shadow cursor-pointer" onClick={onClick}>
+    <Card
+      className={cn('transition-shadow', loading ? 'opacity-70 cursor-wait' : 'hover:shadow-md cursor-pointer',
+        status === 'error' && 'border-destructive/40', status === 'done' && 'border-income/40')}
+      onClick={() => { if (!loading) onClick(); }}
+    >
       <CardContent className="p-5 flex items-center gap-4">
         <div className={cn('w-12 h-12 rounded-xl flex items-center justify-center shrink-0',
-          color === 'primary' ? 'bg-primary/10' : 'bg-accent/10')}>
-          <Icon className={cn('w-6 h-6', color === 'primary' ? 'text-primary' : 'text-accent')} />
+          status === 'error' ? 'bg-destructive/10' : status === 'done' ? 'bg-income/10' : color === 'primary' ? 'bg-primary/10' : 'bg-accent/10')}>
+          {loading ? <Loader2 className="w-6 h-6 animate-spin text-primary" />
+            : status === 'done' ? <CheckCircle2 className="w-6 h-6 text-income" />
+            : status === 'error' ? <AlertCircle className="w-6 h-6 text-destructive" />
+            : <Icon className={cn('w-6 h-6', color === 'primary' ? 'text-primary' : 'text-accent')} />}
         </div>
-        <div className="min-w-0">
+        <div className="min-w-0 flex-1">
           <p className="font-semibold text-sm">{title}</p>
-          <p className="text-xs text-muted-foreground mt-0.5 truncate">{subtitle}</p>
+          <p className={cn('text-xs mt-0.5 truncate',
+            status === 'error' ? 'text-destructive' : status === 'done' ? 'text-income' : 'text-muted-foreground')}>
+            {loading ? 'Generating…' : status === 'done' ? 'Downloaded successfully' : status === 'error' ? (error || 'Export failed') : subtitle}
+          </p>
         </div>
+        {status === 'error' && (
+          <Button size="sm" variant="outline" onClick={(e) => { e.stopPropagation(); onClick(); }}>
+            <RotateCcw className="w-3.5 h-3.5 mr-1" /> Retry
+          </Button>
+        )}
       </CardContent>
     </Card>
   );
 }
+
 
 function DatePicker({ label, date, onChange }: { label: string; date: Date; onChange: (d: Date) => void }) {
   return (

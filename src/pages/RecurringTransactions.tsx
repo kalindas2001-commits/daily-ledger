@@ -19,7 +19,7 @@ const FREQUENCIES = [
   { value: 'yearly', label: 'Yearly' },
 ];
 
-const PAYMENT_METHODS = ['Cash', 'Mobile Money', 'Bank Transfer', 'Card'];
+import { PAYMENT_METHODS, PaymentMethodOption, PaymentMethodLogo } from '@/components/PaymentMethodLogo';
 
 export default function RecurringTransactions() {
   const { data: recurring, isLoading } = useRecurringTransactions();
@@ -122,9 +122,12 @@ export default function RecurringTransactions() {
             </Select>
             <div className="space-y-1"><Label>Next Run Date</Label><Input type="date" value={nextRunDate} onChange={(e) => setNextRunDate(e.target.value)} /></div>
             <Select value={paymentMethod} onValueChange={setPaymentMethod}>
-              <SelectTrigger><SelectValue /></SelectTrigger>
-              <SelectContent>{PAYMENT_METHODS.map((m) => <SelectItem key={m} value={m}>{m}</SelectItem>)}</SelectContent>
+              <SelectTrigger>
+                <span className="flex items-center gap-2 truncate"><PaymentMethodLogo method={paymentMethod} size={20} />{paymentMethod}</span>
+              </SelectTrigger>
+              <SelectContent>{PAYMENT_METHODS.map((m) => <SelectItem key={m} value={m}><PaymentMethodOption method={m} /></SelectItem>)}</SelectContent>
             </Select>
+
             <Input placeholder="Description (optional)" value={description} onChange={(e) => setDescription(e.target.value)} />
           </div>
           <DialogFooter>

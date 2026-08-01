@@ -2,6 +2,7 @@ import { useTranslation } from 'react-i18next';
 import { Globe, Check } from 'lucide-react';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { SUPPORTED_LANGUAGES } from '@/i18n';
+import { Flag } from './Flag';
 
 export default function LanguageSwitcher() {
   const { i18n, t } = useTranslation();
@@ -9,9 +10,9 @@ export default function LanguageSwitcher() {
 
   return (
     <DropdownMenu>
-      <DropdownMenuTrigger className="p-1.5 rounded-full hover:bg-muted transition-colors flex items-center gap-1" aria-label={t('common.language')}>
+      <DropdownMenuTrigger className="p-1.5 rounded-full hover:bg-muted transition-colors flex items-center gap-1.5" aria-label={t('common.language')}>
         <Globe className="w-4 h-4 text-muted-foreground" />
-        <span className="text-base leading-none">{current.flag}</span>
+        <Flag code={current.code} size={20} />
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-44">
         {SUPPORTED_LANGUAGES.map(lang => (
@@ -20,7 +21,7 @@ export default function LanguageSwitcher() {
             onClick={() => i18n.changeLanguage(lang.code)}
             className="cursor-pointer gap-2"
           >
-            <span className="text-base">{lang.flag}</span>
+            <Flag code={lang.code} size={20} />
             <span className="flex-1">{lang.label}</span>
             {i18n.resolvedLanguage === lang.code && <Check className="w-3.5 h-3.5 text-primary" />}
           </DropdownMenuItem>
@@ -29,3 +30,4 @@ export default function LanguageSwitcher() {
     </DropdownMenu>
   );
 }
+
