@@ -14,7 +14,7 @@ import { toast } from 'sonner';
 import { useCategories, useCreateTransaction } from '@/hooks/useTransactions';
 import { useAccounts } from '@/hooks/useAccounts';
 
-const PAYMENT_METHODS = ['Cash', 'Mobile Money', 'Bank Transfer', 'Card', 'Visa', 'MasterCard', 'Apple Pay', 'Google Pay', 'PayPal', 'Crypto', 'Cheque', 'QR Payment'];
+import { PAYMENT_METHODS, PaymentMethodOption, PaymentMethodLogo } from '@/components/PaymentMethodLogo';
 
 export default function AddTransaction() {
   const navigate = useNavigate();
@@ -128,8 +128,11 @@ export default function AddTransaction() {
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-2"><Label>Payment Method</Label>
                 <Select value={paymentMethod} onValueChange={setPaymentMethod}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
-                  <SelectContent>{PAYMENT_METHODS.map((m) => <SelectItem key={m} value={m}>{m}</SelectItem>)}</SelectContent>
+                  <SelectTrigger>
+                    <span className="flex items-center gap-2 truncate"><PaymentMethodLogo method={paymentMethod} size={20} />{paymentMethod}</span>
+                  </SelectTrigger>
+                  <SelectContent>{PAYMENT_METHODS.map((m) => <SelectItem key={m} value={m}><PaymentMethodOption method={m} /></SelectItem>)}</SelectContent>
+
                 </Select>
               </div>
               <div className="space-y-2"><Label>Account</Label>
