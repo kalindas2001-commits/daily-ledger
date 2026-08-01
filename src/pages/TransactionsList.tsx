@@ -13,7 +13,7 @@ import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 import TransactionDetailDialog from '@/components/TransactionDetailDialog';
 
-const PAYMENT_METHODS = ['Cash', 'Mobile Money', 'Bank Transfer', 'Card'];
+import { PAYMENT_METHODS, PaymentMethodOption, PaymentMethodLogo } from '@/components/PaymentMethodLogo';
 
 export default function TransactionsList() {
   const { data: transactions, isLoading } = useTransactions();
@@ -151,7 +151,9 @@ export default function TransactionsList() {
               {filtered.map((tx) => (
                 <div key={tx.id} className="flex items-center justify-between p-3 rounded-lg hover:bg-muted transition-colors group cursor-pointer" onClick={() => setDetailTx(tx)}>
                   <div className="flex items-center gap-3 min-w-0">
+                    <PaymentMethodLogo method={tx.payment_method} size={28} />
                     <div className={cn('w-2 h-2 rounded-full shrink-0', tx.type === 'INCOME' ? 'bg-income' : 'bg-expense')} />
+
                     <div className="min-w-0">
                       <p className="text-sm font-medium truncate">{tx.category}{(tx as any).subcategory && <span className="text-muted-foreground"> · {(tx as any).subcategory}</span>}</p>
                       <p className="text-xs text-muted-foreground">
@@ -220,9 +222,12 @@ export default function TransactionsList() {
               </p>
             </div>
             <Select value={editPayment} onValueChange={setEditPayment}>
-              <SelectTrigger><SelectValue /></SelectTrigger>
-              <SelectContent>{PAYMENT_METHODS.map((m) => <SelectItem key={m} value={m}>{m}</SelectItem>)}</SelectContent>
+              <SelectTrigger>
+                <span className="flex items-center gap-2 truncate"><PaymentMethodLogo method={editPayment} size={20} />{editPayment}</span>
+              </SelectTrigger>
+              <SelectContent>{PAYMENT_METHODS.map((m) => <SelectItem key={m} value={m}><PaymentMethodOption method={m} /></SelectItem>)}</SelectContent>
             </Select>
+
             <Textarea placeholder="Description (optional)" value={editDescription} onChange={(e) => setEditDescription(e.target.value)} />
           </div>
           <DialogFooter>
