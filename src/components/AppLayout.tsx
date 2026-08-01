@@ -16,11 +16,11 @@ import InfoBanner from './InfoBanner';
 
 const mainNavCfg = [
   { path: '/', key: 'dashboard', icon: LayoutDashboard },
-  { path: '/add', key: 'add', icon: PlusCircle },
   { path: '/calendar', key: 'calendar', icon: CalendarDays },
   { path: '/transactions', key: 'transactions', icon: List },
   { path: '/export', key: 'export', icon: FileDown },
 ];
+
 
 const moreNavCfg = [
   { path: '/accounts', key: 'accounts', icon: Wallet, fallback: 'Accounts' },
