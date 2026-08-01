@@ -13,6 +13,9 @@ import AlertsBell from './AlertsBell';
 import LanguageSwitcher from './LanguageSwitcher';
 import { Button } from '@/components/ui/button';
 import InfoBanner from './InfoBanner';
+import Fab from './Fab';
+import { useMyEditRequestAlerts } from '@/hooks/useEditRequests';
+
 
 const mainNavCfg = [
   { path: '/', key: 'dashboard', icon: LayoutDashboard },
@@ -45,15 +48,19 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   const { t } = useTranslation();
   const location = useLocation();
   const [mobileOpen, setMobileOpen] = useState(false);
+  useMyEditRequestAlerts();
 
-  const mainNav = mainNavCfg.map(i => ({ ...i, label: t(`nav.${i.key}`) }));
+  const baseMain = mainNavCfg.map(i => ({ ...i, label: t(`nav.${i.key}`) }));
+  const mainNav = isAdmin
+    ? [...baseMain, { path: '/team', key: 'team', label: (t as any)('nav.team', { defaultValue: 'Team' }), icon: Users }]
+    : baseMain;
   const moreNav = moreNavCfg.map(i => ({ ...i, label: (i as any).fallback ? ((t as any)(`nav.${i.key}`, { defaultValue: (i as any).fallback })) : t(`nav.${i.key}`) }));
   const assistanceNav = assistanceNavCfg.map(i => ({ ...i, label: (i as any).fallback ? ((t as any)(`nav.${i.key}`, { defaultValue: (i as any).fallback })) : t(`nav.${i.key}`) }));
   const extras: any[] = [];
-  if (isAdmin && !isSuperAdmin) extras.push({ path: '/team', key: 'team', label: 'Team', icon: Users });
   if (isSuperAdmin) extras.push({ path: '/admin', key: 'superAdmin', label: t('nav.superAdmin'), icon: Shield });
   const moreNavWithAdmin = [...moreNav, ...extras];
-  const allNav = [...mainNav, ...moreNavWithAdmin, ...assistanceNav];
+  const allNav = [...mainNav, ...moreNavWithAdmin, ...assistanceNav, { path: '/add', key: 'add', label: t('nav.add'), icon: PlusCircle }];
+
   const currentLabel = allNav.find((i) => i.path === location.pathname)?.label ?? 'CungaCash';
 
   return (
