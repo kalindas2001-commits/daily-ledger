@@ -109,22 +109,55 @@ export default function EditRequestsQueue() {
         </Card>
       ))}
 
-      {reviewed.length > 0 && (
-        <>
-          <h4 className="text-xs font-semibold text-muted-foreground pt-4">Recently reviewed</h4>
-          {reviewed.map(r => (
-            <Card key={r.id} className="opacity-75">
-              <CardContent className="p-3 flex items-center justify-between gap-2 text-sm">
-                <div>
-                  <p><strong>{r.full_name}</strong> — {r.tx_snapshot?.category} · {fmt(r.tx_snapshot?.total_amount)} RWF</p>
-                  {r.admin_notes && <p className="text-xs text-muted-foreground mt-0.5">{r.admin_notes}</p>}
+      {/* Audit trail */}
+      <div className="pt-4">
+        <div className="flex items-center gap-2 mb-2">
+          <History className="w-4 h-4 text-muted-foreground" />
+          <h4 className="text-sm font-semibold">Audit trail</h4>
+          <Badge variant="secondary" className="text-[10px]">{(data ?? []).length} records</Badge>
+        </div>
+        {(data ?? []).length === 0 && (
+          <Card><CardContent className="py-6 text-center text-sm text-muted-foreground">No edit request history yet.</CardContent></Card>
+        )}
+        <div className="space-y-2">
+          {(data ?? []).map(r => (
+            <Card key={`audit-${r.id}`} className={r.status === 'pending' ? 'border-primary/30' : 'opacity-90'}>
+              <CardContent className="p-3 space-y-2">
+                <div className="flex items-start justify-between gap-2 flex-wrap">
+                  <div className="min-w-0">
+                    <p className="text-sm font-medium truncate">
+                      {r.full_name || 'Team member'} — {r.tx_snapshot?.category ?? '—'} · {fmt(r.tx_snapshot?.total_amount)} RWF
+                    </p>
+                    <p className="text-[11px] text-muted-foreground">
+                      Requested {format(new Date(r.created_at), 'MMM d, yyyy · h:mm:ss a')}
+                      {r.reviewed_at && ` → Reviewed ${format(new Date(r.reviewed_at), 'MMM d, yyyy · h:mm:ss a')}`}
+                    </p>
+                  </div>
+                  <Badge
+                    variant={r.status === 'approved' ? 'default' : r.status === 'rejected' ? 'destructive' : 'outline'}
+                    className="text-[10px]"
+                  >
+                    {r.status === 'pending' && <Clock className="w-3 h-3 mr-1" />}
+                    {r.status === 'approved' && <CheckCircle2 className="w-3 h-3 mr-1" />}
+                    {r.status === 'rejected' && <XCircle className="w-3 h-3 mr-1" />}
+                    {r.status}
+                  </Badge>
                 </div>
-                <Badge variant={r.status === 'approved' ? 'default' : 'destructive'} className="text-[10px]">{r.status}</Badge>
+
+                <div className="rounded border">
+                  {Object.entries(r.requested_changes ?? {}).map(([k, v]) => diffRow(k, r.tx_snapshot?.[k], v))}
+                </div>
+
+                {r.reason && <p className="text-xs"><span className="text-muted-foreground">Reason: </span>{r.reason}</p>}
+                {r.admin_notes && (
+                  <p className="text-xs bg-muted/40 p-2 rounded"><span className="text-muted-foreground">Admin note: </span>{r.admin_notes}</p>
+                )}
               </CardContent>
             </Card>
           ))}
-        </>
-      )}
+        </div>
+      </div>
+
 
       <AlertDialog open={!!confirm} onOpenChange={o => { if (!o) { setConfirm(null); setNote(''); } }}>
         <AlertDialogContent>
