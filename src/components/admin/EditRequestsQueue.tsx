@@ -9,7 +9,7 @@ import {
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import { toast } from 'sonner';
-import { CheckCircle2, XCircle, Clock, User as UserIcon } from 'lucide-react';
+import { CheckCircle2, XCircle, Clock, User as UserIcon, History as HistoryIcon } from 'lucide-react';
 import { useTenantEditRequests, useReviewEditRequest, useEditRequestsRealtime } from '@/hooks/useEditRequests';
 import { useQueryClient } from '@tanstack/react-query';
 
@@ -112,7 +112,7 @@ export default function EditRequestsQueue() {
       {/* Audit trail */}
       <div className="pt-4">
         <div className="flex items-center gap-2 mb-2">
-          <History className="w-4 h-4 text-muted-foreground" />
+          <HistoryIcon className="w-4 h-4 text-muted-foreground" />
           <h4 className="text-sm font-semibold">Audit trail</h4>
           <Badge variant="secondary" className="text-[10px]">{(data ?? []).length} records</Badge>
         </div>
