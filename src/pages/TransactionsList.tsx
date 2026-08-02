@@ -148,44 +148,65 @@ export default function TransactionsList() {
             <p className="text-center text-muted-foreground py-8">No transactions found</p>
           ) : (
             <div className="space-y-2">
-              {filtered.map((tx) => (
-                <div key={tx.id} className="flex items-center justify-between p-3 rounded-lg hover:bg-muted transition-colors group cursor-pointer" onClick={() => setDetailTx(tx)}>
-                  <div className="flex items-center gap-3 min-w-0">
+              {filtered.map((tx) => {
+                const note = noteByTx[tx.id];
+                return (
+                <div
+                  key={tx.id}
+                  className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between p-3 rounded-lg border sm:border-0 hover:bg-muted transition-colors group cursor-pointer"
+                  onClick={() => setDetailTx(tx)}
+                >
+                  <div className="flex items-start gap-3 min-w-0 flex-1">
                     <PaymentMethodLogo method={tx.payment_method} size={28} />
-                    <div className={cn('w-2 h-2 rounded-full shrink-0', tx.type === 'INCOME' ? 'bg-income' : 'bg-expense')} />
+                    <div className={cn('w-2 h-2 rounded-full shrink-0 mt-2', tx.type === 'INCOME' ? 'bg-income' : 'bg-expense')} />
 
-                    <div className="min-w-0">
-                      <p className="text-sm font-medium truncate">{tx.category}{(tx as any).subcategory && <span className="text-muted-foreground"> · {(tx as any).subcategory}</span>}</p>
-                      <p className="text-xs text-muted-foreground">
+                    <div className="min-w-0 flex-1">
+                      <p className="text-sm font-medium break-words">
+                        {tx.category}
+                        {(tx as any).subcategory && <span className="text-muted-foreground"> · {(tx as any).subcategory}</span>}
+                      </p>
+                      <p className="text-xs text-muted-foreground break-words">
                         {format(new Date(tx.transaction_date), 'MMM d, yyyy')}
                         {(tx as any).transaction_time && ` · ${format(new Date(`1970-01-01T${String((tx as any).transaction_time)}`), 'h:mm a')}`}
                         {' · '}{tx.payment_method}
                         {(tx as any).merchant_name && ` · ${(tx as any).merchant_name}`}
                         {tx.description && ` · ${tx.description}`}
                       </p>
+                      {note && (
+                        <span
+                          className="mt-1 inline-flex items-center gap-1 rounded-full bg-primary/10 text-primary px-2 py-0.5 text-[10px] font-medium max-w-full"
+                          title={note.admin_notes ?? ''}
+                        >
+                          <MessageSquare className="w-3 h-3 shrink-0" />
+                          <span className="truncate">Admin note · {format(new Date(note.reviewed_at ?? note.created_at), 'MMM d, h:mm a')}</span>
+                        </span>
+                      )}
                     </div>
                   </div>
-                  <div className="flex items-center gap-2 shrink-0" onClick={e => e.stopPropagation()}>
-                    <div className="text-right">
-                      <p className={cn('text-sm font-semibold', tx.type === 'INCOME' ? 'text-income' : 'text-expense')}>
+                  <div className="flex items-center justify-between sm:justify-end gap-2 shrink-0 pl-9 sm:pl-0" onClick={e => e.stopPropagation()}>
+                    <div className="text-left sm:text-right">
+                      <p className={cn('text-sm font-semibold whitespace-nowrap', tx.type === 'INCOME' ? 'text-income' : 'text-expense')}>
                         {tx.type === 'INCOME' ? '+' : '-'}{fmt(tx.total_amount ?? 0)} RWF
                       </p>
                       {(tx.quantity ?? 1) > 1 && (
                         <p className="text-xs text-muted-foreground">{tx.quantity} × {fmt(tx.unit_price)}</p>
                       )}
                     </div>
-                    <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setDetailTx(tx)}>
-                      <Eye className="w-4 h-4" />
-                    </Button>
-                    <Button variant="ghost" size="icon" className="sm:opacity-0 sm:group-hover:opacity-100 h-8 w-8" onClick={() => openEdit(tx)}>
-                      <Pencil className="w-3.5 h-3.5" />
-                    </Button>
-                    <Button variant="ghost" size="icon" className="sm:opacity-0 sm:group-hover:opacity-100 text-destructive h-8 w-8" onClick={() => handleDelete(tx.id)}>
-                      <Trash2 className="w-4 h-4" />
-                    </Button>
+                    <div className="flex items-center gap-1">
+                      <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setDetailTx(tx)}>
+                        <Eye className="w-4 h-4" />
+                      </Button>
+                      <Button variant="ghost" size="icon" className="sm:opacity-0 sm:group-hover:opacity-100 h-8 w-8" onClick={() => openEdit(tx)}>
+                        <Pencil className="w-3.5 h-3.5" />
+                      </Button>
+                      <Button variant="ghost" size="icon" className="sm:opacity-0 sm:group-hover:opacity-100 text-destructive h-8 w-8" onClick={() => handleDelete(tx.id)}>
+                        <Trash2 className="w-4 h-4" />
+                      </Button>
+                    </div>
                   </div>
                 </div>
-              ))}
+                );
+              })}
             </div>
           )}
         </CardContent>
