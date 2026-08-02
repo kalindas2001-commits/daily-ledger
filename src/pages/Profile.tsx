@@ -286,6 +286,8 @@ export default function Profile() {
         </Card>
       )}
 
+      <NotificationPreferences />
+
       <Card>
         <CardHeader className="pb-2">
           <CardTitle className="text-sm font-medium flex items-center gap-2 text-muted-foreground">
