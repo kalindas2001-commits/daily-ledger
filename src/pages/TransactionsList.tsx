@@ -21,6 +21,19 @@ export default function TransactionsList() {
   const { data: categories } = useCategories();
   const deleteTx = useDeleteTransaction();
   const updateTx = useUpdateTransaction();
+  const { data: myRequests } = useMyEditRequests();
+  useMyEditRequestAlerts();
+
+  // Latest admin note per transaction (with timestamp) for inline badges
+  const noteByTx = useMemo(() => {
+    const map: Record<string, any> = {};
+    (myRequests ?? []).forEach((r: any) => {
+      if (!r.admin_notes) return;
+      if (!map[r.transaction_id]) map[r.transaction_id] = r;
+    });
+    return map;
+  }, [myRequests]);
+
 
   const [search, setSearch] = useState('');
   const [filterType, setFilterType] = useState<string>('ALL');
