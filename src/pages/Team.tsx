@@ -1,6 +1,7 @@
 import TeamMembers from '@/components/admin/TeamMembers';
 import EditRequestsQueue from '@/components/admin/EditRequestsQueue';
 import UserTransactionsDrawer from '@/components/admin/UserTransactionsDrawer';
+import TeamTransactionsPanel from '@/components/admin/TeamTransactionsPanel';
 import { useAuth } from '@/hooks/useAuth';
 import { Navigate } from 'react-router-dom';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
