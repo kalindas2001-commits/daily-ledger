@@ -3,6 +3,8 @@ import { useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { toast } from 'sonner';
+import { format } from 'date-fns';
+import { getNotificationPrefs, showWebAlert } from '@/hooks/useNotificationPrefs';
 
 
 export interface EditRequest {
@@ -99,10 +101,22 @@ export function useMyEditRequestAlerts() {
         { event: 'UPDATE', schema: 'public', table: 'transaction_edit_requests', filter: `user_id=eq.${user.id}` },
         (payload) => {
           const r: any = payload.new;
+          const prev: any = payload.old ?? {};
+          const prefs = getNotificationPrefs();
+          const noteAdded = !!r.admin_notes && r.admin_notes !== prev.admin_notes;
+          const stamp = format(new Date(r.reviewed_at ?? r.updated_at ?? Date.now()), 'MMM d, yyyy · h:mm a');
           const note = r.admin_notes ? `Admin note: ${r.admin_notes}` : undefined;
-          if (r.status === 'approved') toast.success('Edit request approved — changes applied', { description: note });
-          else if (r.status === 'rejected') toast.error('Edit request declined', { description: note });
-          else if (note) toast('Admin added a note to your edit request', { description: r.admin_notes });
+
+          if (r.status === 'approved' && r.status !== prev.status) {
+            if (prefs.approved.toast) toast.success('Edit request approved — changes applied', { description: [stamp, note].filter(Boolean).join(' — ') });
+            if (prefs.approved.web) showWebAlert('Edit request approved', [stamp, note].filter(Boolean).join(' — '));
+          } else if (r.status === 'rejected' && r.status !== prev.status) {
+            if (prefs.rejected.toast) toast.error('Edit request declined', { description: [stamp, note].filter(Boolean).join(' — ') });
+            if (prefs.rejected.web) showWebAlert('Edit request declined', [stamp, note].filter(Boolean).join(' — '));
+          } else if (noteAdded) {
+            if (prefs.notes.toast) toast('Admin added a note to your edit request', { description: `${stamp} — ${r.admin_notes}` });
+            if (prefs.notes.web) showWebAlert('New admin note on your edit request', `${stamp} — ${r.admin_notes}`);
+          }
           qc.invalidateQueries({ queryKey: ['edit_requests'] });
           qc.invalidateQueries({ queryKey: ['transactions'] });
         })

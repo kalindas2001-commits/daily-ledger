@@ -1,6 +1,7 @@
 import TeamMembers from '@/components/admin/TeamMembers';
 import EditRequestsQueue from '@/components/admin/EditRequestsQueue';
 import UserTransactionsDrawer from '@/components/admin/UserTransactionsDrawer';
+import TeamTransactionsPanel from '@/components/admin/TeamTransactionsPanel';
 import { useAuth } from '@/hooks/useAuth';
 import { Navigate } from 'react-router-dom';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -90,16 +91,16 @@ export default function TeamPage() {
         <h2 className="text-xl font-bold">Team Management</h2>
       </div>
       <Tabs defaultValue="overview" className="w-full">
-        <TabsList className="grid w-full grid-cols-4">
-          <TabsTrigger value="overview"><LayoutDashboard className="w-4 h-4 mr-1.5" /> Overview</TabsTrigger>
-          <TabsTrigger value="members"><Users className="w-4 h-4 mr-1.5" /> Members</TabsTrigger>
-          <TabsTrigger value="edits" className="relative">
-            <PencilLine className="w-4 h-4 mr-1.5" /> Edits
+        <TabsList className="grid w-full grid-cols-4 h-auto">
+          <TabsTrigger value="overview" className="text-[11px] sm:text-sm px-1 py-2"><LayoutDashboard className="w-4 h-4 sm:mr-1.5" /><span className="hidden sm:inline">Overview</span></TabsTrigger>
+          <TabsTrigger value="members" className="text-[11px] sm:text-sm px-1 py-2"><Users className="w-4 h-4 sm:mr-1.5" /><span className="hidden sm:inline">Members</span></TabsTrigger>
+          <TabsTrigger value="edits" className="relative text-[11px] sm:text-sm px-1 py-2">
+            <PencilLine className="w-4 h-4 sm:mr-1.5" /><span className="hidden sm:inline">Edits</span>
             {pendingCount > 0 && (
-              <span className="ml-1.5 inline-flex items-center justify-center min-w-[18px] h-[18px] px-1 rounded-full bg-primary text-primary-foreground text-[10px] font-bold">{pendingCount}</span>
+              <span className="ml-1 inline-flex items-center justify-center min-w-[18px] h-[18px] px-1 rounded-full bg-primary text-primary-foreground text-[10px] font-bold">{pendingCount}</span>
             )}
           </TabsTrigger>
-          <TabsTrigger value="transactions"><ListChecks className="w-4 h-4 mr-1.5" /> Transactions</TabsTrigger>
+          <TabsTrigger value="transactions" className="text-[11px] sm:text-sm px-1 py-2"><ListChecks className="w-4 h-4 sm:mr-1.5" /><span className="hidden sm:inline">Records</span></TabsTrigger>
         </TabsList>
         <TabsContent value="overview" className="mt-4">
           <TeamOverview onOpenAll={() => setAllOpen(true)} onOpenUser={(id, name) => setFocus({ id, name })} />
@@ -107,10 +108,7 @@ export default function TeamPage() {
         <TabsContent value="members" className="mt-4"><TeamMembers /></TabsContent>
         <TabsContent value="edits" className="mt-4"><EditRequestsQueue /></TabsContent>
         <TabsContent value="transactions" className="mt-4">
-          <Card><CardContent className="p-4">
-            <Button onClick={() => setAllOpen(true)}><Eye className="w-4 h-4 mr-1" /> Open all team transactions</Button>
-            <p className="text-xs text-muted-foreground mt-2">View, filter and audit every transaction recorded by your team members.</p>
-          </CardContent></Card>
+          <TeamTransactionsPanel userId={null} />
         </TabsContent>
       </Tabs>
       <UserTransactionsDrawer open={allOpen} onOpenChange={setAllOpen} userId={null} userName="Team" />
