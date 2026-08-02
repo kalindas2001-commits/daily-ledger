@@ -10,6 +10,7 @@ import { Badge } from '@/components/ui/badge';
 import { Camera, Loader2, Shield, User as UserIcon, LogOut, Calendar, Save, Lock, Building2, Users as UsersIcon } from 'lucide-react';
 import { toast } from 'sonner';
 import { useMyTenant } from '@/hooks/useTenant';
+import NotificationPreferences from '@/components/NotificationPreferences';
 
 const AVATAR_KEY = 'cungacash:avatar_url';
 
