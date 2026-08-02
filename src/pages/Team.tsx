@@ -107,10 +107,7 @@ export default function TeamPage() {
         <TabsContent value="members" className="mt-4"><TeamMembers /></TabsContent>
         <TabsContent value="edits" className="mt-4"><EditRequestsQueue /></TabsContent>
         <TabsContent value="transactions" className="mt-4">
-          <Card><CardContent className="p-4">
-            <Button onClick={() => setAllOpen(true)}><Eye className="w-4 h-4 mr-1" /> Open all team transactions</Button>
-            <p className="text-xs text-muted-foreground mt-2">View, filter and audit every transaction recorded by your team members.</p>
-          </CardContent></Card>
+          <TeamTransactionsPanel userId={null} />
         </TabsContent>
       </Tabs>
       <UserTransactionsDrawer open={allOpen} onOpenChange={setAllOpen} userId={null} userName="Team" />
