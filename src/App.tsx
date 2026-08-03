@@ -70,6 +70,7 @@ function AppRoutes() {
         <Route path="/admin/tenants/:id" element={<TenantDetail />} />
         <Route path="/team" element={<Team />} />
         <Route path="/alerts" element={<Alerts />} />
+        <Route path="/ai" element={<CungaAI />} />
         <Route path="/assist" element={<Assist />} />
         <Route path="/profile" element={<Profile />} />
         <Route path="/backup" element={<BackupRestore />} />
