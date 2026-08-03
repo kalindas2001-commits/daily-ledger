@@ -6,7 +6,7 @@ import { useTheme } from '@/hooks/useTheme';
 import {
   LayoutDashboard, PlusCircle, CalendarDays, List, Menu, FileDown,
   ExternalLink, X, Tag, Repeat, Target, Database, Moon, Sun, HandCoins,
-  StickyNote, Shield, UserCircle2, PiggyBank, Users, LifeBuoy, Wallet, Trophy,
+  StickyNote, Shield, UserCircle2, PiggyBank, Users, LifeBuoy, Wallet, Trophy, Sparkles,
 } from 'lucide-react';
 import OfflineIndicator from './OfflineIndicator';
 import AlertsBell from './AlertsBell';
