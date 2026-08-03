@@ -25,6 +25,7 @@ import TenantDetail from "./pages/admin/TenantDetail";
 import Team from "./pages/Team";
 import Alerts from "./pages/Alerts";
 import Assist from "./pages/Assist";
+import CungaAI from "./pages/CungaAI";
 import AppLayout from "./components/AppLayout";
 import WhatsNewDialog from "./components/WhatsNewDialog";
 import InfoPopup from "./components/InfoPopup";
