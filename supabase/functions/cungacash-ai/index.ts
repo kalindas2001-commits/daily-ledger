@@ -1,6 +1,6 @@
 // @ts-nocheck
 import { createOpenAICompatible } from 'npm:@ai-sdk/openai-compatible';
-import { convertToModelMessages, streamText } from 'npm:ai';
+import { streamText } from 'npm:ai';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -42,7 +42,7 @@ Deno.serve(async (req) => {
     const result = streamText({
       model: gateway('google/gemini-3.6-flash'),
       system: `${SYSTEM}\n\nLIVE FINANCIAL SNAPSHOT (real-time, from the signed-in user's records):\n${JSON.stringify(snapshot ?? {}, null, 2)}`,
-      messages: await convertToModelMessages(messages ?? []),
+      messages: messages ?? [],
     });
 
     return result.toTextStreamResponse({ headers: corsHeaders });
