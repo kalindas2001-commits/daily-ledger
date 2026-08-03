@@ -31,11 +31,12 @@ export function useMyEditRequests(transactionId?: string) {
   return useQuery({
     queryKey: ['edit_requests', 'mine', transactionId ?? 'all'],
     queryFn: async () => {
-      let q = supabase.from('transaction_edit_requests').select('*').order('created_at', { ascending: false });
-      if (transactionId) q = q.eq('transaction_id', transactionId);
-      const { data, error } = await q;
-      if (error) throw error;
-      return data as EditRequest[];
+      const rows = await fetchAllRows<EditRequest>(() => {
+        let q = supabase.from('transaction_edit_requests').select('*').order('created_at', { ascending: false });
+        if (transactionId) q = q.eq('transaction_id', transactionId);
+        return q;
+      });
+      return rows;
     },
     enabled: !!user,
   });
