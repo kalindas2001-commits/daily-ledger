@@ -4,7 +4,12 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
-import { getNotificationPrefs, showWebAlert } from '@/hooks/useNotificationPrefs';
+import { getNotificationPrefs, showWebAlert, loadRemotePrefs } from '@/hooks/useNotificationPrefs';
+
+/** Single source of truth for admin-note / review timestamps (badge + toast + web alert). */
+export const NOTE_STAMP_FORMAT = 'MMM d, yyyy · h:mm a';
+export const formatNoteStamp = (value?: string | null) =>
+  format(new Date(value ?? Date.now()), NOTE_STAMP_FORMAT);
 
 
 export interface EditRequest {
