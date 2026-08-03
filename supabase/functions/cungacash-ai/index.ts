@@ -45,7 +45,7 @@ Deno.serve(async (req) => {
       messages: await convertToModelMessages(messages ?? []),
     });
 
-    return result.toUIMessageStreamResponse({ headers: corsHeaders });
+    return result.toTextStreamResponse({ headers: corsHeaders });
   } catch (e: any) {
     return new Response(JSON.stringify({ error: String(e?.message ?? e) }), {
       status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
