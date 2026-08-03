@@ -5,6 +5,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
 import { getNotificationPrefs, showWebAlert, loadRemotePrefs } from '@/hooks/useNotificationPrefs';
+import { fetchAllRows } from '@/lib/fetchAll';
 
 /** Single source of truth for admin-note / review timestamps (badge + toast + web alert). */
 export const NOTE_STAMP_FORMAT = 'MMM d, yyyy · h:mm a';
