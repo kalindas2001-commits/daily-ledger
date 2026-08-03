@@ -41,21 +41,21 @@ export function useTransactions(dateRange?: { from: string; to: string }) {
   return useQuery({
     queryKey: ['transactions', dateRange],
     queryFn: async () => {
-      let q = supabase
-        .from('transactions')
-        .select('*')
-        .order('transaction_date', { ascending: false })
-        .order('transaction_time', { ascending: false })
-        .order('created_at', { ascending: false });
+      // Paged fetch — no 1,000-row ceiling, the full history is returned.
+      const rows = await fetchAllRows<any>(() => {
+        let q = supabase
+          .from('transactions')
+          .select('*')
+          .order('transaction_date', { ascending: false })
+          .order('transaction_time', { ascending: false })
+          .order('created_at', { ascending: false });
 
-
-      if (dateRange) {
-        q = q.gte('transaction_date', dateRange.from).lte('transaction_date', dateRange.to);
-      }
-
-      const { data, error } = await q;
-      if (error) throw error;
-      return data;
+        if (dateRange) {
+          q = q.gte('transaction_date', dateRange.from).lte('transaction_date', dateRange.to);
+        }
+        return q;
+      });
+      return rows;
     },
     enabled: !!user,
   });
