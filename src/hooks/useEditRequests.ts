@@ -165,13 +165,15 @@ export function useTenantTransactions(userId?: string) {
   return useQuery({
     queryKey: ['admin_tenant_transactions', userId ?? 'all'],
     queryFn: async () => {
-      const { data, error } = await supabase.rpc('admin_list_tenant_transactions', {
-        _user_id: userId ?? null,
-        _start_date: null,
-        _end_date: null,
-      });
-      if (error) throw error;
-      return (data ?? []) as any[];
+      // Paged so admins see every team transaction, not just the first 1,000.
+      const rows = await fetchAllRows<any>(() =>
+        supabase.rpc('admin_list_tenant_transactions', {
+          _user_id: userId ?? null,
+          _start_date: null,
+          _end_date: null,
+        }),
+      );
+      return rows;
     },
     enabled: !!user,
   });
