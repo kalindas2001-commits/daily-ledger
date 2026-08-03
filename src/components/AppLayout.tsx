@@ -39,6 +39,7 @@ const moreNavCfg = [
 ];
 
 const assistanceNavCfg = [
+  { path: '/ai', key: 'cungaAi', icon: Sparkles, fallback: 'CungaCash AI' },
   { path: '/assist', key: 'assist', icon: LifeBuoy, fallback: 'CungaCash Assist' },
 ];
 
