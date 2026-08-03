@@ -9,7 +9,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '
 import { Textarea } from '@/components/ui/textarea';
 import { Trash2, Search, Pencil, Eye, MessageSquare } from 'lucide-react';
 import { useTransactions, useDeleteTransaction, useUpdateTransaction, useCategories } from '@/hooks/useTransactions';
-import { useMyEditRequests, useMyEditRequestAlerts } from '@/hooks/useEditRequests';
+import { useMyEditRequests, useMyEditRequestAlerts, formatNoteStamp } from '@/hooks/useEditRequests';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 import TransactionDetailDialog from '@/components/TransactionDetailDialog';
