@@ -3,6 +3,7 @@ import { useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
 import { toast } from 'sonner';
+import { fetchAllRows } from '@/lib/fetchAll';
 
 export interface Alert {
   id: string;
@@ -23,10 +24,11 @@ export function useAlerts() {
     queryKey: ['alerts'],
     enabled: !!user,
     queryFn: async () => {
-      const { data, error } = await supabase.from('alerts').select('*')
-        .order('created_at', { ascending: false }).limit(100);
-      if (error) throw error;
-      return data as Alert[];
+      // Endless notifications — paged fetch instead of a fixed 100/1,000 cap.
+      const rows = await fetchAllRows<Alert>(() =>
+        supabase.from('alerts').select('*').order('created_at', { ascending: false }),
+      );
+      return rows;
     },
   });
 

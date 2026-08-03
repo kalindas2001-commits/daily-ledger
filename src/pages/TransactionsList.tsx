@@ -9,7 +9,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '
 import { Textarea } from '@/components/ui/textarea';
 import { Trash2, Search, Pencil, Eye, MessageSquare } from 'lucide-react';
 import { useTransactions, useDeleteTransaction, useUpdateTransaction, useCategories } from '@/hooks/useTransactions';
-import { useMyEditRequests, useMyEditRequestAlerts } from '@/hooks/useEditRequests';
+import { useMyEditRequests, useMyEditRequestAlerts, formatNoteStamp } from '@/hooks/useEditRequests';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 import TransactionDetailDialog from '@/components/TransactionDetailDialog';
@@ -111,10 +111,10 @@ export default function TransactionsList() {
   const editFilteredCats = categories?.filter((c) => c.type === editType) ?? [];
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-4 pb-4">
       <Card>
-        <CardContent className="p-4">
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+        <CardContent className="p-3 sm:p-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-3">
             <div className="relative">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
               <Input placeholder="Search..." className="pl-9" value={search} onChange={(e) => setSearch(e.target.value)} />
@@ -145,78 +145,86 @@ export default function TransactionsList() {
         </CardContent>
       </Card>
 
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-base flex items-center justify-between flex-wrap gap-2">
-            <span>Transactions ({filtered.length})</span>
-            <div className="flex items-center gap-3 text-sm font-normal">
-              <span className="text-income">+{fmt(filtered.filter(t => t.type === 'INCOME').reduce((s, t) => s + (t.total_amount ?? 0), 0))} RWF</span>
-              <span className="text-expense">-{fmt(filtered.filter(t => t.type === 'EXPENSE').reduce((s, t) => s + (t.total_amount ?? 0), 0))} RWF</span>
+      <Card className="overflow-hidden">
+        <CardHeader className="sticky top-0 z-20 bg-card/95 backdrop-blur-md border-b p-3 sm:p-4 space-y-0">
+          <CardTitle className="text-sm sm:text-base flex flex-col gap-1.5 sm:flex-row sm:items-center sm:justify-between">
+            <span className="truncate">Transactions ({filtered.length})</span>
+            <div className="flex items-center gap-3 text-xs sm:text-sm font-normal">
+              <span className="text-income truncate">+{fmt(filtered.filter(t => t.type === 'INCOME').reduce((s, t) => s + (t.total_amount ?? 0), 0))} RWF</span>
+              <span className="text-expense truncate">-{fmt(filtered.filter(t => t.type === 'EXPENSE').reduce((s, t) => s + (t.total_amount ?? 0), 0))} RWF</span>
             </div>
           </CardTitle>
         </CardHeader>
-        <CardContent>
+        <CardContent className="p-2 sm:p-4">
           {isLoading ? (
             <p className="text-center text-muted-foreground py-8">Loading...</p>
           ) : filtered.length === 0 ? (
             <p className="text-center text-muted-foreground py-8">No transactions found</p>
           ) : (
-            <div className="space-y-2">
+            <div className="divide-y sm:divide-y-0 sm:space-y-1">
               {filtered.map((tx) => {
                 const note = noteByTx[tx.id];
                 return (
                 <div
                   key={tx.id}
-                  className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between p-3 rounded-lg border sm:border-0 hover:bg-muted transition-colors group cursor-pointer"
+                  className="grid grid-cols-[auto_minmax(0,1fr)_auto] items-start gap-x-2.5 gap-y-2 py-3 px-1.5 sm:px-3 sm:rounded-lg hover:bg-muted/60 transition-colors group cursor-pointer"
                   onClick={() => setDetailTx(tx)}
                 >
-                  <div className="flex items-start gap-3 min-w-0 flex-1">
-                    <PaymentMethodLogo method={tx.payment_method} size={28} />
-                    <div className={cn('w-2 h-2 rounded-full shrink-0 mt-2', tx.type === 'INCOME' ? 'bg-income' : 'bg-expense')} />
-
-                    <div className="min-w-0 flex-1">
-                      <p className="text-sm font-medium break-words">
-                        {tx.category}
-                        {(tx as any).subcategory && <span className="text-muted-foreground"> · {(tx as any).subcategory}</span>}
-                      </p>
-                      <p className="text-xs text-muted-foreground break-words">
-                        {format(new Date(tx.transaction_date), 'MMM d, yyyy')}
-                        {(tx as any).transaction_time && ` · ${format(new Date(`1970-01-01T${String((tx as any).transaction_time)}`), 'h:mm a')}`}
-                        {' · '}{tx.payment_method}
-                        {(tx as any).merchant_name && ` · ${(tx as any).merchant_name}`}
-                        {tx.description && ` · ${tx.description}`}
-                      </p>
-                      {note && (
-                        <span
-                          className="mt-1 inline-flex items-center gap-1 rounded-full bg-primary/10 text-primary px-2 py-0.5 text-[10px] font-medium max-w-full"
-                          title={note.admin_notes ?? ''}
-                        >
-                          <MessageSquare className="w-3 h-3 shrink-0" />
-                          <span className="truncate">Admin note · {format(new Date(note.reviewed_at ?? note.created_at), 'MMM d, h:mm a')}</span>
-                        </span>
-                      )}
-                    </div>
+                  {/* Left: payment logo + type dot */}
+                  <div className="flex items-center gap-1.5 pt-0.5">
+                    <PaymentMethodLogo method={tx.payment_method} size={26} />
+                    <span className={cn('w-2 h-2 rounded-full shrink-0', tx.type === 'INCOME' ? 'bg-income' : 'bg-expense')} />
                   </div>
-                  <div className="flex items-center justify-between sm:justify-end gap-2 shrink-0 pl-9 sm:pl-0" onClick={e => e.stopPropagation()}>
-                    <div className="text-left sm:text-right">
-                      <p className={cn('text-sm font-semibold whitespace-nowrap', tx.type === 'INCOME' ? 'text-income' : 'text-expense')}>
-                        {tx.type === 'INCOME' ? '+' : '-'}{fmt(tx.total_amount ?? 0)} RWF
-                      </p>
-                      {(tx.quantity ?? 1) > 1 && (
-                        <p className="text-xs text-muted-foreground">{tx.quantity} × {fmt(tx.unit_price)}</p>
-                      )}
-                    </div>
-                    <div className="flex items-center gap-1">
-                      <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setDetailTx(tx)}>
-                        <Eye className="w-4 h-4" />
-                      </Button>
-                      <Button variant="ghost" size="icon" className="sm:opacity-0 sm:group-hover:opacity-100 h-8 w-8" onClick={() => openEdit(tx)}>
-                        <Pencil className="w-3.5 h-3.5" />
-                      </Button>
-                      <Button variant="ghost" size="icon" className="sm:opacity-0 sm:group-hover:opacity-100 text-destructive h-8 w-8" onClick={() => handleDelete(tx.id)}>
-                        <Trash2 className="w-4 h-4" />
-                      </Button>
-                    </div>
+
+                  {/* Middle: details — always shrinkable, never clipped */}
+                  <div className="min-w-0">
+                    <p className="text-sm font-medium break-words leading-snug">
+                      {tx.category}
+                      {(tx as any).subcategory && <span className="text-muted-foreground"> · {(tx as any).subcategory}</span>}
+                    </p>
+                    <p className="text-[11px] sm:text-xs text-muted-foreground break-words leading-snug mt-0.5">
+                      {format(new Date(tx.transaction_date), 'MMM d, yyyy')}
+                      {(tx as any).transaction_time && ` · ${format(new Date(`1970-01-01T${String((tx as any).transaction_time)}`), 'h:mm a')}`}
+                      {' · '}{tx.payment_method}
+                      {(tx as any).merchant_name && ` · ${(tx as any).merchant_name}`}
+                      {tx.description && ` · ${tx.description}`}
+                    </p>
+                    {note && (
+                      <span
+                        className="mt-1 inline-flex max-w-full items-center gap-1 rounded-full bg-primary/10 text-primary px-2 py-0.5 text-[10px] font-medium"
+                        title={note.admin_notes ?? ''}
+                      >
+                        <MessageSquare className="w-3 h-3 shrink-0" />
+                        <span className="truncate">Admin note · {formatNoteStamp(note.reviewed_at ?? note.updated_at ?? note.created_at)}</span>
+                      </span>
+                    )}
+                  </div>
+
+                  {/* Right: amount (always visible) */}
+                  <div className="text-right">
+                    <p className={cn('text-sm font-semibold whitespace-nowrap', tx.type === 'INCOME' ? 'text-income' : 'text-expense')}>
+                      {tx.type === 'INCOME' ? '+' : '-'}{fmt(tx.total_amount ?? 0)}
+                      <span className="text-[10px] font-normal text-muted-foreground"> RWF</span>
+                    </p>
+                    {(tx.quantity ?? 1) > 1 && (
+                      <p className="text-[10px] text-muted-foreground">{tx.quantity} × {fmt(tx.unit_price)}</p>
+                    )}
+                  </div>
+
+                  {/* Actions row — spans full width on mobile, inline on desktop */}
+                  <div
+                    className="col-span-3 flex items-center justify-end gap-0.5 -mt-1 sm:mt-0"
+                    onClick={e => e.stopPropagation()}
+                  >
+                    <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setDetailTx(tx)}>
+                      <Eye className="w-4 h-4" />
+                    </Button>
+                    <Button variant="ghost" size="icon" className="h-8 w-8 sm:opacity-0 sm:group-hover:opacity-100" onClick={() => openEdit(tx)}>
+                      <Pencil className="w-3.5 h-3.5" />
+                    </Button>
+                    <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive sm:opacity-0 sm:group-hover:opacity-100" onClick={() => handleDelete(tx.id)}>
+                      <Trash2 className="w-4 h-4" />
+                    </Button>
                   </div>
                 </div>
                 );
@@ -225,6 +233,7 @@ export default function TransactionsList() {
           )}
         </CardContent>
       </Card>
+
 
       <TransactionDetailDialog open={!!detailTx} onOpenChange={(o) => !o && setDetailTx(null)} tx={detailTx} />
 

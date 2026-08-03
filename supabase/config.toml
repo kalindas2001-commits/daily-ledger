@@ -8,3 +8,6 @@ verify_jwt = false
 
 [functions.ai-alert-analyzer]
 verify_jwt = false
+
+[functions.cungacash-ai]
+verify_jwt = true

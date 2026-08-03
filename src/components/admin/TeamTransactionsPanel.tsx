@@ -1,12 +1,13 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { format } from 'date-fns';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { useTenantTransactions } from '@/hooks/useEditRequests';
-import { TrendingUp, TrendingDown, ArrowLeftRight, Download, Hash } from 'lucide-react';
+import { TrendingUp, TrendingDown, ArrowLeftRight, Download, Hash, Bookmark, BookmarkPlus, X, RotateCcw } from 'lucide-react';
 import { toast } from 'sonner';
 
 const fmt = (n: any) => Number(n ?? 0).toLocaleString('en-RW');
@@ -17,17 +18,60 @@ interface Props {
   userName?: string;
 }
 
-type SortKey = 'date_desc' | 'date_asc' | 'amount_desc' | 'amount_asc';
+type SortKey = 'latest_activity' | 'date_desc' | 'date_asc' | 'net_impact' | 'amount_desc' | 'amount_asc';
+
+interface FilterState {
+  q: string;
+  type: 'ALL' | 'INCOME' | 'EXPENSE';
+  category: string;
+  member: string;
+  from: string;
+  to: string;
+  sort: SortKey;
+}
+
+const EMPTY: FilterState = {
+  q: '', type: 'ALL', category: 'ALL', member: 'ALL', from: '', to: '', sort: 'latest_activity',
+};
+
+interface Preset extends FilterState { id: string; name: string }
+
+const PRESET_KEY = 'cungacash:team_filter_presets';
+
+function readPresets(): Preset[] {
+  try { return JSON.parse(localStorage.getItem(PRESET_KEY) ?? '[]'); } catch { return []; }
+}
 
 export default function TeamTransactionsPanel({ userId, userName }: Props) {
   const { data, isLoading } = useTenantTransactions(userId ?? undefined);
-  const [q, setQ] = useState('');
-  const [type, setType] = useState<'ALL' | 'INCOME' | 'EXPENSE'>('ALL');
-  const [category, setCategory] = useState('ALL');
-  const [from, setFrom] = useState('');
-  const [to, setTo] = useState('');
-  const [sort, setSort] = useState<SortKey>('date_desc');
-  const [member, setMember] = useState('ALL');
+  const [f, setF] = useState<FilterState>(EMPTY);
+  const set = <K extends keyof FilterState>(k: K, v: FilterState[K]) => setF((p) => ({ ...p, [k]: v }));
+
+  const [presets, setPresets] = useState<Preset[]>(() => readPresets());
+  const [saveOpen, setSaveOpen] = useState(false);
+  const [presetName, setPresetName] = useState('');
+  const [activePreset, setActivePreset] = useState<string | null>(null);
+
+  useEffect(() => {
+    localStorage.setItem(PRESET_KEY, JSON.stringify(presets));
+  }, [presets]);
+
+  const savePreset = () => {
+    const name = presetName.trim();
+    if (!name) return toast.error('Give the preset a name');
+    const preset: Preset = { ...f, id: crypto.randomUUID(), name };
+    setPresets((p) => [preset, ...p.filter((x) => x.name !== name)]);
+    setActivePreset(preset.id);
+    setSaveOpen(false);
+    setPresetName('');
+    toast.success(`Preset “${name}” saved`);
+  };
+
+  const applyPreset = (p: Preset) => {
+    const { id, name, ...rest } = p;
+    setF(rest);
+    setActivePreset(p.id);
+  };
 
   const members = useMemo(() => {
     const map: Record<string, string> = {};
@@ -40,24 +84,31 @@ export default function TeamTransactionsPanel({ userId, userName }: Props) {
     [data],
   );
 
+  const signed = (t: any) => (t.type === 'INCOME' ? 1 : -1) * Number(t.total_amount ?? 0);
+  const activityTs = (t: any) =>
+    new Date(t.created_at ?? `${t.transaction_date}T00:00:00`).getTime();
+
   const filtered = useMemo(() => {
     const rows = (data ?? []).filter((t: any) => {
-      if (type !== 'ALL' && t.type !== type) return false;
-      if (category !== 'ALL' && t.category !== category) return false;
-      if (!userId && member !== 'ALL' && t.user_id !== member) return false;
-      if (from && t.transaction_date < from) return false;
-      if (to && t.transaction_date > to) return false;
-      if (q && !`${t.category} ${t.description ?? ''} ${t.notes ?? ''} ${t.full_name ?? ''}`.toLowerCase().includes(q.toLowerCase())) return false;
+      if (f.type !== 'ALL' && t.type !== f.type) return false;
+      if (f.category !== 'ALL' && t.category !== f.category) return false;
+      if (!userId && f.member !== 'ALL' && t.user_id !== f.member) return false;
+      if (f.from && t.transaction_date < f.from) return false;
+      if (f.to && t.transaction_date > f.to) return false;
+      if (f.q && !`${t.category} ${t.description ?? ''} ${t.notes ?? ''} ${t.full_name ?? ''}`.toLowerCase().includes(f.q.toLowerCase())) return false;
       return true;
     });
-    return rows.sort((a: any, b: any) => {
-      if (sort === 'amount_desc') return Number(b.total_amount ?? 0) - Number(a.total_amount ?? 0);
-      if (sort === 'amount_asc') return Number(a.total_amount ?? 0) - Number(b.total_amount ?? 0);
-      const da = new Date(a.transaction_date).getTime();
-      const db = new Date(b.transaction_date).getTime();
-      return sort === 'date_asc' ? da - db : db - da;
+    return [...rows].sort((a: any, b: any) => {
+      switch (f.sort) {
+        case 'net_impact': return Math.abs(signed(b)) - Math.abs(signed(a));
+        case 'amount_desc': return Number(b.total_amount ?? 0) - Number(a.total_amount ?? 0);
+        case 'amount_asc': return Number(a.total_amount ?? 0) - Number(b.total_amount ?? 0);
+        case 'latest_activity': return activityTs(b) - activityTs(a);
+        case 'date_asc': return new Date(a.transaction_date).getTime() - new Date(b.transaction_date).getTime();
+        default: return new Date(b.transaction_date).getTime() - new Date(a.transaction_date).getTime();
+      }
     });
-  }, [data, q, type, category, member, from, to, sort, userId]);
+  }, [data, f, userId]);
 
   const stats = useMemo(() => {
     const income = filtered.filter((t: any) => t.type === 'INCOME').reduce((s, t: any) => s + Number(t.total_amount ?? 0), 0);
@@ -73,9 +124,10 @@ export default function TeamTransactionsPanel({ userId, userName }: Props) {
 
   const exportCsv = () => {
     if (filtered.length === 0) return toast.error('Nothing to export');
-    const head = ['Date', 'Member', 'Type', 'Category', 'Description', 'Quantity', 'Unit price', 'Total (RWF)', 'Status'];
+    const head = ['Date', 'Time', 'Member', 'Type', 'Category', 'Description', 'Quantity', 'Unit price', 'Total (RWF)', 'Status'];
     const rows = filtered.map((t: any) => [
       t.transaction_date,
+      t.created_at ? format(new Date(t.created_at), 'h:mm a') : '',
       (t.full_name || t.email || '').replace(/,/g, ' '),
       t.type,
       (t.category ?? '').replace(/,/g, ' '),
@@ -106,9 +158,50 @@ export default function TeamTransactionsPanel({ userId, userName }: Props) {
         <StatCard label="Records" value={String(stats.count)} tone="neutral" icon={Hash} />
       </div>
 
+      {/* Saved presets */}
+      <Card>
+        <CardContent className="p-3 space-y-2">
+          <div className="flex items-center justify-between gap-2 flex-wrap">
+            <p className="text-[10px] uppercase tracking-wider text-muted-foreground flex items-center gap-1">
+              <Bookmark className="w-3.5 h-3.5" /> Saved filter presets
+            </p>
+            <div className="flex gap-1">
+              <Button size="sm" variant="ghost" onClick={() => { setF(EMPTY); setActivePreset(null); }} className="h-8 text-xs">
+                <RotateCcw className="w-3.5 h-3.5 sm:mr-1" /><span className="hidden sm:inline">Clear</span>
+              </Button>
+              <Button size="sm" variant="outline" onClick={() => setSaveOpen(true)} className="h-8 text-xs">
+                <BookmarkPlus className="w-3.5 h-3.5 sm:mr-1" /><span className="hidden sm:inline">Save current</span>
+              </Button>
+            </div>
+          </div>
+          {presets.length === 0 ? (
+            <p className="text-xs text-muted-foreground">No presets yet — set your filters then press “Save current”.</p>
+          ) : (
+            <div className="flex gap-2 flex-wrap">
+              {presets.map((p) => (
+                <span
+                  key={p.id}
+                  className={`inline-flex items-center gap-1 rounded-full border px-2.5 py-1 text-xs transition-colors ${
+                    activePreset === p.id ? 'bg-primary text-primary-foreground border-primary' : 'hover:bg-muted'
+                  }`}
+                >
+                  <button onClick={() => applyPreset(p)} className="max-w-[160px] truncate">{p.name}</button>
+                  <button
+                    aria-label={`Delete preset ${p.name}`}
+                    onClick={() => { setPresets((x) => x.filter((y) => y.id !== p.id)); if (activePreset === p.id) setActivePreset(null); }}
+                  >
+                    <X className="w-3 h-3 opacity-70 hover:opacity-100" />
+                  </button>
+                </span>
+              ))}
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
-        <Input placeholder="Search category, notes, member…" value={q} onChange={e => setQ(e.target.value)} />
-        <Select value={type} onValueChange={(v: any) => setType(v)}>
+        <Input placeholder="Search category, notes, member…" value={f.q} onChange={e => set('q', e.target.value)} />
+        <Select value={f.type} onValueChange={(v: any) => set('type', v)}>
           <SelectTrigger><SelectValue placeholder="Type" /></SelectTrigger>
           <SelectContent>
             <SelectItem value="ALL">All types</SelectItem>
@@ -116,7 +209,7 @@ export default function TeamTransactionsPanel({ userId, userName }: Props) {
             <SelectItem value="EXPENSE">Expense</SelectItem>
           </SelectContent>
         </Select>
-        <Select value={category} onValueChange={setCategory}>
+        <Select value={f.category} onValueChange={(v) => set('category', v)}>
           <SelectTrigger><SelectValue placeholder="Category" /></SelectTrigger>
           <SelectContent>
             <SelectItem value="ALL">All categories</SelectItem>
@@ -124,7 +217,7 @@ export default function TeamTransactionsPanel({ userId, userName }: Props) {
           </SelectContent>
         </Select>
         {!userId && (
-          <Select value={member} onValueChange={setMember}>
+          <Select value={f.member} onValueChange={(v) => set('member', v)}>
             <SelectTrigger><SelectValue placeholder="Member" /></SelectTrigger>
             <SelectContent>
               <SelectItem value="ALL">All members</SelectItem>
@@ -133,15 +226,17 @@ export default function TeamTransactionsPanel({ userId, userName }: Props) {
           </Select>
         )}
         <div className="grid grid-cols-2 gap-2">
-          <Input type="date" value={from} onChange={e => setFrom(e.target.value)} />
-          <Input type="date" value={to} onChange={e => setTo(e.target.value)} />
+          <Input type="date" value={f.from} onChange={e => set('from', e.target.value)} />
+          <Input type="date" value={f.to} onChange={e => set('to', e.target.value)} />
         </div>
         <div className="flex gap-2">
-          <Select value={sort} onValueChange={(v: any) => setSort(v)}>
+          <Select value={f.sort} onValueChange={(v: any) => set('sort', v)}>
             <SelectTrigger className="flex-1"><SelectValue /></SelectTrigger>
             <SelectContent>
-              <SelectItem value="date_desc">Newest first</SelectItem>
-              <SelectItem value="date_asc">Oldest first</SelectItem>
+              <SelectItem value="latest_activity">Latest activity</SelectItem>
+              <SelectItem value="net_impact">Highest net impact</SelectItem>
+              <SelectItem value="date_desc">Newest by date</SelectItem>
+              <SelectItem value="date_asc">Oldest by date</SelectItem>
               <SelectItem value="amount_desc">Highest amount</SelectItem>
               <SelectItem value="amount_asc">Lowest amount</SelectItem>
             </SelectContent>
@@ -198,6 +293,20 @@ export default function TeamTransactionsPanel({ userId, userName }: Props) {
           </Card>
         ))}
       </div>
+
+      <Dialog open={saveOpen} onOpenChange={setSaveOpen}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader><DialogTitle>Save filter preset</DialogTitle></DialogHeader>
+          <p className="text-xs text-muted-foreground">
+            Stores the current member, date range, type, category, search and sort choices.
+          </p>
+          <Input placeholder="e.g. Q3 expenses — Alice" value={presetName} onChange={e => setPresetName(e.target.value)} />
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setSaveOpen(false)}>Cancel</Button>
+            <Button onClick={savePreset}>Save preset</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

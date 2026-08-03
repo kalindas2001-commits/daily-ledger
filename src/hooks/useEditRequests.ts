@@ -4,7 +4,13 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
-import { getNotificationPrefs, showWebAlert } from '@/hooks/useNotificationPrefs';
+import { getNotificationPrefs, showWebAlert, loadRemotePrefs } from '@/hooks/useNotificationPrefs';
+import { fetchAllRows } from '@/lib/fetchAll';
+
+/** Single source of truth for admin-note / review timestamps (badge + toast + web alert). */
+export const NOTE_STAMP_FORMAT = 'MMM d, yyyy · h:mm a';
+export const formatNoteStamp = (value?: string | null) =>
+  format(new Date(value ?? Date.now()), NOTE_STAMP_FORMAT);
 
 
 export interface EditRequest {
@@ -26,11 +32,12 @@ export function useMyEditRequests(transactionId?: string) {
   return useQuery({
     queryKey: ['edit_requests', 'mine', transactionId ?? 'all'],
     queryFn: async () => {
-      let q = supabase.from('transaction_edit_requests').select('*').order('created_at', { ascending: false });
-      if (transactionId) q = q.eq('transaction_id', transactionId);
-      const { data, error } = await q;
-      if (error) throw error;
-      return data as EditRequest[];
+      const rows = await fetchAllRows<EditRequest>(() => {
+        let q = supabase.from('transaction_edit_requests').select('*').order('created_at', { ascending: false });
+        if (transactionId) q = q.eq('transaction_id', transactionId);
+        return q;
+      });
+      return rows;
     },
     enabled: !!user,
   });
@@ -95,6 +102,8 @@ export function useMyEditRequestAlerts() {
   const qc = useQueryClient();
   useEffect(() => {
     if (!user) return;
+    // Make sure the account-level (cross-device) preferences are loaded before alerts fire.
+    loadRemotePrefs();
     const channel = supabase
       .channel(`edit_requests_mine_${user.id}`)
       .on('postgres_changes',
@@ -104,18 +113,29 @@ export function useMyEditRequestAlerts() {
           const prev: any = payload.old ?? {};
           const prefs = getNotificationPrefs();
           const noteAdded = !!r.admin_notes && r.admin_notes !== prev.admin_notes;
-          const stamp = format(new Date(r.reviewed_at ?? r.updated_at ?? Date.now()), 'MMM d, yyyy · h:mm a');
+          const stamp = formatNoteStamp(r.reviewed_at ?? r.updated_at);
           const note = r.admin_notes ? `Admin note: ${r.admin_notes}` : undefined;
+          const detail = [stamp, note].filter(Boolean).join(' — ');
+
+          const web = (title: string, body: string, enabled: boolean) => {
+            if (!enabled) return;
+            const state = showWebAlert(title, body);
+            if (state === 'denied') {
+              toast.error('Web alerts are blocked in your browser — enable notifications in site settings.', { duration: 8000 });
+            } else if (state === 'default') {
+              toast.message('Web alerts are not enabled yet', { description: 'Turn them on from Profile → Notification preferences.' });
+            }
+          };
 
           if (r.status === 'approved' && r.status !== prev.status) {
-            if (prefs.approved.toast) toast.success('Edit request approved — changes applied', { description: [stamp, note].filter(Boolean).join(' — ') });
-            if (prefs.approved.web) showWebAlert('Edit request approved', [stamp, note].filter(Boolean).join(' — '));
+            if (prefs.approved.toast) toast.success('Edit request approved — changes applied', { description: detail });
+            web('Edit request approved', detail, prefs.approved.web);
           } else if (r.status === 'rejected' && r.status !== prev.status) {
-            if (prefs.rejected.toast) toast.error('Edit request declined', { description: [stamp, note].filter(Boolean).join(' — ') });
-            if (prefs.rejected.web) showWebAlert('Edit request declined', [stamp, note].filter(Boolean).join(' — '));
+            if (prefs.rejected.toast) toast.error('Edit request declined', { description: detail });
+            web('Edit request declined', detail, prefs.rejected.web);
           } else if (noteAdded) {
             if (prefs.notes.toast) toast('Admin added a note to your edit request', { description: `${stamp} — ${r.admin_notes}` });
-            if (prefs.notes.web) showWebAlert('New admin note on your edit request', `${stamp} — ${r.admin_notes}`);
+            web('New admin note on your edit request', `${stamp} — ${r.admin_notes}`, prefs.notes.web);
           }
           qc.invalidateQueries({ queryKey: ['edit_requests'] });
           qc.invalidateQueries({ queryKey: ['transactions'] });
@@ -145,13 +165,15 @@ export function useTenantTransactions(userId?: string) {
   return useQuery({
     queryKey: ['admin_tenant_transactions', userId ?? 'all'],
     queryFn: async () => {
-      const { data, error } = await supabase.rpc('admin_list_tenant_transactions', {
-        _user_id: userId ?? null,
-        _start_date: null,
-        _end_date: null,
-      });
-      if (error) throw error;
-      return (data ?? []) as any[];
+      // Paged so admins see every team transaction, not just the first 1,000.
+      const rows = await fetchAllRows<any>(() =>
+        supabase.rpc('admin_list_tenant_transactions', {
+          _user_id: userId ?? null,
+          _start_date: null,
+          _end_date: null,
+        }),
+      );
+      return rows;
     },
     enabled: !!user,
   });
