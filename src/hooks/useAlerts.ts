@@ -3,6 +3,7 @@ import { useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
 import { toast } from 'sonner';
+import { fetchAllRows } from '@/lib/fetchAll';
 
 export interface Alert {
   id: string;
