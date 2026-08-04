@@ -117,6 +117,15 @@ export default function TeamTransactionsPanel({ userId, userName }: Props) {
 
   const maxCat = Math.max(1, ...topCategories.map(([, v]) => v));
 
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const rowVirtualizer = useVirtualizer({
+    count: filtered.length,
+    getScrollElement: () => scrollRef.current,
+    estimateSize: () => 92,
+    overscan: 12,
+  });
+
+
   return (
     <div className="space-y-4">
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
