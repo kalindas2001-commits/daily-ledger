@@ -8,7 +8,12 @@ import { Badge } from '@/components/ui/badge';
 import { Sparkles, SendHorizontal, TrendingUp, TrendingDown, Wallet, Loader2, RotateCcw, ShieldCheck } from 'lucide-react';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
-import { useTransactions } from '@/hooks/useTransactions';
+import { useTransactions, useBudgets } from '@/hooks/useTransactions';
+import { useAccounts } from '@/hooks/useAccounts';
+import { useSavingsAccounts } from '@/hooks/useSavings';
+import { useLoans } from '@/hooks/useLoans';
+import { useGoals } from '@/hooks/useGoals';
+
 
 const fmt = (n: number) => Number(n ?? 0).toLocaleString('en-RW', { maximumFractionDigits: 0 });
 
