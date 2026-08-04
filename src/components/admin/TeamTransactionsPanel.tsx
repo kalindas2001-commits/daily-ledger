@@ -158,46 +158,20 @@ export default function TeamTransactionsPanel({ userId, userName }: Props) {
         <StatCard label="Records" value={String(stats.count)} tone="neutral" icon={Hash} />
       </div>
 
-      {/* Saved presets */}
-      <Card>
-        <CardContent className="p-3 space-y-2">
-          <div className="flex items-center justify-between gap-2 flex-wrap">
-            <p className="text-[10px] uppercase tracking-wider text-muted-foreground flex items-center gap-1">
-              <Bookmark className="w-3.5 h-3.5" /> Saved filter presets
-            </p>
-            <div className="flex gap-1">
-              <Button size="sm" variant="ghost" onClick={() => { setF(EMPTY); setActivePreset(null); }} className="h-8 text-xs">
-                <RotateCcw className="w-3.5 h-3.5 sm:mr-1" /><span className="hidden sm:inline">Clear</span>
-              </Button>
-              <Button size="sm" variant="outline" onClick={() => setSaveOpen(true)} className="h-8 text-xs">
-                <BookmarkPlus className="w-3.5 h-3.5 sm:mr-1" /><span className="hidden sm:inline">Save current</span>
-              </Button>
-            </div>
-          </div>
-          {presets.length === 0 ? (
-            <p className="text-xs text-muted-foreground">No presets yet — set your filters then press “Save current”.</p>
-          ) : (
-            <div className="flex gap-2 flex-wrap">
-              {presets.map((p) => (
-                <span
-                  key={p.id}
-                  className={`inline-flex items-center gap-1 rounded-full border px-2.5 py-1 text-xs transition-colors ${
-                    activePreset === p.id ? 'bg-primary text-primary-foreground border-primary' : 'hover:bg-muted'
-                  }`}
-                >
-                  <button onClick={() => applyPreset(p)} className="max-w-[160px] truncate">{p.name}</button>
-                  <button
-                    aria-label={`Delete preset ${p.name}`}
-                    onClick={() => { setPresets((x) => x.filter((y) => y.id !== p.id)); if (activePreset === p.id) setActivePreset(null); }}
-                  >
-                    <X className="w-3 h-3 opacity-70 hover:opacity-100" />
-                  </button>
-                </span>
-              ))}
-            </div>
-          )}
-        </CardContent>
-      </Card>
+      <div className="flex items-center justify-between gap-2 flex-wrap">
+        <p className="text-[10px] uppercase tracking-wider text-muted-foreground">
+          {userName ? `${userName} · live records` : 'All team records · live'}
+        </p>
+        <div className="flex gap-1">
+          <Button size="sm" variant="ghost" onClick={() => setF(EMPTY)} className="h-8 text-xs">
+            <RotateCcw className="w-3.5 h-3.5 sm:mr-1" /><span className="hidden sm:inline">Clear filters</span>
+          </Button>
+          <Button size="sm" variant="outline" onClick={() => refetch()} disabled={isFetching} className="h-8 text-xs">
+            <RefreshCw className={`w-3.5 h-3.5 sm:mr-1 ${isFetching ? 'animate-spin' : ''}`} /><span className="hidden sm:inline">Refresh</span>
+          </Button>
+        </div>
+      </div>
+
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
         <Input placeholder="Search category, notes, member…" value={f.q} onChange={e => set('q', e.target.value)} />
