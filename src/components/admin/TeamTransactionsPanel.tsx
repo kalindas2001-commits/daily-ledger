@@ -266,47 +266,49 @@ export default function TeamTransactionsPanel({ userId, userName }: Props) {
         </Card>
       )}
 
-      <div className="space-y-2">
-        {isLoading && <p className="text-sm text-muted-foreground">Loading…</p>}
-        {!isLoading && filtered.length === 0 && (
-          <Card><CardContent className="py-8 text-center text-sm text-muted-foreground">No transactions found.</CardContent></Card>
-        )}
-        {filtered.map((t: any) => (
-          <Card key={t.id}>
-            <CardContent className="p-3 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-              <div className="min-w-0">
-                <div className="flex items-center gap-2 flex-wrap">
-                  <Badge variant={t.type === 'INCOME' ? 'default' : 'destructive'} className="text-[10px]">{t.type}</Badge>
-                  <span className="font-medium text-sm break-words">{t.category}</span>
+      {isLoading && <p className="text-sm text-muted-foreground">Loading…</p>}
+      {!isLoading && filtered.length === 0 && (
+        <Card><CardContent className="py-8 text-center text-sm text-muted-foreground">No transactions found.</CardContent></Card>
+      )}
+      {filtered.length > 0 && (
+        <div ref={scrollRef} className="max-h-[65vh] overflow-y-auto pr-1">
+          <div className="relative" style={{ height: `${rowVirtualizer.getTotalSize()}px` }}>
+            {rowVirtualizer.getVirtualItems().map((vi) => {
+              const t: any = filtered[vi.index];
+              return (
+                <div
+                  key={t.id}
+                  ref={rowVirtualizer.measureElement}
+                  data-index={vi.index}
+                  className="absolute left-0 top-0 w-full pb-2"
+                  style={{ transform: `translateY(${vi.start}px)` }}
+                >
+                  <Card>
+                    <CardContent className="p-3 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                      <div className="min-w-0">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <Badge variant={t.type === 'INCOME' ? 'default' : 'destructive'} className="text-[10px]">{t.type}</Badge>
+                          <span className="font-medium text-sm break-words">{t.category}</span>
+                        </div>
+                        <p className="text-xs text-muted-foreground mt-0.5 break-words">
+                          {format(new Date(t.transaction_date), 'MMM d, yyyy')}
+                          {t.created_at && ` · ${format(new Date(t.created_at), 'h:mm a')}`}
+                          {' · '}{t.description || t.notes || '—'}
+                        </p>
+                        {!userId && <p className="text-[10px] text-muted-foreground/70">{t.full_name || t.email}</p>}
+                      </div>
+                      <div className={`text-left sm:text-right font-semibold whitespace-nowrap ${t.type === 'INCOME' ? 'text-income' : 'text-expense'}`}>
+                        {t.type === 'INCOME' ? '+' : '-'}{fmt(t.total_amount)} <span className="text-xs font-normal text-muted-foreground">RWF</span>
+                      </div>
+                    </CardContent>
+                  </Card>
                 </div>
-                <p className="text-xs text-muted-foreground mt-0.5 break-words">
-                  {format(new Date(t.transaction_date), 'MMM d, yyyy')}
-                  {t.created_at && ` · ${format(new Date(t.created_at), 'h:mm a')}`}
-                  {' · '}{t.description || t.notes || '—'}
-                </p>
-                {!userId && <p className="text-[10px] text-muted-foreground/70">{t.full_name || t.email}</p>}
-              </div>
-              <div className={`text-left sm:text-right font-semibold whitespace-nowrap ${t.type === 'INCOME' ? 'text-income' : 'text-expense'}`}>
-                {t.type === 'INCOME' ? '+' : '-'}{fmt(t.total_amount)} <span className="text-xs font-normal text-muted-foreground">RWF</span>
-              </div>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
 
-      <Dialog open={saveOpen} onOpenChange={setSaveOpen}>
-        <DialogContent className="max-w-sm">
-          <DialogHeader><DialogTitle>Save filter preset</DialogTitle></DialogHeader>
-          <p className="text-xs text-muted-foreground">
-            Stores the current member, date range, type, category, search and sort choices.
-          </p>
-          <Input placeholder="e.g. Q3 expenses — Alice" value={presetName} onChange={e => setPresetName(e.target.value)} />
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setSaveOpen(false)}>Cancel</Button>
-            <Button onClick={savePreset}>Save preset</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
     </div>
   );
 }
