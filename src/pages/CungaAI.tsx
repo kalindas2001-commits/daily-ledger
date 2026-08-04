@@ -28,6 +28,11 @@ const STARTERS = [
 
 export default function CungaAI() {
   const { data: txs } = useTransactions();
+  const { data: accounts } = useAccounts();
+  const { data: savings } = useSavingsAccounts();
+  const { data: loans } = useLoans();
+  const { data: goals } = useGoals();
+  const { data: budgets } = useBudgets();
   const [messages, setMessages] = useState<Msg[]>([]);
   const [input, setInput] = useState('');
   const [streaming, setStreaming] = useState(false);
@@ -54,19 +59,68 @@ export default function CungaAI() {
       monthly.push({ month: format(d, 'MMM yyyy'), income: mi, expense: me, net: mi - me });
     }
 
+    const monthKey = format(new Date(), 'yyyy-MM');
+    const spentThisMonthByCat: Record<string, number> = {};
+    rows.filter(t => t.type === 'EXPENSE' && String(t.transaction_date).slice(0, 7) === monthKey)
+      .forEach(t => { spentThisMonthByCat[t.category] = (spentThisMonthByCat[t.category] ?? 0) + Number(t.total_amount ?? 0); });
+
+    const savingsBalance = (savings ?? []).reduce((s: number, a: any) => s + Number(a.current_balance ?? 0), 0);
+    const accountsBalance = (accounts ?? []).reduce((s: number, a: any) => s + Number(a.current_balance ?? 0), 0);
+    const owedToMe = (loans ?? []).filter((l: any) => l.type === 'GIVEN' && l.status === 'PENDING')
+      .reduce((s: number, l: any) => s + Number(l.amount ?? 0), 0);
+    const iOwe = (loans ?? []).filter((l: any) => l.type === 'RECEIVED' && l.status === 'PENDING')
+      .reduce((s: number, l: any) => s + Number(l.amount ?? 0), 0);
+    const avgMonthlyExpense = monthly.length ? monthly.reduce((s, m) => s + m.expense, 0) / monthly.length : 0;
+
     return {
       currency: 'RWF',
       generated_at: new Date().toISOString(),
       totals: { income, expense, net_balance: income - expense, records: rows.length },
       savings_rate_pct: income > 0 ? Math.round(((income - expense) / income) * 100) : 0,
       last_6_months: monthly,
+      avg_monthly_expense: Math.round(avgMonthlyExpense),
+      emergency_fund_months: avgMonthlyExpense > 0
+        ? Number(((savingsBalance + accountsBalance) / avgMonthlyExpense).toFixed(1)) : null,
       top_expense_categories: topExpenseCategories,
+      accounts: (accounts ?? []).map((a: any) => ({
+        name: a.name, kind: a.kind, currency: a.currency,
+        balance: Number(a.current_balance ?? 0), archived: !!a.is_archived,
+      })),
+      accounts_total_balance: accountsBalance,
+      savings: {
+        total_balance: savingsBalance,
+        accounts: (savings ?? []).map((s: any) => ({
+          name: s.name, balance: Number(s.current_balance ?? 0), goal: Number(s.goal_amount ?? 0) || null,
+        })),
+      },
+      loans: {
+        owed_to_me_pending: owedToMe,
+        i_owe_pending: iOwe,
+        items: (loans ?? []).slice(0, 20).map((l: any) => ({
+          person: l.person_name, type: l.type, status: l.status,
+          amount: Number(l.amount ?? 0), date: l.loan_date,
+        })),
+      },
+      goals: (goals ?? []).map((g: any) => ({
+        name: g.name, target: Number(g.target_amount ?? 0), saved: Number(g.current_amount ?? 0),
+        target_date: g.target_date, status: g.status,
+        progress_pct: g.target_amount ? Math.round((Number(g.current_amount ?? 0) / Number(g.target_amount)) * 100) : 0,
+      })),
+      budgets: (budgets ?? []).map((b: any) => ({
+        category: b.category,
+        monthly_limit: Number(b.monthly_limit ?? 0),
+        spent_this_month: Math.round(spentThisMonthByCat[b.category] ?? 0),
+        used_pct: b.monthly_limit
+          ? Math.round(((spentThisMonthByCat[b.category] ?? 0) / Number(b.monthly_limit)) * 100) : 0,
+      })),
       recent_transactions: rows.slice(0, 25).map(t => ({
         date: t.transaction_date, type: t.type, category: t.category,
         amount: Number(t.total_amount ?? 0), payment_method: t.payment_method,
+        merchant: (t as any).merchant_name ?? null,
       })),
     };
-  }, [txs]);
+  }, [txs, accounts, savings, loans, goals, budgets]);
+
 
   useEffect(() => { endRef.current?.scrollIntoView({ behavior: 'smooth' }); }, [messages, streaming]);
 
