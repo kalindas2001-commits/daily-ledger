@@ -227,27 +227,27 @@ export default function ExportPage() {
     const profile = await getProfile();
     return {
       reportType,
-      company: tenant?.business_name?.trim() || profile.name || 'CungaCash User',
-      branch: 'Head Office',
+      // Personal report: the document belongs to the person, not a company.
+      company: profile.name || 'CungaCash User',
       periodFrom: from,
       periodTo: to,
       currency: 'RWF',
       generatedBy: profile.name,
       generatedByEmail: profile.email,
       reportId: makeReportId(kindCode),
-      confidentiality: 'CONFIDENTIAL' as const,
+      confidentiality: 'FINAL' as const,
       version: '1.0',
       revision: 0,
       auditTrailId: newAuditTrailId(),
       deviceName: detectDevice(),
       userId: user?.id ?? '—',
-      watermark: 'CONFIDENTIAL' as const,
+      watermark: null,
       supportEmail: 'support@cungacash.com',
       website: 'www.cungacash.com',
     };
   };
 
-  /** Build scaffold: cover + confidentiality + TOC placeholder. Returns report. */
+  /** Build scaffold: cover + TOC placeholder (personal, professional — no corporate notices). */
   const openReport = async (reportType: string, kindCode: string) => {
     const meta = await buildMeta(reportType, kindCode);
     const report = new EnterpriseReport(meta);
@@ -256,18 +256,17 @@ export default function ExportPage() {
     await report.computeHash();
     await report.buildQr();
     report.coverPage();
-    report.confidentialityNotice();
     report.tocPagePlaceholder();
     return report;
   };
 
   const closeReport = (report: EnterpriseReport, extraNotes: Parameters<EnterpriseReport['notesSection']>[0] = {}) => {
     report.notesSection(extraNotes);
-    report.approvalPage();
     report.qrVerificationPage();
     report.metadataPage();
     return report;
   };
+
 
   // ---------- KPI helpers ----------
   const kpiRow = (extra: { label: string; value: string; sub?: string; color?: [number,number,number] }[] = []) => [
