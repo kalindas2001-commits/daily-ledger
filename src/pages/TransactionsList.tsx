@@ -112,6 +112,17 @@ export default function TransactionsList() {
   const fmt = (n: number) => Number(n).toLocaleString('en-RW', { minimumFractionDigits: 0 });
   const editFilteredCats = categories?.filter((c) => c.type === editType) ?? [];
 
+  // Virtual scrolling — smooth with thousands of records
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const rowVirtualizer = useVirtualizer({
+    count: filtered.length,
+    getScrollElement: () => scrollRef.current,
+    estimateSize: () => 104,
+    overscan: 12,
+  });
+
+
+
   return (
     <div className="space-y-4 pb-4">
       <Card>
