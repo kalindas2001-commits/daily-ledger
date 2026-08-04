@@ -1,13 +1,13 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import { format } from 'date-fns';
+import { useVirtualizer } from '@tanstack/react-virtual';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { useTenantTransactions } from '@/hooks/useEditRequests';
-import { TrendingUp, TrendingDown, ArrowLeftRight, Download, Hash, Bookmark, BookmarkPlus, X, RotateCcw } from 'lucide-react';
+import { TrendingUp, TrendingDown, ArrowLeftRight, Download, Hash, RotateCcw, RefreshCw } from 'lucide-react';
 import { toast } from 'sonner';
 
 const fmt = (n: any) => Number(n ?? 0).toLocaleString('en-RW');
@@ -34,44 +34,12 @@ const EMPTY: FilterState = {
   q: '', type: 'ALL', category: 'ALL', member: 'ALL', from: '', to: '', sort: 'latest_activity',
 };
 
-interface Preset extends FilterState { id: string; name: string }
-
-const PRESET_KEY = 'cungacash:team_filter_presets';
-
-function readPresets(): Preset[] {
-  try { return JSON.parse(localStorage.getItem(PRESET_KEY) ?? '[]'); } catch { return []; }
-}
-
 export default function TeamTransactionsPanel({ userId, userName }: Props) {
-  const { data, isLoading } = useTenantTransactions(userId ?? undefined);
+  const { data, isLoading, isFetching, refetch } = useTenantTransactions(userId ?? undefined);
   const [f, setF] = useState<FilterState>(EMPTY);
   const set = <K extends keyof FilterState>(k: K, v: FilterState[K]) => setF((p) => ({ ...p, [k]: v }));
 
-  const [presets, setPresets] = useState<Preset[]>(() => readPresets());
-  const [saveOpen, setSaveOpen] = useState(false);
-  const [presetName, setPresetName] = useState('');
-  const [activePreset, setActivePreset] = useState<string | null>(null);
 
-  useEffect(() => {
-    localStorage.setItem(PRESET_KEY, JSON.stringify(presets));
-  }, [presets]);
-
-  const savePreset = () => {
-    const name = presetName.trim();
-    if (!name) return toast.error('Give the preset a name');
-    const preset: Preset = { ...f, id: crypto.randomUUID(), name };
-    setPresets((p) => [preset, ...p.filter((x) => x.name !== name)]);
-    setActivePreset(preset.id);
-    setSaveOpen(false);
-    setPresetName('');
-    toast.success(`Preset “${name}” saved`);
-  };
-
-  const applyPreset = (p: Preset) => {
-    const { id, name, ...rest } = p;
-    setF(rest);
-    setActivePreset(p.id);
-  };
 
   const members = useMemo(() => {
     const map: Record<string, string> = {};
