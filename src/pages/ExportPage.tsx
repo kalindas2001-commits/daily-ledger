@@ -308,7 +308,7 @@ export default function ExportPage() {
     d.setTextColor(...CHARCOAL); d.setFont('helvetica', 'normal'); d.setFontSize(10);
     const days = differenceInDays(to, from) + 1;
     const savingsRate = totals.income > 0 ? (totals.net / totals.income) * 100 : 0;
-    const summary = `This report presents the consolidated financial activity of ${report.meta.company} for the period ${format(from, 'dd MMM yyyy')} through ${format(to, 'dd MMM yyyy')} (${days} day${days > 1 ? 's' : ''}). During this window a total of ${transactions.length} financial transaction${transactions.length > 1 ? 's were' : ' was'} recorded, aggregating ${fmt(totals.income)} RWF in income and ${fmt(totals.expense)} RWF in expenses, resulting in a net ${totals.net >= 0 ? 'surplus' : 'deficit'} of ${fmt(Math.abs(totals.net))} RWF and an effective savings rate of ${savingsRate.toFixed(1)}%.`;
+    const summary = `This report presents the personal financial activity of ${report.meta.company} for the period ${format(from, 'dd MMM yyyy')} through ${format(to, 'dd MMM yyyy')} (${days} day${days > 1 ? 's' : ''}). During this window a total of ${transactions.length} financial transaction${transactions.length > 1 ? 's were' : ' was'} recorded, aggregating ${fmt(totals.income)} RWF in income and ${fmt(totals.expense)} RWF in expenses, resulting in a net ${totals.net >= 0 ? 'surplus' : 'deficit'} of ${fmt(Math.abs(totals.net))} RWF and an effective savings rate of ${savingsRate.toFixed(1)}%.`;
     d.text(d.splitTextToSize(summary, report.pageW - 28), 14, y);
     y += Math.ceil(summary.length / 90) * 5 + 10;
 
