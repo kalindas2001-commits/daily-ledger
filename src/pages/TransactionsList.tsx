@@ -145,8 +145,8 @@ export default function TransactionsList() {
         </CardContent>
       </Card>
 
-      <Card className="overflow-hidden">
-        <CardHeader className="sticky top-0 z-20 bg-card/95 backdrop-blur-md border-b p-3 sm:p-4 space-y-0">
+      <Card>
+        <CardHeader className="border-b p-3 sm:p-4 space-y-0 bg-card">
           <CardTitle className="text-sm sm:text-base flex flex-col gap-1.5 sm:flex-row sm:items-center sm:justify-between">
             <span className="truncate">Transactions ({filtered.length})</span>
             <div className="flex items-center gap-3 text-xs sm:text-sm font-normal">
@@ -161,78 +161,85 @@ export default function TransactionsList() {
           ) : filtered.length === 0 ? (
             <p className="text-center text-muted-foreground py-8">No transactions found</p>
           ) : (
-            <div className="divide-y sm:divide-y-0 sm:space-y-1">
-              {filtered.map((tx) => {
-                const note = noteByTx[tx.id];
-                return (
-                <div
-                  key={tx.id}
-                  className="grid grid-cols-[auto_minmax(0,1fr)_auto] items-start gap-x-2.5 gap-y-2 py-3 px-1.5 sm:px-3 sm:rounded-lg hover:bg-muted/60 transition-colors group cursor-pointer"
-                  onClick={() => setDetailTx(tx)}
-                >
-                  {/* Left: payment logo + type dot */}
-                  <div className="flex items-center gap-1.5 pt-0.5">
-                    <PaymentMethodLogo method={tx.payment_method} size={26} />
-                    <span className={cn('w-2 h-2 rounded-full shrink-0', tx.type === 'INCOME' ? 'bg-income' : 'bg-expense')} />
-                  </div>
-
-                  {/* Middle: details — always shrinkable, never clipped */}
-                  <div className="min-w-0">
-                    <p className="text-sm font-medium break-words leading-snug">
-                      {tx.category}
-                      {(tx as any).subcategory && <span className="text-muted-foreground"> · {(tx as any).subcategory}</span>}
-                    </p>
-                    <p className="text-[11px] sm:text-xs text-muted-foreground break-words leading-snug mt-0.5">
-                      {format(new Date(tx.transaction_date), 'MMM d, yyyy')}
-                      {(tx as any).transaction_time && ` · ${format(new Date(`1970-01-01T${String((tx as any).transaction_time)}`), 'h:mm a')}`}
-                      {' · '}{tx.payment_method}
-                      {(tx as any).merchant_name && ` · ${(tx as any).merchant_name}`}
-                      {tx.description && ` · ${tx.description}`}
-                    </p>
-                    {note && (
-                      <span
-                        className="mt-1 inline-flex max-w-full items-center gap-1 rounded-full bg-primary/10 text-primary px-2 py-0.5 text-[10px] font-medium"
-                        title={note.admin_notes ?? ''}
+            <div ref={scrollRef} className="max-h-[70vh] overflow-y-auto">
+              <div className="relative" style={{ height: `${rowVirtualizer.getTotalSize()}px` }}>
+                {rowVirtualizer.getVirtualItems().map((vi) => {
+                  const tx: any = filtered[vi.index];
+                  const note = noteByTx[tx.id];
+                  return (
+                    <div
+                      key={tx.id}
+                      ref={rowVirtualizer.measureElement}
+                      data-index={vi.index}
+                      className="absolute left-0 top-0 w-full"
+                      style={{ transform: `translateY(${vi.start}px)` }}
+                    >
+                      <div
+                        className="grid grid-cols-[auto_minmax(0,1fr)_auto] items-start gap-x-2.5 gap-y-2 py-3 px-1.5 sm:px-3 border-b sm:border-b-0 sm:rounded-lg hover:bg-muted/60 transition-colors group cursor-pointer"
+                        onClick={() => setDetailTx(tx)}
                       >
-                        <MessageSquare className="w-3 h-3 shrink-0" />
-                        <span className="truncate">Admin note · {formatNoteStamp(note.reviewed_at ?? note.updated_at ?? note.created_at)}</span>
-                      </span>
-                    )}
-                  </div>
+                        <div className="flex items-center gap-1.5 pt-0.5">
+                          <PaymentMethodLogo method={tx.payment_method} size={26} />
+                          <span className={cn('w-2 h-2 rounded-full shrink-0', tx.type === 'INCOME' ? 'bg-income' : 'bg-expense')} />
+                        </div>
 
-                  {/* Right: amount (always visible) */}
-                  <div className="text-right">
-                    <p className={cn('text-sm font-semibold whitespace-nowrap', tx.type === 'INCOME' ? 'text-income' : 'text-expense')}>
-                      {tx.type === 'INCOME' ? '+' : '-'}{fmt(tx.total_amount ?? 0)}
-                      <span className="text-[10px] font-normal text-muted-foreground"> RWF</span>
-                    </p>
-                    {(tx.quantity ?? 1) > 1 && (
-                      <p className="text-[10px] text-muted-foreground">{tx.quantity} × {fmt(tx.unit_price)}</p>
-                    )}
-                  </div>
+                        <div className="min-w-0">
+                          <p className="text-sm font-medium break-words leading-snug">
+                            {tx.category}
+                            {tx.subcategory && <span className="text-muted-foreground"> · {tx.subcategory}</span>}
+                          </p>
+                          <p className="text-[11px] sm:text-xs text-muted-foreground break-words leading-snug mt-0.5">
+                            {format(new Date(tx.transaction_date), 'MMM d, yyyy')}
+                            {tx.transaction_time && ` · ${format(new Date(`1970-01-01T${String(tx.transaction_time)}`), 'h:mm a')}`}
+                            {' · '}{tx.payment_method}
+                            {tx.merchant_name && ` · ${tx.merchant_name}`}
+                            {tx.description && ` · ${tx.description}`}
+                          </p>
+                          {note && (
+                            <span
+                              className="mt-1 inline-flex max-w-full items-center gap-1 rounded-full bg-primary/10 text-primary px-2 py-0.5 text-[10px] font-medium"
+                              title={note.admin_notes ?? ''}
+                            >
+                              <MessageSquare className="w-3 h-3 shrink-0" />
+                              <span className="truncate">Admin note · {formatNoteStamp(note.reviewed_at ?? note.updated_at ?? note.created_at)}</span>
+                            </span>
+                          )}
+                        </div>
 
-                  {/* Actions row — spans full width on mobile, inline on desktop */}
-                  <div
-                    className="col-span-3 flex items-center justify-end gap-0.5 -mt-1 sm:mt-0"
-                    onClick={e => e.stopPropagation()}
-                  >
-                    <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setDetailTx(tx)}>
-                      <Eye className="w-4 h-4" />
-                    </Button>
-                    <Button variant="ghost" size="icon" className="h-8 w-8 sm:opacity-0 sm:group-hover:opacity-100" onClick={() => openEdit(tx)}>
-                      <Pencil className="w-3.5 h-3.5" />
-                    </Button>
-                    <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive sm:opacity-0 sm:group-hover:opacity-100" onClick={() => handleDelete(tx.id)}>
-                      <Trash2 className="w-4 h-4" />
-                    </Button>
-                  </div>
-                </div>
-                );
-              })}
+                        <div className="text-right">
+                          <p className={cn('text-sm font-semibold whitespace-nowrap', tx.type === 'INCOME' ? 'text-income' : 'text-expense')}>
+                            {tx.type === 'INCOME' ? '+' : '-'}{fmt(tx.total_amount ?? 0)}
+                            <span className="text-[10px] font-normal text-muted-foreground"> RWF</span>
+                          </p>
+                          {(tx.quantity ?? 1) > 1 && (
+                            <p className="text-[10px] text-muted-foreground">{tx.quantity} × {fmt(tx.unit_price)}</p>
+                          )}
+                        </div>
+
+                        <div
+                          className="col-span-3 flex items-center justify-end gap-0.5 -mt-1 sm:mt-0"
+                          onClick={e => e.stopPropagation()}
+                        >
+                          <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setDetailTx(tx)}>
+                            <Eye className="w-4 h-4" />
+                          </Button>
+                          <Button variant="ghost" size="icon" className="h-8 w-8 sm:opacity-0 sm:group-hover:opacity-100" onClick={() => openEdit(tx)}>
+                            <Pencil className="w-3.5 h-3.5" />
+                          </Button>
+                          <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive sm:opacity-0 sm:group-hover:opacity-100" onClick={() => handleDelete(tx.id)}>
+                            <Trash2 className="w-4 h-4" />
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
             </div>
           )}
         </CardContent>
       </Card>
+
 
 
       <TransactionDetailDialog open={!!detailTx} onOpenChange={(o) => !o && setDetailTx(null)} tx={detailTx} />
