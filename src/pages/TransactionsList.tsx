@@ -1,4 +1,6 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useRef } from 'react';
+import { useVirtualizer } from '@tanstack/react-virtual';
+
 import { format } from 'date-fns';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
