@@ -227,27 +227,27 @@ export default function ExportPage() {
     const profile = await getProfile();
     return {
       reportType,
-      company: tenant?.business_name?.trim() || profile.name || 'CungaCash User',
-      branch: 'Head Office',
+      // Personal report: the document belongs to the person, not a company.
+      company: profile.name || 'CungaCash User',
       periodFrom: from,
       periodTo: to,
       currency: 'RWF',
       generatedBy: profile.name,
       generatedByEmail: profile.email,
       reportId: makeReportId(kindCode),
-      confidentiality: 'CONFIDENTIAL' as const,
+      confidentiality: 'FINAL' as const,
       version: '1.0',
       revision: 0,
       auditTrailId: newAuditTrailId(),
       deviceName: detectDevice(),
       userId: user?.id ?? '—',
-      watermark: 'CONFIDENTIAL' as const,
+      watermark: null,
       supportEmail: 'support@cungacash.com',
       website: 'www.cungacash.com',
     };
   };
 
-  /** Build scaffold: cover + confidentiality + TOC placeholder. Returns report. */
+  /** Build scaffold: cover + TOC placeholder (personal, professional — no corporate notices). */
   const openReport = async (reportType: string, kindCode: string) => {
     const meta = await buildMeta(reportType, kindCode);
     const report = new EnterpriseReport(meta);
@@ -256,18 +256,17 @@ export default function ExportPage() {
     await report.computeHash();
     await report.buildQr();
     report.coverPage();
-    report.confidentialityNotice();
     report.tocPagePlaceholder();
     return report;
   };
 
   const closeReport = (report: EnterpriseReport, extraNotes: Parameters<EnterpriseReport['notesSection']>[0] = {}) => {
     report.notesSection(extraNotes);
-    report.approvalPage();
     report.qrVerificationPage();
     report.metadataPage();
     return report;
   };
+
 
   // ---------- KPI helpers ----------
   const kpiRow = (extra: { label: string; value: string; sub?: string; color?: [number,number,number] }[] = []) => [
@@ -309,7 +308,7 @@ export default function ExportPage() {
     d.setTextColor(...CHARCOAL); d.setFont('helvetica', 'normal'); d.setFontSize(10);
     const days = differenceInDays(to, from) + 1;
     const savingsRate = totals.income > 0 ? (totals.net / totals.income) * 100 : 0;
-    const summary = `This report presents the consolidated financial activity of ${report.meta.company} for the period ${format(from, 'dd MMM yyyy')} through ${format(to, 'dd MMM yyyy')} (${days} day${days > 1 ? 's' : ''}). During this window a total of ${transactions.length} financial transaction${transactions.length > 1 ? 's were' : ' was'} recorded, aggregating ${fmt(totals.income)} RWF in income and ${fmt(totals.expense)} RWF in expenses, resulting in a net ${totals.net >= 0 ? 'surplus' : 'deficit'} of ${fmt(Math.abs(totals.net))} RWF and an effective savings rate of ${savingsRate.toFixed(1)}%.`;
+    const summary = `This report presents the personal financial activity of ${report.meta.company} for the period ${format(from, 'dd MMM yyyy')} through ${format(to, 'dd MMM yyyy')} (${days} day${days > 1 ? 's' : ''}). During this window a total of ${transactions.length} financial transaction${transactions.length > 1 ? 's were' : ' was'} recorded, aggregating ${fmt(totals.income)} RWF in income and ${fmt(totals.expense)} RWF in expenses, resulting in a net ${totals.net >= 0 ? 'surplus' : 'deficit'} of ${fmt(Math.abs(totals.net))} RWF and an effective savings rate of ${savingsRate.toFixed(1)}%.`;
     d.text(d.splitTextToSize(summary, report.pageW - 28), 14, y);
     y += Math.ceil(summary.length / 90) * 5 + 10;
 

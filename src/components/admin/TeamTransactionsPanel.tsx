@@ -1,13 +1,13 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import { format } from 'date-fns';
+import { useVirtualizer } from '@tanstack/react-virtual';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { useTenantTransactions } from '@/hooks/useEditRequests';
-import { TrendingUp, TrendingDown, ArrowLeftRight, Download, Hash, Bookmark, BookmarkPlus, X, RotateCcw } from 'lucide-react';
+import { TrendingUp, TrendingDown, ArrowLeftRight, Download, Hash, RotateCcw, RefreshCw } from 'lucide-react';
 import { toast } from 'sonner';
 
 const fmt = (n: any) => Number(n ?? 0).toLocaleString('en-RW');
@@ -34,44 +34,12 @@ const EMPTY: FilterState = {
   q: '', type: 'ALL', category: 'ALL', member: 'ALL', from: '', to: '', sort: 'latest_activity',
 };
 
-interface Preset extends FilterState { id: string; name: string }
-
-const PRESET_KEY = 'cungacash:team_filter_presets';
-
-function readPresets(): Preset[] {
-  try { return JSON.parse(localStorage.getItem(PRESET_KEY) ?? '[]'); } catch { return []; }
-}
-
 export default function TeamTransactionsPanel({ userId, userName }: Props) {
-  const { data, isLoading } = useTenantTransactions(userId ?? undefined);
+  const { data, isLoading, isFetching, refetch } = useTenantTransactions(userId ?? undefined);
   const [f, setF] = useState<FilterState>(EMPTY);
   const set = <K extends keyof FilterState>(k: K, v: FilterState[K]) => setF((p) => ({ ...p, [k]: v }));
 
-  const [presets, setPresets] = useState<Preset[]>(() => readPresets());
-  const [saveOpen, setSaveOpen] = useState(false);
-  const [presetName, setPresetName] = useState('');
-  const [activePreset, setActivePreset] = useState<string | null>(null);
 
-  useEffect(() => {
-    localStorage.setItem(PRESET_KEY, JSON.stringify(presets));
-  }, [presets]);
-
-  const savePreset = () => {
-    const name = presetName.trim();
-    if (!name) return toast.error('Give the preset a name');
-    const preset: Preset = { ...f, id: crypto.randomUUID(), name };
-    setPresets((p) => [preset, ...p.filter((x) => x.name !== name)]);
-    setActivePreset(preset.id);
-    setSaveOpen(false);
-    setPresetName('');
-    toast.success(`Preset “${name}” saved`);
-  };
-
-  const applyPreset = (p: Preset) => {
-    const { id, name, ...rest } = p;
-    setF(rest);
-    setActivePreset(p.id);
-  };
 
   const members = useMemo(() => {
     const map: Record<string, string> = {};
@@ -149,6 +117,15 @@ export default function TeamTransactionsPanel({ userId, userName }: Props) {
 
   const maxCat = Math.max(1, ...topCategories.map(([, v]) => v));
 
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const rowVirtualizer = useVirtualizer({
+    count: filtered.length,
+    getScrollElement: () => scrollRef.current,
+    estimateSize: () => 92,
+    overscan: 12,
+  });
+
+
   return (
     <div className="space-y-4">
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
@@ -158,46 +135,20 @@ export default function TeamTransactionsPanel({ userId, userName }: Props) {
         <StatCard label="Records" value={String(stats.count)} tone="neutral" icon={Hash} />
       </div>
 
-      {/* Saved presets */}
-      <Card>
-        <CardContent className="p-3 space-y-2">
-          <div className="flex items-center justify-between gap-2 flex-wrap">
-            <p className="text-[10px] uppercase tracking-wider text-muted-foreground flex items-center gap-1">
-              <Bookmark className="w-3.5 h-3.5" /> Saved filter presets
-            </p>
-            <div className="flex gap-1">
-              <Button size="sm" variant="ghost" onClick={() => { setF(EMPTY); setActivePreset(null); }} className="h-8 text-xs">
-                <RotateCcw className="w-3.5 h-3.5 sm:mr-1" /><span className="hidden sm:inline">Clear</span>
-              </Button>
-              <Button size="sm" variant="outline" onClick={() => setSaveOpen(true)} className="h-8 text-xs">
-                <BookmarkPlus className="w-3.5 h-3.5 sm:mr-1" /><span className="hidden sm:inline">Save current</span>
-              </Button>
-            </div>
-          </div>
-          {presets.length === 0 ? (
-            <p className="text-xs text-muted-foreground">No presets yet — set your filters then press “Save current”.</p>
-          ) : (
-            <div className="flex gap-2 flex-wrap">
-              {presets.map((p) => (
-                <span
-                  key={p.id}
-                  className={`inline-flex items-center gap-1 rounded-full border px-2.5 py-1 text-xs transition-colors ${
-                    activePreset === p.id ? 'bg-primary text-primary-foreground border-primary' : 'hover:bg-muted'
-                  }`}
-                >
-                  <button onClick={() => applyPreset(p)} className="max-w-[160px] truncate">{p.name}</button>
-                  <button
-                    aria-label={`Delete preset ${p.name}`}
-                    onClick={() => { setPresets((x) => x.filter((y) => y.id !== p.id)); if (activePreset === p.id) setActivePreset(null); }}
-                  >
-                    <X className="w-3 h-3 opacity-70 hover:opacity-100" />
-                  </button>
-                </span>
-              ))}
-            </div>
-          )}
-        </CardContent>
-      </Card>
+      <div className="flex items-center justify-between gap-2 flex-wrap">
+        <p className="text-[10px] uppercase tracking-wider text-muted-foreground">
+          {userName ? `${userName} · live records` : 'All team records · live'}
+        </p>
+        <div className="flex gap-1">
+          <Button size="sm" variant="ghost" onClick={() => setF(EMPTY)} className="h-8 text-xs">
+            <RotateCcw className="w-3.5 h-3.5 sm:mr-1" /><span className="hidden sm:inline">Clear filters</span>
+          </Button>
+          <Button size="sm" variant="outline" onClick={() => refetch()} disabled={isFetching} className="h-8 text-xs">
+            <RefreshCw className={`w-3.5 h-3.5 sm:mr-1 ${isFetching ? 'animate-spin' : ''}`} /><span className="hidden sm:inline">Refresh</span>
+          </Button>
+        </div>
+      </div>
+
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
         <Input placeholder="Search category, notes, member…" value={f.q} onChange={e => set('q', e.target.value)} />
@@ -266,47 +217,49 @@ export default function TeamTransactionsPanel({ userId, userName }: Props) {
         </Card>
       )}
 
-      <div className="space-y-2">
-        {isLoading && <p className="text-sm text-muted-foreground">Loading…</p>}
-        {!isLoading && filtered.length === 0 && (
-          <Card><CardContent className="py-8 text-center text-sm text-muted-foreground">No transactions found.</CardContent></Card>
-        )}
-        {filtered.map((t: any) => (
-          <Card key={t.id}>
-            <CardContent className="p-3 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-              <div className="min-w-0">
-                <div className="flex items-center gap-2 flex-wrap">
-                  <Badge variant={t.type === 'INCOME' ? 'default' : 'destructive'} className="text-[10px]">{t.type}</Badge>
-                  <span className="font-medium text-sm break-words">{t.category}</span>
+      {isLoading && <p className="text-sm text-muted-foreground">Loading…</p>}
+      {!isLoading && filtered.length === 0 && (
+        <Card><CardContent className="py-8 text-center text-sm text-muted-foreground">No transactions found.</CardContent></Card>
+      )}
+      {filtered.length > 0 && (
+        <div ref={scrollRef} className="max-h-[65vh] overflow-y-auto pr-1">
+          <div className="relative" style={{ height: `${rowVirtualizer.getTotalSize()}px` }}>
+            {rowVirtualizer.getVirtualItems().map((vi) => {
+              const t: any = filtered[vi.index];
+              return (
+                <div
+                  key={t.id}
+                  ref={rowVirtualizer.measureElement}
+                  data-index={vi.index}
+                  className="absolute left-0 top-0 w-full pb-2"
+                  style={{ transform: `translateY(${vi.start}px)` }}
+                >
+                  <Card>
+                    <CardContent className="p-3 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                      <div className="min-w-0">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <Badge variant={t.type === 'INCOME' ? 'default' : 'destructive'} className="text-[10px]">{t.type}</Badge>
+                          <span className="font-medium text-sm break-words">{t.category}</span>
+                        </div>
+                        <p className="text-xs text-muted-foreground mt-0.5 break-words">
+                          {format(new Date(t.transaction_date), 'MMM d, yyyy')}
+                          {t.created_at && ` · ${format(new Date(t.created_at), 'h:mm a')}`}
+                          {' · '}{t.description || t.notes || '—'}
+                        </p>
+                        {!userId && <p className="text-[10px] text-muted-foreground/70">{t.full_name || t.email}</p>}
+                      </div>
+                      <div className={`text-left sm:text-right font-semibold whitespace-nowrap ${t.type === 'INCOME' ? 'text-income' : 'text-expense'}`}>
+                        {t.type === 'INCOME' ? '+' : '-'}{fmt(t.total_amount)} <span className="text-xs font-normal text-muted-foreground">RWF</span>
+                      </div>
+                    </CardContent>
+                  </Card>
                 </div>
-                <p className="text-xs text-muted-foreground mt-0.5 break-words">
-                  {format(new Date(t.transaction_date), 'MMM d, yyyy')}
-                  {t.created_at && ` · ${format(new Date(t.created_at), 'h:mm a')}`}
-                  {' · '}{t.description || t.notes || '—'}
-                </p>
-                {!userId && <p className="text-[10px] text-muted-foreground/70">{t.full_name || t.email}</p>}
-              </div>
-              <div className={`text-left sm:text-right font-semibold whitespace-nowrap ${t.type === 'INCOME' ? 'text-income' : 'text-expense'}`}>
-                {t.type === 'INCOME' ? '+' : '-'}{fmt(t.total_amount)} <span className="text-xs font-normal text-muted-foreground">RWF</span>
-              </div>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
 
-      <Dialog open={saveOpen} onOpenChange={setSaveOpen}>
-        <DialogContent className="max-w-sm">
-          <DialogHeader><DialogTitle>Save filter preset</DialogTitle></DialogHeader>
-          <p className="text-xs text-muted-foreground">
-            Stores the current member, date range, type, category, search and sort choices.
-          </p>
-          <Input placeholder="e.g. Q3 expenses — Alice" value={presetName} onChange={e => setPresetName(e.target.value)} />
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setSaveOpen(false)}>Cancel</Button>
-            <Button onClick={savePreset}>Save preset</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
     </div>
   );
 }

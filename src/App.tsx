@@ -33,7 +33,18 @@ import NotFound from "./pages/NotFound";
 import { useEffect } from "react";
 import { initOfflineSync } from "@/lib/offlineSync";
 
-const queryClient = new QueryClient();
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 60_000,
+      gcTime: 30 * 60_000,
+      refetchOnWindowFocus: false,
+      retry: 1,
+      placeholderData: (prev: unknown) => prev,
+    },
+  },
+});
+
 
 function AppRoutes() {
   const { user, loading } = useAuth();
