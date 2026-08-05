@@ -70,17 +70,19 @@ export default function TransactionsList() {
 
   const filtered = useMemo(() => {
     if (!transactions) return [];
-    return transactions.filter((tx) => {
+    return transactions.filter((tx: any) => {
       if (filterType !== 'ALL' && tx.type !== filterType) return false;
       if (filterCategory !== 'ALL' && tx.category !== filterCategory) return false;
-      if (filterPayment !== 'ALL' && tx.payment_method !== filterPayment) return false;
+      if (filterPayment !== 'ALL' && (tx.payment_method || '') !== filterPayment) return false;
       if (search) {
         const q = search.toLowerCase();
-        return tx.category.toLowerCase().includes(q) || tx.description?.toLowerCase().includes(q) || tx.id.toLowerCase().includes(q);
+        const hay = `${tx.category ?? ''} ${tx.subcategory ?? ''} ${tx.description ?? ''} ${tx.merchant_name ?? ''} ${tx.notes ?? ''} ${tx.full_name ?? ''} ${tx.email ?? ''} ${tx.id ?? ''}`;
+        return hay.toLowerCase().includes(q);
       }
       return true;
     });
   }, [transactions, search, filterType, filterCategory, filterPayment]);
+
 
   const uniquePayments = useMemo(() => {
     const set = new Set(transactions?.map((t) => t.payment_method).filter(Boolean) ?? []);
