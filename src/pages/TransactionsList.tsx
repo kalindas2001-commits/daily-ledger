@@ -120,6 +120,8 @@ export default function TransactionsList() {
     estimateSize: () => 104,
     overscan: 12,
   });
+  const virtualRows = rowVirtualizer.getVirtualItems();
+
 
 
 
