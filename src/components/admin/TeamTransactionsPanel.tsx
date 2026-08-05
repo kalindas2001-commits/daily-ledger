@@ -217,23 +217,38 @@ export default function TeamTransactionsPanel({ userId, userName }: Props) {
         </Card>
       )}
 
-      {isLoading && <p className="text-sm text-muted-foreground">Loading…</p>}
+      {isLoading && (
+        <div className="space-y-2" aria-busy="true">
+          {Array.from({ length: 5 }).map((_, i) => (
+            <Card key={i}><CardContent className="p-3 flex items-center gap-3">
+              <div className="h-3 w-1/3 rounded bg-muted animate-pulse" />
+              <div className="ml-auto h-3 w-20 rounded bg-muted animate-pulse" />
+            </CardContent></Card>
+          ))}
+          <p className="text-center text-xs text-muted-foreground">Loading records…</p>
+        </div>
+      )}
       {!isLoading && filtered.length === 0 && (
-        <Card><CardContent className="py-8 text-center text-sm text-muted-foreground">No transactions found.</CardContent></Card>
+        <Card><CardContent className="py-8 text-center text-sm text-muted-foreground bg-card">No transactions found.</CardContent></Card>
       )}
       {filtered.length > 0 && (
-        <div ref={scrollRef} className="max-h-[65vh] overflow-y-auto pr-1">
-          <div className="relative" style={{ height: `${rowVirtualizer.getTotalSize()}px` }}>
-            {rowVirtualizer.getVirtualItems().map((vi) => {
+        <div ref={scrollRef} className="max-h-[65vh] min-h-[120px] overflow-y-auto pr-1 bg-card">
+          <div className="relative" style={{ height: `${Math.max(rowVirtualizer.getTotalSize(), 92)}px` }}>
+            {(rowVirtualizer.getVirtualItems().length > 0
+              ? rowVirtualizer.getVirtualItems()
+              : filtered.slice(0, 20).map((_, index) => ({ index, key: index, start: index * 92 } as any))
+            ).map((vi) => {
               const t: any = filtered[vi.index];
+              if (!t) return null;
               return (
                 <div
-                  key={t.id}
-                  ref={rowVirtualizer.measureElement}
+                  key={t.id ?? vi.index}
+                  ref={rowVirtualizer.getVirtualItems().length > 0 ? rowVirtualizer.measureElement : undefined}
                   data-index={vi.index}
                   className="absolute left-0 top-0 w-full pb-2"
                   style={{ transform: `translateY(${vi.start}px)` }}
                 >
+
                   <Card>
                     <CardContent className="p-3 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                       <div className="min-w-0">

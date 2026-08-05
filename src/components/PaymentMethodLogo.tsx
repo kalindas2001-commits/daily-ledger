@@ -24,19 +24,20 @@ export const PAYMENT_METHODS = Object.keys(METHODS);
 export const CORE_PAYMENT_METHODS = ['Cash', 'Mobile Money', 'Bank Transfer', 'Card'];
 
 export function PaymentMethodLogo({ method, size = 22, className }: { method?: string | null; size?: number; className?: string }) {
-  const meta = METHODS[method ?? ''] ?? METHODS['Cash'];
-  const Icon = meta.icon;
+  const meta = METHODS[method ?? ''] ?? { icon: Wallet, bg: 'bg-secondary', fg: 'text-secondary-foreground' };
+  const Icon = meta.icon ?? Wallet;
   return (
     <span
-      className={cn('inline-flex items-center justify-center rounded-md shrink-0 shadow-sm ring-1 ring-black/5', meta.bg, meta.fg, className)}
+      className={cn('inline-flex items-center justify-center rounded-md shrink-0 shadow-sm ring-1 ring-border', meta.bg, meta.fg, className)}
       style={{ width: size, height: size }}
-      aria-label={method ?? 'Cash'}
-      title={method ?? 'Cash'}
+      aria-label={method || 'Payment method'}
+      title={method || 'Payment method'}
     >
       <Icon style={{ width: size * 0.6, height: size * 0.6 }} />
     </span>
   );
 }
+
 
 export function PaymentMethodOption({ method }: { method: string }) {
   return (
