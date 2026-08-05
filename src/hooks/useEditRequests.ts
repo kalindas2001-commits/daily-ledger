@@ -160,7 +160,7 @@ export function useEditRequestsRealtime(onChange: () => void) {
 }
 
 /** Admin: list tenant transactions (optionally filter by user) */
-export function useTenantTransactions(userId?: string) {
+export function useTenantTransactions(userId?: string, enabled = true) {
   const { user } = useAuth();
   return useQuery({
     queryKey: ['admin_tenant_transactions', userId ?? 'all'],
@@ -175,6 +175,7 @@ export function useTenantTransactions(userId?: string) {
       );
       return rows;
     },
-    enabled: !!user,
+    enabled: !!user && enabled,
   });
 }
+

@@ -11,7 +11,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '
 import { Textarea } from '@/components/ui/textarea';
 import { Trash2, Search, Pencil, Eye, MessageSquare } from 'lucide-react';
 import { useTransactions, useDeleteTransaction, useUpdateTransaction, useCategories } from '@/hooks/useTransactions';
-import { useMyEditRequests, useMyEditRequestAlerts, formatNoteStamp } from '@/hooks/useEditRequests';
+import { useMyEditRequests, useMyEditRequestAlerts, formatNoteStamp, useTenantTransactions } from '@/hooks/useEditRequests';
+import { useAuth } from '@/hooks/useAuth';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 import TransactionDetailDialog from '@/components/TransactionDetailDialog';
@@ -19,12 +20,23 @@ import TransactionDetailDialog from '@/components/TransactionDetailDialog';
 import { PAYMENT_METHODS, PaymentMethodOption, PaymentMethodLogo } from '@/components/PaymentMethodLogo';
 
 export default function TransactionsList() {
-  const { data: transactions, isLoading } = useTransactions();
+  const { isAdmin, isSuperAdmin } = useAuth();
+  const canSeeTeam = isAdmin || isSuperAdmin;
+  const [scope, setScope] = useState<'MINE' | 'TEAM'>('MINE');
+  const teamMode = canSeeTeam && scope === 'TEAM';
+
+  const { data: myTx, isLoading: myLoading, error: myError } = useTransactions();
+  const { data: teamTx, isLoading: teamLoading, error: teamError } = useTenantTransactions(undefined, teamMode);
+  const transactions = (teamMode ? teamTx : myTx) as any[] | undefined;
+  const isLoading = teamMode ? teamLoading : myLoading;
+  const error: any = teamMode ? teamError : myError;
+
   const { data: categories } = useCategories();
   const deleteTx = useDeleteTransaction();
   const updateTx = useUpdateTransaction();
   const { data: myRequests } = useMyEditRequests();
   useMyEditRequestAlerts();
+
 
   // Latest admin note per transaction (with timestamp) for inline badges
   const noteByTx = useMemo(() => {
@@ -58,17 +70,19 @@ export default function TransactionsList() {
 
   const filtered = useMemo(() => {
     if (!transactions) return [];
-    return transactions.filter((tx) => {
+    return transactions.filter((tx: any) => {
       if (filterType !== 'ALL' && tx.type !== filterType) return false;
       if (filterCategory !== 'ALL' && tx.category !== filterCategory) return false;
-      if (filterPayment !== 'ALL' && tx.payment_method !== filterPayment) return false;
+      if (filterPayment !== 'ALL' && (tx.payment_method || '') !== filterPayment) return false;
       if (search) {
         const q = search.toLowerCase();
-        return tx.category.toLowerCase().includes(q) || tx.description?.toLowerCase().includes(q) || tx.id.toLowerCase().includes(q);
+        const hay = `${tx.category ?? ''} ${tx.subcategory ?? ''} ${tx.description ?? ''} ${tx.merchant_name ?? ''} ${tx.notes ?? ''} ${tx.full_name ?? ''} ${tx.email ?? ''} ${tx.id ?? ''}`;
+        return hay.toLowerCase().includes(q);
       }
       return true;
     });
   }, [transactions, search, filterType, filterCategory, filterPayment]);
+
 
   const uniquePayments = useMemo(() => {
     const set = new Set(transactions?.map((t) => t.payment_method).filter(Boolean) ?? []);
@@ -127,9 +141,27 @@ export default function TransactionsList() {
 
   return (
     <div className="space-y-4 pb-4">
+      {canSeeTeam && (
+        <div className="flex rounded-lg border overflow-hidden w-full sm:w-auto sm:inline-flex">
+          {([['MINE', 'My records'], ['TEAM', isSuperAdmin ? 'All platform records' : 'Team records']] as const).map(([v, label]) => (
+            <button
+              key={v}
+              type="button"
+              onClick={() => setScope(v as 'MINE' | 'TEAM')}
+              className={cn(
+                'flex-1 px-4 py-2 text-xs sm:text-sm font-medium transition-colors',
+                scope === v ? 'bg-primary text-primary-foreground' : 'bg-secondary text-secondary-foreground',
+              )}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+      )}
       <Card>
         <CardContent className="p-3 sm:p-4">
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-3">
+
             <div className="relative">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
               <Input placeholder="Search..." className="pl-9" value={search} onChange={(e) => setSearch(e.target.value)} />
@@ -163,7 +195,7 @@ export default function TransactionsList() {
       <Card>
         <CardHeader className="border-b p-3 sm:p-4 space-y-0 bg-card">
           <CardTitle className="text-sm sm:text-base flex flex-col gap-1.5 sm:flex-row sm:items-center sm:justify-between">
-            <span className="truncate">Transactions ({filtered.length})</span>
+            <span className="truncate">{teamMode ? 'Team transactions' : 'Transactions'} ({filtered.length})</span>
             <div className="flex items-center gap-3 text-xs sm:text-sm font-normal">
               <span className="text-income truncate">+{fmt(filtered.filter(t => t.type === 'INCOME').reduce((s, t) => s + (t.total_amount ?? 0), 0))} RWF</span>
               <span className="text-expense truncate">-{fmt(filtered.filter(t => t.type === 'EXPENSE').reduce((s, t) => s + (t.total_amount ?? 0), 0))} RWF</span>
@@ -171,7 +203,12 @@ export default function TransactionsList() {
           </CardTitle>
         </CardHeader>
         <CardContent className="p-2 sm:p-4 bg-card text-card-foreground min-h-[220px]">
-          {isLoading ? (
+          {error ? (
+            <div className="flex flex-col items-center justify-center gap-2 rounded-lg border border-destructive/40 bg-destructive/5 py-10 text-center">
+              <p className="text-sm font-medium text-foreground">Could not load transactions</p>
+              <p className="max-w-md text-xs text-muted-foreground">{error.message ?? 'Unexpected error'}</p>
+            </div>
+          ) : isLoading ? (
             <div className="space-y-2" aria-busy="true" aria-live="polite">
               {Array.from({ length: 6 }).map((_, i) => (
                 <div key={i} className="flex items-center gap-3 rounded-lg border bg-muted/40 p-3">
@@ -192,6 +229,7 @@ export default function TransactionsList() {
               <p className="text-xs text-muted-foreground">Adjust your filters or add a new transaction to get started.</p>
             </div>
           ) : (
+
             <div ref={scrollRef} className="max-h-[70vh] min-h-[140px] overflow-y-auto bg-card">
               <div className="relative" style={{ height: `${Math.max(rowVirtualizer.getTotalSize(), 96)}px` }}>
                 {(virtualRows.length > 0
@@ -227,10 +265,15 @@ export default function TransactionsList() {
                           <p className="text-[11px] sm:text-xs text-muted-foreground break-words leading-snug mt-0.5">
                             {format(new Date(tx.transaction_date), 'MMM d, yyyy')}
                             {tx.transaction_time && ` · ${format(new Date(`1970-01-01T${String(tx.transaction_time)}`), 'h:mm a')}`}
-                            {' · '}{tx.payment_method}
+                            {tx.payment_method ? ` · ${tx.payment_method}` : ''}
                             {tx.merchant_name && ` · ${tx.merchant_name}`}
                             {tx.description && ` · ${tx.description}`}
                           </p>
+                          {teamMode && (
+                            <p className="text-[10px] text-muted-foreground/80 mt-0.5 truncate">
+                              {tx.full_name || tx.email || 'Team member'}
+                            </p>
+                          )}
                           {note && (
                             <span
                               className="mt-1 inline-flex max-w-full items-center gap-1 rounded-full bg-primary/10 text-primary px-2 py-0.5 text-[10px] font-medium"
@@ -259,13 +302,18 @@ export default function TransactionsList() {
                           <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setDetailTx(tx)}>
                             <Eye className="w-4 h-4" />
                           </Button>
-                          <Button variant="ghost" size="icon" className="h-8 w-8 sm:opacity-0 sm:group-hover:opacity-100" onClick={() => openEdit(tx)}>
-                            <Pencil className="w-3.5 h-3.5" />
-                          </Button>
-                          <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive sm:opacity-0 sm:group-hover:opacity-100" onClick={() => handleDelete(tx.id)}>
-                            <Trash2 className="w-4 h-4" />
-                          </Button>
+                          {!teamMode && (
+                            <>
+                              <Button variant="ghost" size="icon" className="h-8 w-8 sm:opacity-0 sm:group-hover:opacity-100" onClick={() => openEdit(tx)}>
+                                <Pencil className="w-3.5 h-3.5" />
+                              </Button>
+                              <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive sm:opacity-0 sm:group-hover:opacity-100" onClick={() => handleDelete(tx.id)}>
+                                <Trash2 className="w-4 h-4" />
+                              </Button>
+                            </>
+                          )}
                         </div>
+
                       </div>
                     </div>
                   );
