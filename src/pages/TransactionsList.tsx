@@ -265,10 +265,15 @@ export default function TransactionsList() {
                           <p className="text-[11px] sm:text-xs text-muted-foreground break-words leading-snug mt-0.5">
                             {format(new Date(tx.transaction_date), 'MMM d, yyyy')}
                             {tx.transaction_time && ` · ${format(new Date(`1970-01-01T${String(tx.transaction_time)}`), 'h:mm a')}`}
-                            {' · '}{tx.payment_method}
+                            {tx.payment_method ? ` · ${tx.payment_method}` : ''}
                             {tx.merchant_name && ` · ${tx.merchant_name}`}
                             {tx.description && ` · ${tx.description}`}
                           </p>
+                          {teamMode && (
+                            <p className="text-[10px] text-muted-foreground/80 mt-0.5 truncate">
+                              {tx.full_name || tx.email || 'Team member'}
+                            </p>
+                          )}
                           {note && (
                             <span
                               className="mt-1 inline-flex max-w-full items-center gap-1 rounded-full bg-primary/10 text-primary px-2 py-0.5 text-[10px] font-medium"
@@ -297,13 +302,18 @@ export default function TransactionsList() {
                           <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setDetailTx(tx)}>
                             <Eye className="w-4 h-4" />
                           </Button>
-                          <Button variant="ghost" size="icon" className="h-8 w-8 sm:opacity-0 sm:group-hover:opacity-100" onClick={() => openEdit(tx)}>
-                            <Pencil className="w-3.5 h-3.5" />
-                          </Button>
-                          <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive sm:opacity-0 sm:group-hover:opacity-100" onClick={() => handleDelete(tx.id)}>
-                            <Trash2 className="w-4 h-4" />
-                          </Button>
+                          {!teamMode && (
+                            <>
+                              <Button variant="ghost" size="icon" className="h-8 w-8 sm:opacity-0 sm:group-hover:opacity-100" onClick={() => openEdit(tx)}>
+                                <Pencil className="w-3.5 h-3.5" />
+                              </Button>
+                              <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive sm:opacity-0 sm:group-hover:opacity-100" onClick={() => handleDelete(tx.id)}>
+                                <Trash2 className="w-4 h-4" />
+                              </Button>
+                            </>
+                          )}
                         </div>
+
                       </div>
                     </div>
                   );
