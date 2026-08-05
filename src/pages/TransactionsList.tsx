@@ -168,23 +168,43 @@ export default function TransactionsList() {
             </div>
           </CardTitle>
         </CardHeader>
-        <CardContent className="p-2 sm:p-4">
+        <CardContent className="p-2 sm:p-4 bg-card text-card-foreground min-h-[220px]">
           {isLoading ? (
-            <p className="text-center text-muted-foreground py-8">Loading...</p>
+            <div className="space-y-2" aria-busy="true" aria-live="polite">
+              {Array.from({ length: 6 }).map((_, i) => (
+                <div key={i} className="flex items-center gap-3 rounded-lg border bg-muted/40 p-3">
+                  <div className="h-7 w-7 rounded-md bg-muted animate-pulse" />
+                  <div className="flex-1 space-y-2">
+                    <div className="h-3 w-1/3 rounded bg-muted animate-pulse" />
+                    <div className="h-2.5 w-2/3 rounded bg-muted animate-pulse" />
+                  </div>
+                  <div className="h-3 w-16 rounded bg-muted animate-pulse" />
+                </div>
+              ))}
+              <p className="pt-1 text-center text-xs text-muted-foreground">Loading transactions…</p>
+            </div>
           ) : filtered.length === 0 ? (
-            <p className="text-center text-muted-foreground py-8">No transactions found</p>
+            <div className="flex flex-col items-center justify-center gap-2 rounded-lg border border-dashed bg-muted/30 py-10 text-center">
+              <Eye className="h-5 w-5 text-muted-foreground" />
+              <p className="text-sm font-medium text-foreground">No transactions found</p>
+              <p className="text-xs text-muted-foreground">Adjust your filters or add a new transaction to get started.</p>
+            </div>
           ) : (
-            <div ref={scrollRef} className="max-h-[70vh] overflow-y-auto">
-              <div className="relative" style={{ height: `${rowVirtualizer.getTotalSize()}px` }}>
-                {rowVirtualizer.getVirtualItems().map((vi) => {
+            <div ref={scrollRef} className="max-h-[70vh] min-h-[140px] overflow-y-auto bg-card">
+              <div className="relative" style={{ height: `${Math.max(rowVirtualizer.getTotalSize(), 96)}px` }}>
+                {(virtualRows.length > 0
+                  ? virtualRows
+                  : filtered.slice(0, 20).map((_, index) => ({ index, key: index, start: index * 96 } as any))
+                ).map((vi) => {
                   const tx: any = filtered[vi.index];
+                  if (!tx) return null;
                   const note = noteByTx[tx.id];
                   return (
                     <div
-                      key={tx.id}
-                      ref={rowVirtualizer.measureElement}
+                      key={tx.id ?? vi.index}
+                      ref={virtualRows.length > 0 ? rowVirtualizer.measureElement : undefined}
                       data-index={vi.index}
-                      className="absolute left-0 top-0 w-full"
+                      className="absolute left-0 top-0 w-full bg-card text-card-foreground"
                       style={{ transform: `translateY(${vi.start}px)` }}
                     >
                       <div
@@ -195,6 +215,7 @@ export default function TransactionsList() {
                           <PaymentMethodLogo method={tx.payment_method} size={26} />
                           <span className={cn('w-2 h-2 rounded-full shrink-0', tx.type === 'INCOME' ? 'bg-income' : 'bg-expense')} />
                         </div>
+
 
                         <div className="min-w-0">
                           <p className="text-sm font-medium break-words leading-snug">
