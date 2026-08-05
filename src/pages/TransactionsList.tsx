@@ -175,7 +175,7 @@ export default function TransactionsList() {
       <Card>
         <CardHeader className="border-b p-3 sm:p-4 space-y-0 bg-card">
           <CardTitle className="text-sm sm:text-base flex flex-col gap-1.5 sm:flex-row sm:items-center sm:justify-between">
-            <span className="truncate">Transactions ({filtered.length})</span>
+            <span className="truncate">{teamMode ? 'Team transactions' : 'Transactions'} ({filtered.length})</span>
             <div className="flex items-center gap-3 text-xs sm:text-sm font-normal">
               <span className="text-income truncate">+{fmt(filtered.filter(t => t.type === 'INCOME').reduce((s, t) => s + (t.total_amount ?? 0), 0))} RWF</span>
               <span className="text-expense truncate">-{fmt(filtered.filter(t => t.type === 'EXPENSE').reduce((s, t) => s + (t.total_amount ?? 0), 0))} RWF</span>
@@ -183,7 +183,12 @@ export default function TransactionsList() {
           </CardTitle>
         </CardHeader>
         <CardContent className="p-2 sm:p-4 bg-card text-card-foreground min-h-[220px]">
-          {isLoading ? (
+          {error ? (
+            <div className="flex flex-col items-center justify-center gap-2 rounded-lg border border-destructive/40 bg-destructive/5 py-10 text-center">
+              <p className="text-sm font-medium text-foreground">Could not load transactions</p>
+              <p className="max-w-md text-xs text-muted-foreground">{error.message ?? 'Unexpected error'}</p>
+            </div>
+          ) : isLoading ? (
             <div className="space-y-2" aria-busy="true" aria-live="polite">
               {Array.from({ length: 6 }).map((_, i) => (
                 <div key={i} className="flex items-center gap-3 rounded-lg border bg-muted/40 p-3">
@@ -204,6 +209,7 @@ export default function TransactionsList() {
               <p className="text-xs text-muted-foreground">Adjust your filters or add a new transaction to get started.</p>
             </div>
           ) : (
+
             <div ref={scrollRef} className="max-h-[70vh] min-h-[140px] overflow-y-auto bg-card">
               <div className="relative" style={{ height: `${Math.max(rowVirtualizer.getTotalSize(), 96)}px` }}>
                 {(virtualRows.length > 0
