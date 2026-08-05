@@ -1435,11 +1435,15 @@ export type Database = {
           email: string
           full_name: string
           id: string
+          merchant_name: string
           notes: string
+          payment_method: string
           quantity: number
           status: string
+          subcategory: string
           total_amount: number
           transaction_date: string
+          transaction_time: string
           type: Database["public"]["Enums"]["transaction_type"]
           unit_price: number
           user_id: string
