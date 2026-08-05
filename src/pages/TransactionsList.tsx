@@ -139,9 +139,27 @@ export default function TransactionsList() {
 
   return (
     <div className="space-y-4 pb-4">
+      {canSeeTeam && (
+        <div className="flex rounded-lg border overflow-hidden w-full sm:w-auto sm:inline-flex">
+          {([['MINE', 'My records'], ['TEAM', isSuperAdmin ? 'All platform records' : 'Team records']] as const).map(([v, label]) => (
+            <button
+              key={v}
+              type="button"
+              onClick={() => setScope(v as 'MINE' | 'TEAM')}
+              className={cn(
+                'flex-1 px-4 py-2 text-xs sm:text-sm font-medium transition-colors',
+                scope === v ? 'bg-primary text-primary-foreground' : 'bg-secondary text-secondary-foreground',
+              )}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+      )}
       <Card>
         <CardContent className="p-3 sm:p-4">
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-3">
+
             <div className="relative">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
               <Input placeholder="Search..." className="pl-9" value={search} onChange={(e) => setSearch(e.target.value)} />
