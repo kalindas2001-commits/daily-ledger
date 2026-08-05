@@ -11,7 +11,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '
 import { Textarea } from '@/components/ui/textarea';
 import { Trash2, Search, Pencil, Eye, MessageSquare } from 'lucide-react';
 import { useTransactions, useDeleteTransaction, useUpdateTransaction, useCategories } from '@/hooks/useTransactions';
-import { useMyEditRequests, useMyEditRequestAlerts, formatNoteStamp } from '@/hooks/useEditRequests';
+import { useMyEditRequests, useMyEditRequestAlerts, formatNoteStamp, useTenantTransactions } from '@/hooks/useEditRequests';
+import { useAuth } from '@/hooks/useAuth';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 import TransactionDetailDialog from '@/components/TransactionDetailDialog';
@@ -19,12 +20,23 @@ import TransactionDetailDialog from '@/components/TransactionDetailDialog';
 import { PAYMENT_METHODS, PaymentMethodOption, PaymentMethodLogo } from '@/components/PaymentMethodLogo';
 
 export default function TransactionsList() {
-  const { data: transactions, isLoading } = useTransactions();
+  const { isAdmin, isSuperAdmin } = useAuth();
+  const canSeeTeam = isAdmin || isSuperAdmin;
+  const [scope, setScope] = useState<'MINE' | 'TEAM'>('MINE');
+  const teamMode = canSeeTeam && scope === 'TEAM';
+
+  const { data: myTx, isLoading: myLoading, error: myError } = useTransactions();
+  const { data: teamTx, isLoading: teamLoading, error: teamError } = useTenantTransactions(undefined, teamMode);
+  const transactions = (teamMode ? teamTx : myTx) as any[] | undefined;
+  const isLoading = teamMode ? teamLoading : myLoading;
+  const error: any = teamMode ? teamError : myError;
+
   const { data: categories } = useCategories();
   const deleteTx = useDeleteTransaction();
   const updateTx = useUpdateTransaction();
   const { data: myRequests } = useMyEditRequests();
   useMyEditRequestAlerts();
+
 
   // Latest admin note per transaction (with timestamp) for inline badges
   const noteByTx = useMemo(() => {
