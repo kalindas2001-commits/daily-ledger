@@ -32,6 +32,19 @@ export default class AppErrorBoundary extends Component<Props, State> {
           <p className="mt-1 text-sm text-muted-foreground">
             Your data is safe. Reload the page to restore the latest records.
           </p>
+
+          {/* Dev-only error details to help debugging in previews — not shown in production */}
+          {process.env.NODE_ENV !== 'production' && this.state.error && (
+            <div className="mt-4 text-left max-h-48 overflow-auto rounded bg-muted/30 p-3 text-xs">
+              <strong className="block text-sm mb-2">Error:</strong>
+              <div className="whitespace-pre-wrap">{this.state.error.message}</div>
+              <details className="mt-2 text-xs text-muted-foreground">
+                <summary className="cursor-pointer">Show stack</summary>
+                <pre className="mt-1 text-[11px]">{String(this.state.error.stack)}</pre>
+              </details>
+            </div>
+          )}
+
           <Button className="mt-5" onClick={() => window.location.reload()}>
             <RefreshCw className="mr-2 h-4 w-4" /> Reload page
           </Button>
