@@ -42,9 +42,23 @@ export default function TransactionsList() {
   const [scope, setScope] = useState<'MINE' | 'TEAM'>('MINE');
   const teamMode = canSeeTeam && scope === 'TEAM';
 
-  const { data: myTx, isLoading: myLoading, error: myError, refetch: refetchMine } = useTransactions();
-  const { data: teamTx, isLoading: teamLoading, error: teamError, refetch: refetchTeam } = useTenantTransactions(undefined, teamMode);
-  const transactions = (teamMode ? teamTx : myTx) as any[] | undefined;
+  const { data: myTxRaw, isLoading: myLoading, error: myError, refetch: refetchMine } = useTransactions();
+  const { data: teamTxRaw, isLoading: teamLoading, error: teamError, refetch: refetchTeam } = useTenantTransactions(undefined, teamMode);
+
+  const normalizeTx = (payload: any): any[] => {
+    if (!payload) return [];
+    if (Array.isArray(payload)) return payload;
+    if (Array.isArray(payload.rows)) return payload.rows;
+    if (Array.isArray(payload.data)) return payload.data;
+    if (Array.isArray(payload.transactions)) return payload.transactions;
+    if (process.env.NODE_ENV !== 'production') {
+      // eslint-disable-next-line no-console
+      console.warn('Unexpected transactions payload shape', payload);
+    }
+    return [];
+  };
+
+  const transactions = teamMode ? normalizeTx(teamTxRaw) : normalizeTx(myTxRaw);
   const isLoading = teamMode ? teamLoading : myLoading;
   const error: any = teamMode ? teamError : myError;
 
@@ -268,7 +282,7 @@ export default function TransactionsList() {
                       style={{ transform: `translateY(${vi.start}px)` }}
                     >
                       <div
-                        className="grid grid-cols-[auto_minmax(0,1fr)_auto] items-start gap-x-2.5 gap-y-2 py-3 px-1.5 sm:px-3 border-b sm:border-b-0 sm:rounded-lg hover:bg-muted/60 transition-colors group cursor-pointer"
+                        className="grid grid-cols-[auto_minmax(0,1fr)_auto] items-start gap-x-2.5 gap-y-2 py-3 px-1.5 sm:px-3 border-b sm:border-b-0 sm:rounded-lg hover:bg-muted/60 transition-col[..."
                         onClick={() => setDetailTx(tx)}
                       >
                         <div className="flex items-center gap-1.5 pt-0.5">
