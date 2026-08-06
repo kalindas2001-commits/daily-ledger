@@ -9,7 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Textarea } from '@/components/ui/textarea';
-import { Trash2, Search, Pencil, Eye, MessageSquare } from 'lucide-react';
+import { Trash2, Search, Pencil, Eye, MessageSquare, RefreshCw } from 'lucide-react';
 import { useTransactions, useDeleteTransaction, useUpdateTransaction, useCategories } from '@/hooks/useTransactions';
 import { useMyEditRequests, useMyEditRequestAlerts, formatNoteStamp, useTenantTransactions } from '@/hooks/useEditRequests';
 import { useAuth } from '@/hooks/useAuth';
@@ -19,14 +19,31 @@ import TransactionDetailDialog from '@/components/TransactionDetailDialog';
 
 import { PAYMENT_METHODS, PaymentMethodOption, PaymentMethodLogo } from '@/components/PaymentMethodLogo';
 
+const safeDateLabel = (value: unknown, pattern: string, fallback = 'Date unavailable') => {
+  if (!value) return fallback;
+  const parsed = new Date(String(value));
+  return Number.isNaN(parsed.getTime()) ? fallback : format(parsed, pattern);
+};
+
+const safeTimeLabel = (value: unknown) => {
+  if (!value) return '';
+  const match = String(value).match(/^(\d{1,2}):(\d{2})/);
+  if (!match) return '';
+  const hour = Number(match[1]);
+  if (hour > 23) return '';
+  const suffix = hour >= 12 ? 'PM' : 'AM';
+  const displayHour = hour % 12 || 12;
+  return `${displayHour}:${match[2]} ${suffix}`;
+};
+
 export default function TransactionsList() {
   const { isAdmin, isSuperAdmin } = useAuth();
   const canSeeTeam = isAdmin || isSuperAdmin;
   const [scope, setScope] = useState<'MINE' | 'TEAM'>('MINE');
   const teamMode = canSeeTeam && scope === 'TEAM';
 
-  const { data: myTx, isLoading: myLoading, error: myError } = useTransactions();
-  const { data: teamTx, isLoading: teamLoading, error: teamError } = useTenantTransactions(undefined, teamMode);
+  const { data: myTx, isLoading: myLoading, error: myError, refetch: refetchMine } = useTransactions();
+  const { data: teamTx, isLoading: teamLoading, error: teamError, refetch: refetchTeam } = useTenantTransactions(undefined, teamMode);
   const transactions = (teamMode ? teamTx : myTx) as any[] | undefined;
   const isLoading = teamMode ? teamLoading : myLoading;
   const error: any = teamMode ? teamError : myError;
@@ -197,8 +214,8 @@ export default function TransactionsList() {
           <CardTitle className="text-sm sm:text-base flex flex-col gap-1.5 sm:flex-row sm:items-center sm:justify-between">
             <span className="truncate">{teamMode ? 'Team transactions' : 'Transactions'} ({filtered.length})</span>
             <div className="flex items-center gap-3 text-xs sm:text-sm font-normal">
-              <span className="text-income truncate">+{fmt(filtered.filter(t => t.type === 'INCOME').reduce((s, t) => s + (t.total_amount ?? 0), 0))} RWF</span>
-              <span className="text-expense truncate">-{fmt(filtered.filter(t => t.type === 'EXPENSE').reduce((s, t) => s + (t.total_amount ?? 0), 0))} RWF</span>
+              <span className="text-income truncate">+{fmt(filtered.filter(t => t.type === 'INCOME').reduce((s, t) => s + Number(t.total_amount ?? 0), 0))} RWF</span>
+              <span className="text-expense truncate">-{fmt(filtered.filter(t => t.type === 'EXPENSE').reduce((s, t) => s + Number(t.total_amount ?? 0), 0))} RWF</span>
             </div>
           </CardTitle>
         </CardHeader>
@@ -207,6 +224,9 @@ export default function TransactionsList() {
             <div className="flex flex-col items-center justify-center gap-2 rounded-lg border border-destructive/40 bg-destructive/5 py-10 text-center">
               <p className="text-sm font-medium text-foreground">Could not load transactions</p>
               <p className="max-w-md text-xs text-muted-foreground">{error.message ?? 'Unexpected error'}</p>
+              <Button variant="outline" size="sm" onClick={() => teamMode ? refetchTeam() : refetchMine()}>
+                <RefreshCw className="mr-1.5 h-3.5 w-3.5" /> Retry
+              </Button>
             </div>
           ) : isLoading ? (
             <div className="space-y-2" aria-busy="true" aria-live="polite">
@@ -263,8 +283,8 @@ export default function TransactionsList() {
                             {tx.subcategory && <span className="text-muted-foreground"> · {tx.subcategory}</span>}
                           </p>
                           <p className="text-[11px] sm:text-xs text-muted-foreground break-words leading-snug mt-0.5">
-                            {format(new Date(tx.transaction_date), 'MMM d, yyyy')}
-                            {tx.transaction_time && ` · ${format(new Date(`1970-01-01T${String(tx.transaction_time)}`), 'h:mm a')}`}
+                            {safeDateLabel(tx.transaction_date, 'MMM d, yyyy')}
+                            {safeTimeLabel(tx.transaction_time) && ` · ${safeTimeLabel(tx.transaction_time)}`}
                             {tx.payment_method ? ` · ${tx.payment_method}` : ''}
                             {tx.merchant_name && ` · ${tx.merchant_name}`}
                             {tx.description && ` · ${tx.description}`}
