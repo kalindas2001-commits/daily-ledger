@@ -27,6 +27,7 @@ import Alerts from "./pages/Alerts";
 import Assist from "./pages/Assist";
 import CungaAI from "./pages/CungaAI";
 import AppLayout from "./components/AppLayout";
+import AppErrorBoundary from "./components/AppErrorBoundary";
 import WhatsNewDialog from "./components/WhatsNewDialog";
 import InfoPopup from "./components/InfoPopup";
 import NotFound from "./pages/NotFound";
@@ -94,17 +95,19 @@ function AppRoutes() {
 }
 
 const App = () => (
-  <QueryClientProvider client={queryClient}>
-    <AuthProvider>
-      <TooltipProvider>
-        <Toaster />
-        <Sonner />
-        <BrowserRouter>
-          <AppRoutes />
-        </BrowserRouter>
-      </TooltipProvider>
-    </AuthProvider>
-  </QueryClientProvider>
+  <AppErrorBoundary>
+    <QueryClientProvider client={queryClient}>
+      <AuthProvider>
+        <TooltipProvider>
+          <Toaster />
+          <Sonner />
+          <BrowserRouter>
+            <AppRoutes />
+          </BrowserRouter>
+        </TooltipProvider>
+      </AuthProvider>
+    </QueryClientProvider>
+  </AppErrorBoundary>
 );
 
 export default App;
