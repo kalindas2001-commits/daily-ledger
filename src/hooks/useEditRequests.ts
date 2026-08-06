@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import { useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
@@ -147,6 +147,7 @@ export function useMyEditRequestAlerts() {
 
 
 
+
 /** Realtime: pending count badge for admins */
 export function useEditRequestsRealtime(onChange: () => void) {
   useEffect(() => {
@@ -165,17 +166,15 @@ export function useTenantTransactions(userId?: string, enabled = true) {
   return useQuery({
     queryKey: ['admin_tenant_transactions', userId ?? 'all'],
     queryFn: async () => {
-      // Paged so admins see every team transaction, not just the first 1,000.
-      const rows = await fetchAllRows<any>(() =>
-        supabase.rpc('admin_list_tenant_transactions', {
-          _user_id: userId ?? null,
-          _start_date: null,
-          _end_date: null,
-        }),
-      );
-      return rows;
+      // RPC returns the full set already — do not pass to fetchAllRows (that expects .range()).
+      const { data, error } = await supabase.rpc('admin_list_tenant_transactions', {
+        _user_id: userId ?? null,
+        _start_date: null,
+        _end_date: null,
+      });
+      if (error) throw error;
+      return (data ?? []) as any[];
     },
     enabled: !!user && enabled,
   });
 }
-
