@@ -51,6 +51,7 @@ export default function AddTransaction() {
         description: description || undefined,
         quantity, unit_price: unitPrice,
         final_amount: total,
+        total_amount: total,
         payment_method: paymentMethod,
         account_id: accountId || undefined,
         type,
@@ -148,8 +149,8 @@ export default function AddTransaction() {
 
             <div className="space-y-2"><Label>Description</Label><Input value={description} onChange={e => setDescription(e.target.value)} placeholder="Short description" /></div>
 
-            <Button type="submit" className="w-full" disabled={createTx.isPending}>
-              {createTx.isPending ? 'Saving...' : 'Save Transaction'}
+            <Button type="submit" className="w-full" disabled={createTx.isLoading}>
+              {createTx.isLoading ? 'Saving...' : 'Save Transaction'}
             </Button>
           </form>
         </CardContent>
