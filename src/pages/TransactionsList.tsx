@@ -282,7 +282,7 @@ export default function TransactionsList() {
                       style={{ transform: `translateY(${vi.start}px)` }}
                     >
                       <div
-                        className="grid grid-cols-[auto_minmax(0,1fr)_auto] items-start gap-x-2.5 gap-y-2 py-3 px-1.5 sm:px-3 border-b sm:border-b-0 sm:rounded-lg hover:bg-muted/60 transition-col[..."
+                        className="grid grid-cols-[auto_minmax(0,1fr)_auto] items-start gap-x-2.5 gap-y-2 py-3 px-1.5 sm:px-3 border-b sm:border-b-0 sm:rounded-lg hover:bg-muted/60 transition-col[...]
                         onClick={() => setDetailTx(tx)}
                       >
                         <div className="flex items-center gap-1.5 pt-0.5">
@@ -401,7 +401,7 @@ export default function TransactionsList() {
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setEditOpen(false)}>Cancel</Button>
-            <Button onClick={handleUpdate} disabled={updateTx.isPending}>Save Changes</Button>
+            <Button onClick={handleUpdate} disabled={updateTx.isLoading}>Save Changes</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
