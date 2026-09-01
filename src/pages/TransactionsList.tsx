@@ -391,7 +391,7 @@ export default function TransactionsList() {
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setEditOpen(false)}>Cancel</Button>
-            <Button onClick={handleUpdate} disabled={updateTx.isLoading}>Save Changes</Button>
+            <Button onClick={handleUpdate} disabled={updateTx.isPending}>Save Changes</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
