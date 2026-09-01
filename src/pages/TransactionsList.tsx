@@ -1,5 +1,4 @@
-import { useState, useMemo, useRef } from 'react';
-import { useVirtualizer } from '@tanstack/react-virtual';
+import { useState, useMemo, useEffect } from 'react';
 
 import { format } from 'date-fns';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -84,6 +83,7 @@ export default function TransactionsList() {
   const [filterType, setFilterType] = useState<string>('ALL');
   const [filterCategory, setFilterCategory] = useState<string>('ALL');
   const [filterPayment, setFilterPayment] = useState<string>('ALL');
+  const [visibleCount, setVisibleCount] = useState(100);
 
   // Edit dialog state
   const [editOpen, setEditOpen] = useState(false);
@@ -119,6 +119,10 @@ export default function TransactionsList() {
     const set = new Set(transactions?.map((t) => t.payment_method).filter(Boolean) ?? []);
     return Array.from(set) as string[];
   }, [transactions]);
+
+  useEffect(() => {
+    setVisibleCount(100);
+  }, [teamMode, search, filterType, filterCategory, filterPayment]);
 
   const openEdit = (tx: any) => {
     setEditId(tx.id);
@@ -156,19 +160,6 @@ export default function TransactionsList() {
 
   const fmt = (n: number) => Number(n).toLocaleString('en-RW', { minimumFractionDigits: 0 });
   const editFilteredCats = categories?.filter((c) => c.type === editType) ?? [];
-
-  // Virtual scrolling — smooth with thousands of records
-  const scrollRef = useRef<HTMLDivElement>(null);
-  const rowVirtualizer = useVirtualizer({
-    count: filtered.length,
-    getScrollElement: () => scrollRef.current,
-    estimateSize: () => 104,
-    overscan: 12,
-  });
-  const virtualRows = rowVirtualizer.getVirtualItems();
-
-
-
 
   return (
     <div className="space-y-4 pb-4">
@@ -264,25 +255,17 @@ export default function TransactionsList() {
             </div>
           ) : (
 
-            <div ref={scrollRef} className="max-h-[70vh] min-h-[140px] overflow-y-auto bg-card">
-              <div className="relative" style={{ height: `${Math.max(rowVirtualizer.getTotalSize(), 96)}px` }}>
-                {(virtualRows.length > 0
-                  ? virtualRows
-                  : filtered.slice(0, 20).map((_, index) => ({ index, key: index, start: index * 96 } as any))
-                ).map((vi) => {
-                  const tx: any = filtered[vi.index];
-                  if (!tx) return null;
+            <div className="min-h-[140px] overflow-hidden bg-card">
+              <div className="divide-y divide-border">
+                {filtered.slice(0, visibleCount).map((tx: any, index) => {
                   const note = noteByTx[tx.id];
                   return (
                     <div
-                      key={tx.id ?? vi.index}
-                      ref={virtualRows.length > 0 ? rowVirtualizer.measureElement : undefined}
-                      data-index={vi.index}
-                      className="absolute left-0 top-0 w-full bg-card text-card-foreground"
-                      style={{ transform: `translateY(${vi.start}px)` }}
+                      key={tx.id ?? `${tx.transaction_date}-${index}`}
+                      className="w-full bg-card text-card-foreground"
                     >
                       <div
-                        className="grid grid-cols-[auto_minmax(0,1fr)_auto] items-start gap-x-2.5 gap-y-2 py-3 px-1.5 sm:px-3 border-b sm:border-b-0 sm:rounded-lg hover:bg-muted/60 transition-col[...]
+                        className="group grid cursor-pointer grid-cols-[auto_minmax(0,1fr)_auto] items-start gap-x-2.5 gap-y-2 px-1.5 py-3 transition-colors hover:bg-muted/60 sm:px-3"
                         onClick={() => setDetailTx(tx)}
                       >
                         <div className="flex items-center gap-1.5 pt-0.5">
@@ -293,19 +276,19 @@ export default function TransactionsList() {
 
                         <div className="min-w-0">
                           <p className="text-sm font-medium break-words leading-snug">
-                            {tx.category}
-                            {tx.subcategory && <span className="text-muted-foreground"> · {tx.subcategory}</span>}
+                            {String(tx.category || 'Uncategorized')}
+                            {tx.subcategory && <span className="text-muted-foreground"> · {String(tx.subcategory)}</span>}
                           </p>
                           <p className="text-[11px] sm:text-xs text-muted-foreground break-words leading-snug mt-0.5">
                             {safeDateLabel(tx.transaction_date, 'MMM d, yyyy')}
                             {safeTimeLabel(tx.transaction_time) && ` · ${safeTimeLabel(tx.transaction_time)}`}
                             {tx.payment_method ? ` · ${tx.payment_method}` : ''}
-                            {tx.merchant_name && ` · ${tx.merchant_name}`}
-                            {tx.description && ` · ${tx.description}`}
+                            {tx.merchant_name && ` · ${String(tx.merchant_name)}`}
+                            {tx.description && ` · ${String(tx.description)}`}
                           </p>
                           {teamMode && (
                             <p className="text-[10px] text-muted-foreground/80 mt-0.5 truncate">
-                              {tx.full_name || tx.email || 'Team member'}
+                              {String(tx.full_name || tx.email || 'Team member')}
                             </p>
                           )}
                           {note && (
@@ -353,6 +336,13 @@ export default function TransactionsList() {
                   );
                 })}
               </div>
+              {visibleCount < filtered.length && (
+                <div className="flex items-center justify-center border-t bg-muted/20 p-3">
+                  <Button variant="outline" size="sm" onClick={() => setVisibleCount((count) => count + 100)}>
+                    Show 100 more · {filtered.length - visibleCount} remaining
+                  </Button>
+                </div>
+              )}
             </div>
           )}
         </CardContent>
