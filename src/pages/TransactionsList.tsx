@@ -1,5 +1,5 @@
 import { useState, useMemo, useEffect } from 'react';
-
+import { Link } from 'react-router-dom';
 import { format } from 'date-fns';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -8,7 +8,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Textarea } from '@/components/ui/textarea';
-import { Trash2, Search, Pencil, Eye, MessageSquare, RefreshCw } from 'lucide-react';
+import {
+  ArrowDownRight, ArrowUpRight, Eye, ListFilter, MessageSquare,
+  Pencil, Plus, ReceiptText, RefreshCw, Search, Trash2, WalletCards,
+} from 'lucide-react';
 import { useTransactions, useDeleteTransaction, useUpdateTransaction, useCategories } from '@/hooks/useTransactions';
 import { useMyEditRequests, useMyEditRequestAlerts, formatNoteStamp, useTenantTransactions } from '@/hooks/useEditRequests';
 import { useAuth } from '@/hooks/useAuth';
@@ -35,6 +38,17 @@ const safeTimeLabel = (value: unknown) => {
   return `${displayHour}:${match[2]} ${suffix}`;
 };
 
+const safeNumber = (value: unknown) => {
+  const number = Number(value);
+  return Number.isFinite(number) ? number : 0;
+};
+
+const safeNoteStamp = (value: unknown) => {
+  if (!value) return 'Recently';
+  const parsed = new Date(String(value));
+  return Number.isNaN(parsed.getTime()) ? 'Recently' : formatNoteStamp(parsed.toISOString());
+};
+
 export default function TransactionsList() {
   const { isAdmin, isSuperAdmin } = useAuth();
   const canSeeTeam = isAdmin || isSuperAdmin;
@@ -50,10 +64,6 @@ export default function TransactionsList() {
     if (Array.isArray(payload.rows)) return payload.rows;
     if (Array.isArray(payload.data)) return payload.data;
     if (Array.isArray(payload.transactions)) return payload.transactions;
-    if (process.env.NODE_ENV !== 'production') {
-      // eslint-disable-next-line no-console
-      console.warn('Unexpected transactions payload shape', payload);
-    }
     return [];
   };
 
@@ -114,6 +124,17 @@ export default function TransactionsList() {
     });
   }, [transactions, search, filterType, filterCategory, filterPayment]);
 
+  const totals = useMemo(() => {
+    let income = 0;
+    let expense = 0;
+    filtered.forEach((tx: any) => {
+      const amount = safeNumber(tx.total_amount ?? safeNumber(tx.quantity) * safeNumber(tx.unit_price));
+      if (tx.type === 'INCOME') income += amount;
+      if (tx.type === 'EXPENSE') expense += amount;
+    });
+    return { income, expense, net: income - expense };
+  }, [filtered]);
+
 
   const uniquePayments = useMemo(() => {
     const set = new Set(transactions?.map((t) => t.payment_method).filter(Boolean) ?? []);
@@ -158,35 +179,58 @@ export default function TransactionsList() {
     catch (err: any) { toast.error(err.message); }
   };
 
-  const fmt = (n: number) => Number(n).toLocaleString('en-RW', { minimumFractionDigits: 0 });
+  const fmt = (n: unknown) => safeNumber(n).toLocaleString('en-RW', { maximumFractionDigits: 2 });
   const editFilteredCats = categories?.filter((c) => c.type === editType) ?? [];
 
   return (
-    <div className="space-y-4 pb-4">
-      {canSeeTeam && (
-        <div className="flex rounded-lg border overflow-hidden w-full sm:w-auto sm:inline-flex">
+    <div className="mx-auto w-full max-w-[1500px] space-y-5 pb-6 text-foreground">
+      <section className="flex flex-col gap-4 border-b pb-5 sm:flex-row sm:items-end sm:justify-between">
+        <div className="min-w-0">
+          <p className="mb-1 flex items-center gap-2 text-xs font-semibold uppercase text-primary">
+            <ReceiptText className="h-4 w-4" aria-hidden="true" /> Financial ledger
+          </p>
+          <h2 className="text-2xl font-bold sm:text-3xl">Transactions</h2>
+          <p className="mt-1 text-sm text-muted-foreground">Review income and expenses with complete dates, times, and payment details.</p>
+        </div>
+        <Button asChild className="w-full shrink-0 sm:w-auto">
+          <Link to="/add"><Plus className="mr-2 h-4 w-4" />New transaction</Link>
+        </Button>
+      </section>
+
+      <section className="grid grid-cols-2 gap-2 sm:grid-cols-4" aria-label="Transaction summary">
+        <SummaryItem icon={ReceiptText} label="Records" value={String(filtered.length)} />
+        <SummaryItem icon={ArrowUpRight} label="Income" value={`${fmt(totals.income)} RWF`} tone="income" />
+        <SummaryItem icon={ArrowDownRight} label="Expenses" value={`${fmt(totals.expense)} RWF`} tone="expense" />
+        <SummaryItem icon={WalletCards} label="Net balance" value={`${fmt(totals.net)} RWF`} tone={totals.net >= 0 ? 'income' : 'expense'} />
+      </section>
+
+      <section className="space-y-3 border-y bg-card px-3 py-4 text-card-foreground sm:px-4">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex items-center gap-2 text-sm font-semibold">
+            <ListFilter className="h-4 w-4 text-primary" aria-hidden="true" /> Filter records
+          </div>
+          {canSeeTeam && (
+            <div className="grid w-full grid-cols-2 gap-1 rounded-md bg-muted p-1 sm:w-auto">
           {([['MINE', 'My records'], ['TEAM', isSuperAdmin ? 'All platform records' : 'Team records']] as const).map(([v, label]) => (
-            <button
+            <Button
               key={v}
               type="button"
+              size="sm"
+              variant={scope === v ? 'default' : 'ghost'}
               onClick={() => setScope(v as 'MINE' | 'TEAM')}
-              className={cn(
-                'flex-1 px-4 py-2 text-xs sm:text-sm font-medium transition-colors',
-                scope === v ? 'bg-primary text-primary-foreground' : 'bg-secondary text-secondary-foreground',
-              )}
+              className="h-8 flex-1 text-xs"
             >
               {label}
-            </button>
+            </Button>
           ))}
+            </div>
+          )}
         </div>
-      )}
-      <Card>
-        <CardContent className="p-3 sm:p-4">
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-3">
 
             <div className="relative">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-              <Input placeholder="Search..." className="pl-9" value={search} onChange={(e) => setSearch(e.target.value)} />
+              <Input aria-label="Search transactions" placeholder="Search records…" className="bg-background pl-9" value={search} onChange={(e) => setSearch(e.target.value)} />
             </div>
             <Select value={filterType} onValueChange={setFilterType}>
               <SelectTrigger><SelectValue placeholder="Type" /></SelectTrigger>
@@ -211,20 +255,16 @@ export default function TransactionsList() {
               </SelectContent>
             </Select>
           </div>
-        </CardContent>
-      </Card>
+      </section>
 
-      <Card>
-        <CardHeader className="border-b p-3 sm:p-4 space-y-0 bg-card">
+      <Card className="overflow-hidden border bg-card text-card-foreground shadow-sm">
+        <CardHeader className="space-y-0 border-b bg-muted/30 p-3 sm:p-4">
           <CardTitle className="text-sm sm:text-base flex flex-col gap-1.5 sm:flex-row sm:items-center sm:justify-between">
-            <span className="truncate">{teamMode ? 'Team transactions' : 'Transactions'} ({filtered.length})</span>
-            <div className="flex items-center gap-3 text-xs sm:text-sm font-normal">
-              <span className="text-income truncate">+{fmt(filtered.filter(t => t.type === 'INCOME').reduce((s, t) => s + Number(t.total_amount ?? 0), 0))} RWF</span>
-              <span className="text-expense truncate">-{fmt(filtered.filter(t => t.type === 'EXPENSE').reduce((s, t) => s + Number(t.total_amount ?? 0), 0))} RWF</span>
-            </div>
+            <span>{teamMode ? 'Team transaction activity' : 'Your transaction activity'}</span>
+            <span className="text-xs font-normal text-muted-foreground">Showing {Math.min(visibleCount, filtered.length)} of {filtered.length}</span>
           </CardTitle>
         </CardHeader>
-        <CardContent className="p-2 sm:p-4 bg-card text-card-foreground min-h-[220px]">
+        <CardContent className="min-h-[300px] bg-card p-0 text-card-foreground">
           {error ? (
             <div className="flex flex-col items-center justify-center gap-2 rounded-lg border border-destructive/40 bg-destructive/5 py-10 text-center">
               <p className="text-sm font-medium text-foreground">Could not load transactions</p>
@@ -255,17 +295,17 @@ export default function TransactionsList() {
             </div>
           ) : (
 
-            <div className="min-h-[140px] overflow-hidden bg-card">
+            <div className="min-h-[140px] bg-card">
               <div className="divide-y divide-border">
                 {filtered.slice(0, visibleCount).map((tx: any, index) => {
                   const note = noteByTx[tx.id];
                   return (
                     <div
                       key={tx.id ?? `${tx.transaction_date}-${index}`}
-                      className="w-full bg-card text-card-foreground"
+                      className="w-full bg-card text-card-foreground odd:bg-muted/10"
                     >
                       <div
-                        className="group grid cursor-pointer grid-cols-[auto_minmax(0,1fr)_auto] items-start gap-x-2.5 gap-y-2 px-1.5 py-3 transition-colors hover:bg-muted/60 sm:px-3"
+                        className="group grid min-h-[88px] cursor-pointer grid-cols-[auto_minmax(0,1fr)] items-start gap-x-3 gap-y-2 px-3 py-3 transition-colors hover:bg-muted/60 sm:grid-cols-[auto_minmax(0,1fr)_auto_auto] sm:items-center sm:px-4"
                         onClick={() => setDetailTx(tx)}
                       >
                         <div className="flex items-center gap-1.5 pt-0.5">
@@ -275,7 +315,7 @@ export default function TransactionsList() {
 
 
                         <div className="min-w-0">
-                          <p className="text-sm font-medium break-words leading-snug">
+                          <p className="break-words text-sm font-semibold leading-snug text-foreground">
                             {String(tx.category || 'Uncategorized')}
                             {tx.subcategory && <span className="text-muted-foreground"> · {String(tx.subcategory)}</span>}
                           </p>
@@ -297,14 +337,14 @@ export default function TransactionsList() {
                               title={note.admin_notes ?? ''}
                             >
                               <MessageSquare className="w-3 h-3 shrink-0" />
-                              <span className="truncate">Admin note · {formatNoteStamp(note.reviewed_at ?? note.updated_at ?? note.created_at)}</span>
+                              <span className="truncate">Admin note · {safeNoteStamp(note.reviewed_at ?? note.updated_at ?? note.created_at)}</span>
                             </span>
                           )}
                         </div>
 
-                        <div className="text-right">
+                        <div className="col-start-2 text-left sm:col-start-auto sm:text-right">
                           <p className={cn('text-sm font-semibold whitespace-nowrap', tx.type === 'INCOME' ? 'text-income' : 'text-expense')}>
-                            {tx.type === 'INCOME' ? '+' : '-'}{fmt(tx.total_amount ?? 0)}
+                            {tx.type === 'INCOME' ? '+' : '-'}{fmt(tx.total_amount ?? safeNumber(tx.quantity) * safeNumber(tx.unit_price))}
                             <span className="text-[10px] font-normal text-muted-foreground"> RWF</span>
                           </p>
                           {(tx.quantity ?? 1) > 1 && (
@@ -313,7 +353,7 @@ export default function TransactionsList() {
                         </div>
 
                         <div
-                          className="col-span-3 flex items-center justify-end gap-0.5 -mt-1 sm:mt-0"
+                          className="col-span-2 flex items-center justify-end gap-0.5 sm:col-span-1 sm:mt-0"
                           onClick={e => e.stopPropagation()}
                         >
                           <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setDetailTx(tx)}>
@@ -337,7 +377,7 @@ export default function TransactionsList() {
                 })}
               </div>
               {visibleCount < filtered.length && (
-                <div className="flex items-center justify-center border-t bg-muted/20 p-3">
+                <div className="flex items-center justify-center border-t bg-muted/30 p-4">
                   <Button variant="outline" size="sm" onClick={() => setVisibleCount((count) => count + 100)}>
                     Show 100 more · {filtered.length - visibleCount} remaining
                   </Button>
