@@ -152,7 +152,7 @@ export function useMyEditRequestAlerts() {
 export function useEditRequestsRealtime(onChange: () => void) {
   useEffect(() => {
     const channel = supabase
-      .channel('edit_requests_admin')
+      .channel(`edit_requests_admin_${Math.random().toString(36).slice(2)}`)
       .on('postgres_changes', { event: '*', schema: 'public', table: 'transaction_edit_requests' }, () => onChange())
       .subscribe();
     return () => { supabase.removeChannel(channel); };
