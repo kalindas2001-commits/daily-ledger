@@ -438,3 +438,32 @@ export default function TransactionsList() {
     </div>
   );
 }
+
+function SummaryItem({
+  icon: Icon,
+  label,
+  value,
+  tone,
+}: {
+  icon: React.ComponentType<{ className?: string }>;
+  label: string;
+  value: string;
+  tone?: 'income' | 'expense';
+}) {
+  return (
+    <div className="rounded-lg border bg-card p-3 text-card-foreground">
+      <p className="flex items-center gap-1.5 text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
+        <Icon className="h-3.5 w-3.5" /> {label}
+      </p>
+      <p
+        className={cn(
+          'mt-1 truncate text-sm font-bold sm:text-base',
+          tone === 'income' && 'text-income',
+          tone === 'expense' && 'text-expense',
+        )}
+      >
+        {value}
+      </p>
+    </div>
+  );
+}
