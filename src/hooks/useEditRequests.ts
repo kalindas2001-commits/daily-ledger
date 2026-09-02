@@ -105,7 +105,7 @@ export function useMyEditRequestAlerts() {
     // Make sure the account-level (cross-device) preferences are loaded before alerts fire.
     loadRemotePrefs();
     const channel = supabase
-      .channel(`edit_requests_mine_${user.id}`)
+      .channel(`edit_requests_mine_${user.id}_${Math.random().toString(36).slice(2)}`)
       .on('postgres_changes',
         { event: 'UPDATE', schema: 'public', table: 'transaction_edit_requests', filter: `user_id=eq.${user.id}` },
         (payload) => {
@@ -152,7 +152,7 @@ export function useMyEditRequestAlerts() {
 export function useEditRequestsRealtime(onChange: () => void) {
   useEffect(() => {
     const channel = supabase
-      .channel('edit_requests_admin')
+      .channel(`edit_requests_admin_${Math.random().toString(36).slice(2)}`)
       .on('postgres_changes', { event: '*', schema: 'public', table: 'transaction_edit_requests' }, () => onChange())
       .subscribe();
     return () => { supabase.removeChannel(channel); };
@@ -166,14 +166,14 @@ export function useTenantTransactions(userId?: string, enabled = true) {
   return useQuery({
     queryKey: ['admin_tenant_transactions', userId ?? 'all'],
     queryFn: async () => {
-      // RPC returns the full set already — do not pass to fetchAllRows (that expects .range()).
-      const { data, error } = await supabase.rpc('admin_list_tenant_transactions', {
+      // The RPC is ordered server-side; page its result so admins receive the
+      // complete tenant history instead of the Data API's default response cap.
+      const rows = await fetchAllRows<any>(() => supabase.rpc('admin_list_tenant_transactions', {
         _user_id: userId ?? null,
         _start_date: null,
         _end_date: null,
-      });
-      if (error) throw error;
-      return (data ?? []) as any[];
+      }));
+      return rows;
     },
     enabled: !!user && enabled,
   });
