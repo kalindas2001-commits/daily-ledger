@@ -13,7 +13,7 @@ import {
   Pencil, Plus, ReceiptText, RefreshCw, Search, Trash2, WalletCards,
 } from 'lucide-react';
 import { useTransactions, useDeleteTransaction, useUpdateTransaction, useCategories } from '@/hooks/useTransactions';
-import { useMyEditRequests, useMyEditRequestAlerts, formatNoteStamp, useTenantTransactions } from '@/hooks/useEditRequests';
+import { useMyEditRequests, formatNoteStamp, useTenantTransactions } from '@/hooks/useEditRequests';
 import { useAuth } from '@/hooks/useAuth';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
@@ -75,7 +75,6 @@ export default function TransactionsList() {
   const deleteTx = useDeleteTransaction();
   const updateTx = useUpdateTransaction();
   const { data: myRequests } = useMyEditRequests();
-  useMyEditRequestAlerts();
 
 
   // Latest admin note per transaction (with timestamp) for inline badges
