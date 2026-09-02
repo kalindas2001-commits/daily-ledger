@@ -105,7 +105,7 @@ export function useMyEditRequestAlerts() {
     // Make sure the account-level (cross-device) preferences are loaded before alerts fire.
     loadRemotePrefs();
     const channel = supabase
-      .channel(`edit_requests_mine_${user.id}`)
+      .channel(`edit_requests_mine_${user.id}_${Math.random().toString(36).slice(2)}`)
       .on('postgres_changes',
         { event: 'UPDATE', schema: 'public', table: 'transaction_edit_requests', filter: `user_id=eq.${user.id}` },
         (payload) => {
