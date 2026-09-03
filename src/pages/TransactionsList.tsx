@@ -7,6 +7,10 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { Textarea } from '@/components/ui/textarea';
 import {
   ArrowDownRight, ArrowUpRight, Eye, ListFilter, MessageSquare,
@@ -103,7 +107,9 @@ export default function TransactionsList() {
   const [editDescription, setEditDescription] = useState('');
   const [editQuantity, setEditQuantity] = useState(1);
   const [editUnitPrice, setEditUnitPrice] = useState(0);
-  const [editPayment, setEditPayment] = useState('Cash');
+  const [editPayment, setEditPayment] = useState(PAYMENT_METHODS[0]);
+  const [confirmUpdateOpen, setConfirmUpdateOpen] = useState(false);
+  const [deleteTarget, setDeleteTarget] = useState<any | null>(null);
 
   // Detail dialog
   const [detailTx, setDetailTx] = useState<any | null>(null);
@@ -152,11 +158,13 @@ export default function TransactionsList() {
     setEditDescription(tx.description || '');
     setEditQuantity(tx.quantity ?? 1);
     setEditUnitPrice(tx.unit_price);
-    setEditPayment(tx.payment_method || 'Cash');
+    setEditPayment(PAYMENT_METHODS.includes(tx.payment_method) ? tx.payment_method : PAYMENT_METHODS[0]);
     setEditOpen(true);
   };
 
-  const handleUpdate = async () => {
+  const handleUpdate = () => setConfirmUpdateOpen(true);
+
+  const confirmUpdate = async () => {
     try {
       await updateTx.mutateAsync({
         id: editId,
@@ -169,13 +177,18 @@ export default function TransactionsList() {
         payment_method: editPayment,
       });
       toast.success('Transaction updated');
+      setConfirmUpdateOpen(false);
       setEditOpen(false);
     } catch (err: any) { toast.error(err.message); }
   };
 
-  const handleDelete = async (id: string) => {
-    try { await deleteTx.mutateAsync(id); toast.success('Transaction deleted'); }
-    catch (err: any) { toast.error(err.message); }
+  const handleDelete = async () => {
+    if (!deleteTarget?.id) return;
+    try {
+      await deleteTx.mutateAsync(deleteTarget.id);
+      toast.success('Transaction deleted');
+      setDeleteTarget(null);
+    } catch (err: any) { toast.error(err.message); }
   };
 
   const fmt = (n: unknown) => safeNumber(n).toLocaleString('en-RW', { maximumFractionDigits: 2 });
@@ -363,7 +376,7 @@ export default function TransactionsList() {
                               <Button variant="ghost" size="icon" className="h-8 w-8 sm:opacity-0 sm:group-hover:opacity-100" onClick={() => openEdit(tx)}>
                                 <Pencil className="w-3.5 h-3.5" />
                               </Button>
-                              <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive sm:opacity-0 sm:group-hover:opacity-100" onClick={() => handleDelete(tx.id)}>
+                              <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive sm:opacity-0 sm:group-hover:opacity-100" onClick={() => setDeleteTarget(tx)} aria-label="Delete transaction">
                                 <Trash2 className="w-4 h-4" />
                               </Button>
                             </>
@@ -434,6 +447,32 @@ export default function TransactionsList() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <AlertDialog open={confirmUpdateOpen} onOpenChange={setConfirmUpdateOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Save transaction changes?</AlertDialogTitle>
+            <AlertDialogDescription>Review the updated transaction details before saving this edit.</AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={updateTx.isPending}>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmUpdate} disabled={updateTx.isPending}>Confirm save</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog open={!!deleteTarget} onOpenChange={(open) => !open && setDeleteTarget(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete this transaction?</AlertDialogTitle>
+            <AlertDialogDescription>This action permanently removes this transaction and cannot be undone.</AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={deleteTx.isPending}>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDelete} disabled={deleteTx.isPending} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">Delete transaction</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

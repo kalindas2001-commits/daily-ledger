@@ -34,7 +34,7 @@ export default function RecurringTransactions() {
   const [description, setDescription] = useState('');
   const [quantity, setQuantity] = useState(1);
   const [unitPrice, setUnitPrice] = useState(0);
-  const [paymentMethod, setPaymentMethod] = useState('Cash');
+  const [paymentMethod, setPaymentMethod] = useState(PAYMENT_METHODS[0]);
   const [frequency, setFrequency] = useState('monthly');
   const [nextRunDate, setNextRunDate] = useState(format(new Date(), 'yyyy-MM-dd'));
 

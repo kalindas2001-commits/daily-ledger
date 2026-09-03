@@ -1,43 +1,57 @@
-import {
-  Banknote, Smartphone, Building2, CreditCard, Wallet, Bitcoin, ScrollText, QrCode, Apple,
-} from 'lucide-react';
+import { Wallet } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import mtnAsset from '@/assets/payments/MTN_MOMO.jpg.asset.json';
+import airtelAsset from '@/assets/payments/AIRTEL_MONEY.jpg.asset.json';
+import visaAsset from '@/assets/payments/VISA.png.asset.json';
+import mastercardAsset from '@/assets/payments/MASTERCARD.webp.asset.json';
+import paypalAsset from '@/assets/payments/PAYPAL.jpg.asset.json';
+import chequeAsset from '@/assets/payments/BANK_CHEQUE.avif.asset.json';
 
-type Meta = { icon: any; bg: string; fg: string; short?: string };
+type Meta = { src: string; bg: string };
 
 const METHODS: Record<string, Meta> = {
-  'Cash':          { icon: Banknote,   bg: 'bg-gradient-to-br from-emerald-500 to-emerald-600', fg: 'text-white' },
-  'Mobile Money':  { icon: Smartphone, bg: 'bg-gradient-to-br from-yellow-400 to-amber-500',    fg: 'text-black', short: 'MoMo' },
-  'Bank Transfer': { icon: Building2,  bg: 'bg-gradient-to-br from-blue-600 to-blue-800',       fg: 'text-white' },
-  'Card':          { icon: CreditCard, bg: 'bg-gradient-to-br from-slate-600 to-slate-800',     fg: 'text-white' },
-  'Visa':          { icon: CreditCard, bg: 'bg-gradient-to-br from-blue-700 to-indigo-800',     fg: 'text-white', short: 'VISA' },
-  'MasterCard':    { icon: CreditCard, bg: 'bg-gradient-to-br from-orange-500 to-red-600',      fg: 'text-white', short: 'MC' },
-  'Apple Pay':     { icon: Apple,      bg: 'bg-gradient-to-br from-neutral-800 to-black',       fg: 'text-white' },
-  'Google Pay':    { icon: Wallet,     bg: 'bg-gradient-to-br from-sky-500 to-emerald-500',     fg: 'text-white', short: 'GPay' },
-  'PayPal':        { icon: Wallet,     bg: 'bg-gradient-to-br from-sky-600 to-blue-800',        fg: 'text-white', short: 'PP' },
-  'Crypto':        { icon: Bitcoin,    bg: 'bg-gradient-to-br from-orange-400 to-amber-600',    fg: 'text-white' },
-  'Cheque':        { icon: ScrollText, bg: 'bg-gradient-to-br from-teal-500 to-cyan-700',       fg: 'text-white' },
-  'QR Payment':    { icon: QrCode,     bg: 'bg-gradient-to-br from-fuchsia-500 to-purple-700',  fg: 'text-white' },
+  'MTN MOMO': { src: mtnAsset.url, bg: 'bg-muted' },
+  'AIRTEL MONEY': { src: airtelAsset.url, bg: 'bg-muted' },
+  'VISA': { src: visaAsset.url, bg: 'bg-card' },
+  'MASTERCARD': { src: mastercardAsset.url, bg: 'bg-card' },
+  'PAYPAL': { src: paypalAsset.url, bg: 'bg-card' },
+  'BANK CHEQUE': { src: chequeAsset.url, bg: 'bg-card' },
 };
 
 export const PAYMENT_METHODS = Object.keys(METHODS);
-export const CORE_PAYMENT_METHODS = ['Cash', 'Mobile Money', 'Bank Transfer', 'Card'];
+export const CORE_PAYMENT_METHODS = PAYMENT_METHODS;
 
 export function PaymentMethodLogo({ method, size = 22, className }: { method?: string | null; size?: number; className?: string }) {
-  const meta = METHODS[method ?? ''] ?? { icon: Wallet, bg: 'bg-secondary', fg: 'text-secondary-foreground' };
-  const Icon = meta.icon ?? Wallet;
+  const meta = METHODS[String(method ?? '').toUpperCase()];
+
+  if (!meta) {
+    return (
+      <span
+        className={cn('inline-flex items-center justify-center rounded-md shrink-0 shadow-sm ring-1 ring-border bg-secondary text-secondary-foreground', className)}
+        style={{ width: size, height: size }}
+        aria-label={method || 'Payment method'}
+        title={method || 'Payment method'}
+      >
+        <Wallet style={{ width: size * 0.6, height: size * 0.6 }} />
+      </span>
+    );
+  }
+
   return (
     <span
-      className={cn('inline-flex items-center justify-center rounded-md shrink-0 shadow-sm ring-1 ring-border', meta.bg, meta.fg, className)}
+      className={cn('inline-flex items-center justify-center overflow-hidden rounded-md shrink-0 shadow-sm ring-1 ring-border', meta.bg, className)}
       style={{ width: size, height: size }}
-      aria-label={method || 'Payment method'}
       title={method || 'Payment method'}
     >
-      <Icon style={{ width: size * 0.6, height: size * 0.6 }} />
+      <img
+        src={meta.src}
+        alt={`${method} logo`}
+        loading="lazy"
+        className="h-full w-full object-contain p-[2px]"
+      />
     </span>
   );
 }
-
 
 export function PaymentMethodOption({ method }: { method: string }) {
   return (

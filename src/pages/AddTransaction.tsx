@@ -8,7 +8,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { CalendarIcon, Sparkles } from 'lucide-react';
+import { CalendarIcon, ReceiptText } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 import { useCategories, useCreateTransaction } from '@/hooks/useTransactions';
@@ -31,7 +31,7 @@ export default function AddTransaction() {
   const [description, setDescription] = useState('');
   const [quantity, setQuantity] = useState(1);
   const [unitPrice, setUnitPrice] = useState(0);
-  const [paymentMethod, setPaymentMethod] = useState('Cash');
+  const [paymentMethod, setPaymentMethod] = useState(PAYMENT_METHODS[0]);
   const [accountId, setAccountId] = useState<string>('');
 
   const total = quantity * unitPrice;
@@ -68,7 +68,7 @@ export default function AddTransaction() {
     <div className="max-w-lg mx-auto">
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2 tracking-wide"><Sparkles className="w-5 h-5 text-primary" /> TRANSACTIONS</CardTitle>
+          <CardTitle className="flex items-center gap-2 tracking-wide"><ReceiptText className="w-5 h-5 text-primary" /> Transactions</CardTitle>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-5">
