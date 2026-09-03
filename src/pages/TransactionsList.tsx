@@ -7,6 +7,10 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { Textarea } from '@/components/ui/textarea';
 import {
   ArrowDownRight, ArrowUpRight, Eye, ListFilter, MessageSquare,
@@ -103,7 +107,8 @@ export default function TransactionsList() {
   const [editDescription, setEditDescription] = useState('');
   const [editQuantity, setEditQuantity] = useState(1);
   const [editUnitPrice, setEditUnitPrice] = useState(0);
-  const [editPayment, setEditPayment] = useState('Cash');
+  const [editPayment, setEditPayment] = useState(PAYMENT_METHODS[0]);
+  const [deleteTarget, setDeleteTarget] = useState<any | null>(null);
 
   // Detail dialog
   const [detailTx, setDetailTx] = useState<any | null>(null);
@@ -152,7 +157,7 @@ export default function TransactionsList() {
     setEditDescription(tx.description || '');
     setEditQuantity(tx.quantity ?? 1);
     setEditUnitPrice(tx.unit_price);
-    setEditPayment(tx.payment_method || 'Cash');
+    setEditPayment(PAYMENT_METHODS.includes(tx.payment_method) ? tx.payment_method : PAYMENT_METHODS[0]);
     setEditOpen(true);
   };
 
@@ -173,9 +178,13 @@ export default function TransactionsList() {
     } catch (err: any) { toast.error(err.message); }
   };
 
-  const handleDelete = async (id: string) => {
-    try { await deleteTx.mutateAsync(id); toast.success('Transaction deleted'); }
-    catch (err: any) { toast.error(err.message); }
+  const handleDelete = async () => {
+    if (!deleteTarget?.id) return;
+    try {
+      await deleteTx.mutateAsync(deleteTarget.id);
+      toast.success('Transaction deleted');
+      setDeleteTarget(null);
+    } catch (err: any) { toast.error(err.message); }
   };
 
   const fmt = (n: unknown) => safeNumber(n).toLocaleString('en-RW', { maximumFractionDigits: 2 });

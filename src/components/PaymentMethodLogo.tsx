@@ -10,12 +10,12 @@ import chequeAsset from '@/assets/payments/BANK_CHEQUE.avif.asset.json';
 type Meta = { src: string; bg: string };
 
 const METHODS: Record<string, Meta> = {
-  'MTN MOMO': { src: mtnAsset.url, bg: 'bg-[#ffcc00]' },
-  'AIRTEL MONEY': { src: airtelAsset.url, bg: 'bg-[#e40000]' },
-  'VISA': { src: visaAsset.url, bg: 'bg-white' },
-  'MASTERCARD': { src: mastercardAsset.url, bg: 'bg-white' },
-  'PAYPAL': { src: paypalAsset.url, bg: 'bg-white' },
-  'BANK CHEQUE': { src: chequeAsset.url, bg: 'bg-white' },
+  'MTN MOMO': { src: mtnAsset.url, bg: 'bg-muted' },
+  'AIRTEL MONEY': { src: airtelAsset.url, bg: 'bg-muted' },
+  'VISA': { src: visaAsset.url, bg: 'bg-card' },
+  'MASTERCARD': { src: mastercardAsset.url, bg: 'bg-card' },
+  'PAYPAL': { src: paypalAsset.url, bg: 'bg-card' },
+  'BANK CHEQUE': { src: chequeAsset.url, bg: 'bg-card' },
 };
 
 export const PAYMENT_METHODS = Object.keys(METHODS);
