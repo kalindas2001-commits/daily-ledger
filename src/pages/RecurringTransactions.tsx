@@ -123,7 +123,7 @@ export default function RecurringTransactions() {
             <div className="space-y-1"><Label>Next Run Date</Label><Input type="date" value={nextRunDate} onChange={(e) => setNextRunDate(e.target.value)} /></div>
             <Select value={paymentMethod} onValueChange={setPaymentMethod}>
               <SelectTrigger>
-                <span className="flex items-center gap-2 truncate"><PaymentMethodLogo method={paymentMethod} size={20} />{paymentMethod}</span>
+                <span className="flex items-center gap-3 truncate"><PaymentMethodLogo method={paymentMethod} size={20} />{paymentMethod}</span>
               </SelectTrigger>
               <SelectContent>{PAYMENT_METHODS.map((m) => <SelectItem key={m} value={m}><PaymentMethodOption method={m} /></SelectItem>)}</SelectContent>
             </Select>

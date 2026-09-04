@@ -442,7 +442,7 @@ export default function TransactionsList() {
             </div>
             <Select value={editPayment} onValueChange={setEditPayment}>
               <SelectTrigger>
-                <span className="flex items-center gap-2 truncate"><PaymentMethodLogo method={editPayment} size={20} />{editPayment}</span>
+                <span className="flex items-center gap-3 truncate"><PaymentMethodLogo method={editPayment} size={20} />{editPayment}</span>
               </SelectTrigger>
               <SelectContent>{PAYMENT_METHODS.map((m) => <SelectItem key={m} value={m}><PaymentMethodOption method={m} /></SelectItem>)}</SelectContent>
             </Select>
