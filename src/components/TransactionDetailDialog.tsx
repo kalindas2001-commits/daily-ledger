@@ -37,10 +37,12 @@ export default function TransactionDetailDialog({ open, onOpenChange, tx }: Prop
   const del = useDeleteAttachment();
   const createEditRequest = useCreateEditRequest();
 
+  const deleteTx = useDeleteTransaction();
   const [editOpen, setEditOpen] = useState(false);
   const [editForm, setEditForm] = useState<Record<string, string>>({});
   const [editReason, setEditReason] = useState('');
   const [confirmSubmit, setConfirmSubmit] = useState(false);
+  const [confirmDelete, setConfirmDelete] = useState(false);
 
   if (!tx) return null;
 
