@@ -54,7 +54,6 @@ const Paypal: Mark = () => (
 
 const BankCheque: Mark = () => (
   <Box bg="#FFFFFF">
-    <rect x="0" y="0" width="40" height="24" rx="4" fill="#F1F5F9" stroke="#E5E7EB" />
     <rect x="5" y="6" width="30" height="12" rx="1.5" fill="#FFFFFF" stroke="#94A3B8" />
     <rect x="7.5" y="8.5" width="12" height="1.6" fill="#0D9668" />
     <rect x="7.5" y="12" width="18" height="1.4" fill="#CBD5E1" />
@@ -63,22 +62,22 @@ const BankCheque: Mark = () => (
   </Box>
 );
 
-const METHODS: Record<string, Mark> = {
-  'MTN MOMO': MtnMomo,
-  'AIRTEL MONEY': AirtelMoney,
-  'VISA': Visa,
-  'MASTERCARD': Mastercard,
-  'PAYPAL': Paypal,
-  'BANK CHEQUE': BankCheque,
+const METHODS: Record<string, { mark: Mark; bg: string }> = {
+  'MTN MOMO': { mark: MtnMomo, bg: '#FFCC00' },
+  'AIRTEL MONEY': { mark: AirtelMoney, bg: '#E40000' },
+  'VISA': { mark: Visa, bg: '#FFFFFF' },
+  'MASTERCARD': { mark: Mastercard, bg: '#FFFFFF' },
+  'PAYPAL': { mark: Paypal, bg: '#FFFFFF' },
+  'BANK CHEQUE': { mark: BankCheque, bg: '#FFFFFF' },
 };
 
 export const PAYMENT_METHODS = Object.keys(METHODS);
 export const CORE_PAYMENT_METHODS = PAYMENT_METHODS;
 
 export function PaymentMethodLogo({ method, size = 22, className }: { method?: string | null; size?: number; className?: string }) {
-  const Mark = METHODS[String(method ?? '').toUpperCase()];
+  const entry = METHODS[String(method ?? '').toUpperCase()];
 
-  if (!Mark) {
+  if (!entry) {
     return (
       <span
         className={cn('inline-flex items-center justify-center rounded-md shrink-0 shadow-sm ring-1 ring-border bg-secondary text-secondary-foreground', className)}
@@ -91,10 +90,12 @@ export function PaymentMethodLogo({ method, size = 22, className }: { method?: s
     );
   }
 
+  const Mark = entry.mark;
+
   return (
     <span
-      className={cn('inline-flex items-center justify-center overflow-hidden rounded-md shrink-0 shadow-sm ring-1 ring-border', className)}
-      style={{ width: size * 1.5, height: size }}
+      className={cn('inline-flex items-center justify-center overflow-hidden rounded-md shrink-0 shadow-sm ring-1 ring-black/10', className)}
+      style={{ width: size * 1.5, height: size, backgroundColor: entry.bg }}
       title={method || 'Payment method'}
       aria-label={`${method} logo`}
     >
@@ -105,9 +106,10 @@ export function PaymentMethodLogo({ method, size = 22, className }: { method?: s
 
 export function PaymentMethodOption({ method }: { method: string }) {
   return (
-    <span className="flex items-center gap-2">
+    <span className="flex items-center gap-3">
       <PaymentMethodLogo method={method} size={18} />
-      <span>{method}</span>
+      <span className="leading-none">{method}</span>
     </span>
   );
 }
+
