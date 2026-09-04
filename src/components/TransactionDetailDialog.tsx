@@ -20,6 +20,7 @@ import {
 import { useAttachments, useUploadAttachment, useDeleteAttachment, getSignedUrl } from '@/hooks/useAttachments';
 import { useAccounts } from '@/hooks/useAccounts';
 import { useCreateEditRequest, useMyEditRequests } from '@/hooks/useEditRequests';
+import { useDeleteTransaction } from '@/hooks/useTransactions';
 
 const fmt = (n: number) => Number(n ?? 0).toLocaleString('en-RW', { minimumFractionDigits: 0 });
 
