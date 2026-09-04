@@ -19,22 +19,32 @@ const admin = createClient(
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders });
 
+  const json = (body: unknown, status = 200) =>
+    new Response(JSON.stringify(body), {
+      status,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    });
+
   try {
-    if (!VAPID_PRIVATE_KEY) {
-      return new Response(JSON.stringify({ error: 'VAPID_PRIVATE_KEY not configured' }), {
-        status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
-    }
+    if (!VAPID_PRIVATE_KEY) return json({ error: 'VAPID_PRIVATE_KEY not configured' }, 500);
 
     const body = await req.json().catch(() => ({}));
-    const { user_id, title, message, severity, url, alert_id } = body;
-    if (!user_id || !title) {
-      return new Response(JSON.stringify({ error: 'user_id and title required' }), {
-        status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
+    const { user_id, user_ids, broadcast, title, message, severity, url, alert_id, tag } = body;
+    if (!title) return json({ error: 'title required' }, 400);
+
+    // Resolve target audience: single user, list of users, or every subscribed device.
+    let query = admin.from('push_subscriptions').select('*');
+    if (broadcast === true) {
+      // no filter — every registered device
+    } else if (Array.isArray(user_ids) && user_ids.length > 0) {
+      query = query.in('user_id', user_ids);
+    } else if (user_id) {
+      query = query.eq('user_id', user_id);
+    } else {
+      return json({ error: 'user_id, user_ids or broadcast required' }, 400);
     }
 
-    const { data: subs, error } = await admin.from('push_subscriptions').select('*').eq('user_id', user_id);
+    const { data: subs, error } = await query;
     if (error) throw error;
 
     const payload = JSON.stringify({
@@ -42,7 +52,7 @@ Deno.serve(async (req) => {
       body: message ?? '',
       severity: severity ?? 'info',
       url: url ?? '/',
-      tag: alert_id ?? `alert-${Date.now()}`,
+      tag: tag ?? alert_id ?? `cungacash-${Date.now()}`,
     });
 
     const results = await Promise.allSettled(
@@ -63,12 +73,8 @@ Deno.serve(async (req) => {
       }),
     );
 
-    return new Response(JSON.stringify({ sent: results.length, results }), {
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-    });
+    return json({ sent: results.length, results });
   } catch (e: any) {
-    return new Response(JSON.stringify({ error: String(e?.message ?? e) }), {
-      status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-    });
+    return json({ error: String(e?.message ?? e) }, 500);
   }
 });
