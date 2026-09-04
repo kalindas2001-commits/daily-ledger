@@ -263,8 +263,45 @@ export default function TransactionDetailDialog({ open, onOpenChange, tx }: Prop
           >
             <PencilLine className="w-4 h-4 mr-2" /> Request edit
           </Button>
+          <Button
+            variant="outline"
+            onClick={() => setConfirmDelete(true)}
+            className="border-destructive/40 text-destructive hover:bg-destructive/10 hover:text-destructive"
+            aria-label="Delete this record"
+          >
+            <Trash2 className="w-4 h-4 mr-2" /> Delete
+          </Button>
           <Button variant="outline" onClick={() => onOpenChange(false)}>Close</Button>
         </div>
+
+        <AlertDialog open={confirmDelete} onOpenChange={setConfirmDelete}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Delete this financial record?</AlertDialogTitle>
+              <AlertDialogDescription>
+                This permanently removes the record{tx.category ? ` "${tx.category}"` : ''} and cannot be undone.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel disabled={deleteTx.isPending}>Cancel</AlertDialogCancel>
+              <AlertDialogAction
+                disabled={deleteTx.isPending}
+                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                onClick={async () => {
+                  try {
+                    await deleteTx.mutateAsync(tx.id);
+                    toast.success('Record deleted');
+                    setConfirmDelete(false);
+                    onOpenChange(false);
+                  } catch (e: any) { toast.error(e.message); }
+                }}
+              >
+                Delete record
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+
 
         {/* Edit-request dialog */}
         <Dialog open={editOpen} onOpenChange={setEditOpen}>
