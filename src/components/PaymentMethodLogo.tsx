@@ -1,30 +1,84 @@
 import { Wallet } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import mtnAsset from '@/assets/payments/MTN_MOMO.jpg.asset.json';
-import airtelAsset from '@/assets/payments/AIRTEL_MONEY.jpg.asset.json';
-import visaAsset from '@/assets/payments/VISA.png.asset.json';
-import mastercardAsset from '@/assets/payments/MASTERCARD.webp.asset.json';
-import paypalAsset from '@/assets/payments/PAYPAL.jpg.asset.json';
-import chequeAsset from '@/assets/payments/BANK_CHEQUE.avif.asset.json';
 
-type Meta = { src: string; bg: string };
+/**
+ * Inline SVG brand marks — no network requests, always render crisply.
+ * Each mark draws inside a 40x24 box so they align in selectors and lists.
+ */
+type Mark = (props: { className?: string }) => JSX.Element;
 
-const METHODS: Record<string, Meta> = {
-  'MTN MOMO': { src: mtnAsset.url, bg: 'bg-muted' },
-  'AIRTEL MONEY': { src: airtelAsset.url, bg: 'bg-muted' },
-  'VISA': { src: visaAsset.url, bg: 'bg-card' },
-  'MASTERCARD': { src: mastercardAsset.url, bg: 'bg-card' },
-  'PAYPAL': { src: paypalAsset.url, bg: 'bg-card' },
-  'BANK CHEQUE': { src: chequeAsset.url, bg: 'bg-card' },
+const Box = ({ children, bg }: { children: React.ReactNode; bg: string }) => (
+  <svg viewBox="0 0 40 24" width="100%" height="100%" role="presentation" preserveAspectRatio="xMidYMid meet">
+    <rect x="0" y="0" width="40" height="24" rx="4" fill={bg} />
+    {children}
+  </svg>
+);
+
+const MtnMomo: Mark = () => (
+  <Box bg="#FFCC00">
+    <ellipse cx="20" cy="12" rx="14" ry="8" fill="#000000" />
+    <text x="20" y="15.4" textAnchor="middle" fontSize="8.5" fontWeight="700" fontFamily="Helvetica, Arial, sans-serif" fill="#FFCC00">MTN</text>
+  </Box>
+);
+
+const AirtelMoney: Mark = () => (
+  <Box bg="#E40000">
+    <text x="20" y="15.8" textAnchor="middle" fontSize="9" fontWeight="700" fontFamily="Helvetica, Arial, sans-serif" fill="#FFFFFF">airtel</text>
+  </Box>
+);
+
+const Visa: Mark = () => (
+  <Box bg="#FFFFFF">
+    <rect x="0" y="0" width="40" height="24" rx="4" fill="#FFFFFF" stroke="#E5E7EB" />
+    <text x="19" y="16" textAnchor="middle" fontSize="10" fontStyle="italic" fontWeight="700" fontFamily="Helvetica, Arial, sans-serif" fill="#1A1F71">VISA</text>
+    <rect x="8" y="17.5" width="24" height="1.8" fill="#F7B600" />
+  </Box>
+);
+
+const Mastercard: Mark = () => (
+  <Box bg="#FFFFFF">
+    <rect x="0" y="0" width="40" height="24" rx="4" fill="#FFFFFF" stroke="#E5E7EB" />
+    <circle cx="16.5" cy="12" r="7" fill="#EB001B" />
+    <circle cx="23.5" cy="12" r="7" fill="#F79E1B" />
+    <path d="M20 5.9a7 7 0 0 0 0 12.2 7 7 0 0 0 0-12.2z" fill="#FF5F00" />
+  </Box>
+);
+
+const Paypal: Mark = () => (
+  <Box bg="#FFFFFF">
+    <rect x="0" y="0" width="40" height="24" rx="4" fill="#FFFFFF" stroke="#E5E7EB" />
+    <text x="18" y="16" textAnchor="middle" fontSize="9.5" fontStyle="italic" fontWeight="700" fontFamily="Helvetica, Arial, sans-serif" fill="#003087">Pay</text>
+    <text x="29" y="16" textAnchor="middle" fontSize="9.5" fontStyle="italic" fontWeight="700" fontFamily="Helvetica, Arial, sans-serif" fill="#009CDE">Pal</text>
+  </Box>
+);
+
+const BankCheque: Mark = () => (
+  <Box bg="#FFFFFF">
+    <rect x="0" y="0" width="40" height="24" rx="4" fill="#F1F5F9" stroke="#E5E7EB" />
+    <rect x="5" y="6" width="30" height="12" rx="1.5" fill="#FFFFFF" stroke="#94A3B8" />
+    <rect x="7.5" y="8.5" width="12" height="1.6" fill="#0D9668" />
+    <rect x="7.5" y="12" width="18" height="1.4" fill="#CBD5E1" />
+    <rect x="7.5" y="14.8" width="10" height="1.4" fill="#CBD5E1" />
+    <rect x="26" y="8.5" width="7" height="4" rx="0.8" fill="#0D9668" opacity="0.15" />
+  </Box>
+);
+
+const METHODS: Record<string, Mark> = {
+  'MTN MOMO': MtnMomo,
+  'AIRTEL MONEY': AirtelMoney,
+  'VISA': Visa,
+  'MASTERCARD': Mastercard,
+  'PAYPAL': Paypal,
+  'BANK CHEQUE': BankCheque,
 };
 
 export const PAYMENT_METHODS = Object.keys(METHODS);
 export const CORE_PAYMENT_METHODS = PAYMENT_METHODS;
 
 export function PaymentMethodLogo({ method, size = 22, className }: { method?: string | null; size?: number; className?: string }) {
-  const meta = METHODS[String(method ?? '').toUpperCase()];
+  const Mark = METHODS[String(method ?? '').toUpperCase()];
 
-  if (!meta) {
+  if (!Mark) {
     return (
       <span
         className={cn('inline-flex items-center justify-center rounded-md shrink-0 shadow-sm ring-1 ring-border bg-secondary text-secondary-foreground', className)}
@@ -39,16 +93,12 @@ export function PaymentMethodLogo({ method, size = 22, className }: { method?: s
 
   return (
     <span
-      className={cn('inline-flex items-center justify-center overflow-hidden rounded-md shrink-0 shadow-sm ring-1 ring-border', meta.bg, className)}
-      style={{ width: size, height: size }}
+      className={cn('inline-flex items-center justify-center overflow-hidden rounded-md shrink-0 shadow-sm ring-1 ring-border', className)}
+      style={{ width: size * 1.5, height: size }}
       title={method || 'Payment method'}
+      aria-label={`${method} logo`}
     >
-      <img
-        src={meta.src}
-        alt={`${method} logo`}
-        loading="lazy"
-        className="h-full w-full object-contain p-[2px]"
-      />
+      <Mark />
     </span>
   );
 }
@@ -56,7 +106,7 @@ export function PaymentMethodLogo({ method, size = 22, className }: { method?: s
 export function PaymentMethodOption({ method }: { method: string }) {
   return (
     <span className="flex items-center gap-2">
-      <PaymentMethodLogo method={method} size={20} />
+      <PaymentMethodLogo method={method} size={18} />
       <span>{method}</span>
     </span>
   );
