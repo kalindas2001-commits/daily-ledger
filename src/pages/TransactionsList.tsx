@@ -317,35 +317,37 @@ export default function TransactionsList() {
                       className="w-full bg-card text-card-foreground odd:bg-muted/10"
                     >
                       <div
-                        className="group grid min-h-[88px] cursor-pointer grid-cols-[auto_minmax(0,1fr)] items-start gap-x-3 gap-y-2 px-3 py-3 transition-colors hover:bg-muted/60 sm:grid-cols-[auto_minmax(0,1fr)_auto_auto] sm:items-center sm:px-4"
+                        className="group flex cursor-pointer items-center gap-3 px-3 py-3 transition-colors hover:bg-muted/60 sm:px-4"
                         onClick={() => setDetailTx(tx)}
                       >
-                        <div className="flex items-center gap-1.5 pt-0.5">
-                          <PaymentMethodLogo method={tx.payment_method} size={26} />
+                        <div className="flex items-center gap-1.5 shrink-0">
+                          <PaymentMethodLogo method={tx.payment_method} size={22} />
                           <span className={cn('w-2 h-2 rounded-full shrink-0', tx.type === 'INCOME' ? 'bg-income' : 'bg-expense')} />
                         </div>
 
-
-                        <div className="min-w-0">
-                          <p className="break-words text-sm font-semibold leading-snug text-foreground">
+                        {/* Primary details only — everything else lives in the eye/detail dialog */}
+                        <div className="min-w-0 flex-1">
+                          <p className="truncate text-sm font-semibold leading-snug text-foreground">
                             {String(tx.category || 'Uncategorized')}
-                            {tx.subcategory && <span className="text-muted-foreground"> · {String(tx.subcategory)}</span>}
+                            {tx.subcategory && <span className="hidden text-muted-foreground sm:inline"> · {String(tx.subcategory)}</span>}
                           </p>
-                          <p className="text-[11px] sm:text-xs text-muted-foreground break-words leading-snug mt-0.5">
+                          <p className="truncate text-[11px] leading-snug text-muted-foreground sm:text-xs">
                             {safeDateLabel(tx.transaction_date, 'MMM d, yyyy')}
                             {safeTimeLabel(tx.transaction_time) && ` · ${safeTimeLabel(tx.transaction_time)}`}
-                            {tx.payment_method ? ` · ${tx.payment_method}` : ''}
-                            {tx.merchant_name && ` · ${String(tx.merchant_name)}`}
-                            {tx.description && ` · ${String(tx.description)}`}
+                            <span className="hidden sm:inline">
+                              {tx.payment_method ? ` · ${tx.payment_method}` : ''}
+                              {tx.merchant_name ? ` · ${String(tx.merchant_name)}` : ''}
+                              {tx.description ? ` · ${String(tx.description)}` : ''}
+                            </span>
                           </p>
                           {teamMode && (
-                            <p className="text-[10px] text-muted-foreground/80 mt-0.5 truncate">
+                            <p className="truncate text-[10px] text-muted-foreground/80">
                               {String(tx.full_name || tx.email || 'Team member')}
                             </p>
                           )}
                           {note && (
                             <span
-                              className="mt-1 inline-flex max-w-full items-center gap-1 rounded-full bg-primary/10 text-primary px-2 py-0.5 text-[10px] font-medium"
+                              className="mt-1 hidden max-w-full items-center gap-1 rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-medium text-primary sm:inline-flex"
                               title={note.admin_notes ?? ''}
                             >
                               <MessageSquare className="w-3 h-3 shrink-0" />
@@ -354,7 +356,7 @@ export default function TransactionsList() {
                           )}
                         </div>
 
-                        <div className="col-start-2 text-left sm:col-start-auto sm:text-right">
+                        <div className="shrink-0 text-right">
                           <p className={cn('text-sm font-semibold whitespace-nowrap', tx.type === 'INCOME' ? 'text-income' : 'text-expense')}>
                             {tx.type === 'INCOME' ? '+' : '-'}{fmt(tx.total_amount ?? safeNumber(tx.quantity) * safeNumber(tx.unit_price))}
                             <span className="text-[10px] font-normal text-muted-foreground"> RWF</span>
@@ -362,21 +364,26 @@ export default function TransactionsList() {
                           {(tx.quantity ?? 1) > 1 && (
                             <p className="text-[10px] text-muted-foreground">{tx.quantity} × {fmt(tx.unit_price)}</p>
                           )}
+                          {note && (
+                            <span className="inline-flex items-center gap-1 text-[10px] font-medium text-primary sm:hidden">
+                              <MessageSquare className="h-2.5 w-2.5" /> Note
+                            </span>
+                          )}
                         </div>
 
                         <div
-                          className="col-span-2 flex items-center justify-end gap-0.5 sm:col-span-1 sm:mt-0"
+                          className="flex shrink-0 items-center gap-0.5"
                           onClick={e => e.stopPropagation()}
                         >
-                          <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setDetailTx(tx)}>
+                          <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setDetailTx(tx)} aria-label="View transaction details">
                             <Eye className="w-4 h-4" />
                           </Button>
                           {!teamMode && (
                             <>
-                              <Button variant="ghost" size="icon" className="h-8 w-8 sm:opacity-0 sm:group-hover:opacity-100" onClick={() => openEdit(tx)}>
+                              <Button variant="ghost" size="icon" className="hidden h-8 w-8 sm:inline-flex sm:opacity-0 sm:group-hover:opacity-100" onClick={() => openEdit(tx)}>
                                 <Pencil className="w-3.5 h-3.5" />
                               </Button>
-                              <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive sm:opacity-0 sm:group-hover:opacity-100" onClick={() => setDeleteTarget(tx)} aria-label="Delete transaction">
+                              <Button variant="ghost" size="icon" className="hidden h-8 w-8 text-destructive sm:inline-flex sm:opacity-0 sm:group-hover:opacity-100" onClick={() => setDeleteTarget(tx)} aria-label="Delete transaction">
                                 <Trash2 className="w-4 h-4" />
                               </Button>
                             </>
@@ -384,6 +391,7 @@ export default function TransactionsList() {
                         </div>
 
                       </div>
+
                     </div>
                   );
                 })}
