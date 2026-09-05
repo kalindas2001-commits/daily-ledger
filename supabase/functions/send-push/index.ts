@@ -29,7 +29,7 @@ Deno.serve(async (req) => {
     if (!VAPID_PRIVATE_KEY) return json({ error: 'VAPID_PRIVATE_KEY not configured' }, 500);
 
     const body = await req.json().catch(() => ({}));
-    const { user_id, user_ids, broadcast, title, message, severity, url, alert_id, tag } = body;
+    const { user_id, user_ids, broadcast, title, message, severity, url, alert_id, tag, pref_event } = body;
     if (!title) return json({ error: 'title required' }, 400);
 
     // Resolve target audience: single user, list of users, or every subscribed device.
@@ -44,8 +44,25 @@ Deno.serve(async (req) => {
       return json({ error: 'user_id, user_ids or broadcast required' }, 400);
     }
 
-    const { data: subs, error } = await query;
+    const { data: subsRaw, error } = await query;
     if (error) throw error;
+
+    // Respect saved per-event web-alert preferences (approved / rejected / notes).
+    let subs = subsRaw ?? [];
+    if (pref_event && subs.length > 0) {
+      const ids = [...new Set(subs.map((s: any) => s.user_id))];
+      const { data: prefRows } = await admin
+        .from('notification_preferences')
+        .select('user_id, prefs')
+        .in('user_id', ids);
+      const disabled = new Set(
+        (prefRows ?? [])
+          .filter((r: any) => r?.prefs?.[pref_event]?.web === false)
+          .map((r: any) => r.user_id),
+      );
+      subs = subs.filter((s: any) => !disabled.has(s.user_id));
+    }
+
 
     const payload = JSON.stringify({
       title,
