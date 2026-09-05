@@ -7,7 +7,7 @@ const VAPID_PUBLIC_KEY = 'BO56kMgGELrS8sOY2wUeghV158DGgm4V_i1e4LTvBYfDheLyRpJeDz
 
 /** Normalize to URL-safe base64 without padding (web-push requirement). */
 const b64url = (s?: string | null) =>
-  (s ?? '').trim().replace(/\s/g, '').replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+  (s ?? '').trim().replace(/[^A-Za-z0-9+/=_-]/g, '').replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
 
 const VAPID_PRIVATE_KEY = b64url(Deno.env.get('VAPID_PRIVATE_KEY'));
 
