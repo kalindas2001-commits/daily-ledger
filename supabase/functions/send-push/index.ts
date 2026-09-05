@@ -4,11 +4,25 @@ import { corsHeaders } from 'npm:@supabase/supabase-js@2/cors';
 import { createClient } from 'npm:@supabase/supabase-js@2';
 
 const VAPID_PUBLIC_KEY = 'BO56kMgGELrS8sOY2wUeghV158DGgm4V_i1e4LTvBYfDheLyRpJeDzo2tAbXeSsQOoYt4uR0UU9_-IKSqqM8fVE';
-const VAPID_PRIVATE_KEY = Deno.env.get('VAPID_PRIVATE_KEY');
-const VAPID_SUBJECT = Deno.env.get('VAPID_SUBJECT') ?? 'mailto:info@rossets.rw';
 
+/** Normalize to URL-safe base64 without padding (web-push requirement). */
+const b64url = (s?: string | null) =>
+  (s ?? '').trim().replace(/[^A-Za-z0-9+/=_-]/g, '').replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+
+const VAPID_PRIVATE_KEY = b64url(Deno.env.get('VAPID_PRIVATE_KEY'));
+
+// Sanitize: strip angle brackets/spaces so a value like "mailto: <a@b.c>" stays valid.
+const cleanedSubject = (Deno.env.get('VAPID_SUBJECT') ?? 'mailto:info@rossets.rw').replace(/[<>\s]/g, '');
+const VAPID_SUBJECT = /^(mailto:|https?:\/\/)/.test(cleanedSubject) ? cleanedSubject : `mailto:${cleanedSubject}`;
+
+let vapidError: string | null = null;
 if (VAPID_PRIVATE_KEY) {
-  webpush.setVapidDetails(VAPID_SUBJECT, VAPID_PUBLIC_KEY, VAPID_PRIVATE_KEY);
+  try {
+    webpush.setVapidDetails(VAPID_SUBJECT, VAPID_PUBLIC_KEY, VAPID_PRIVATE_KEY);
+  } catch (e) {
+    // Never crash the worker at boot — surface the problem in the response instead.
+    vapidError = String(e?.message ?? e);
+  }
 }
 
 const admin = createClient(
@@ -27,6 +41,7 @@ Deno.serve(async (req) => {
 
   try {
     if (!VAPID_PRIVATE_KEY) return json({ error: 'VAPID_PRIVATE_KEY not configured' }, 500);
+    if (vapidError) return json({ error: `VAPID configuration invalid: ${vapidError}` }, 500);
 
     const body = await req.json().catch(() => ({}));
     const { user_id, user_ids, broadcast, title, message, severity, url, alert_id, tag, pref_event } = body;
@@ -81,11 +96,13 @@ Deno.serve(async (req) => {
           );
           return { endpoint: s.endpoint, ok: true };
         } catch (e: any) {
-          // 404/410 = subscription expired -> delete
-          if (e.statusCode === 404 || e.statusCode === 410) {
+          const code = e?.statusCode;
+          // Expired, revoked, or legacy (retired FCM /fcm/send/) endpoints -> drop so the
+          // device re-registers a fresh subscription next time it opens the app.
+          if ([400, 401, 403, 404, 410].includes(code) || s.endpoint.includes('/fcm/send/')) {
             await admin.from('push_subscriptions').delete().eq('endpoint', s.endpoint);
           }
-          return { endpoint: s.endpoint, ok: false, error: String(e?.message ?? e) };
+          return { endpoint: s.endpoint, ok: false, statusCode: code ?? null, error: String(e?.message ?? e) };
         }
       }),
     );
