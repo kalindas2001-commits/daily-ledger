@@ -40,6 +40,13 @@ Deno.serve(async (req) => {
     });
 
   try {
+    if (new URL(req.url).searchParams.get('diag') === '1') {
+      return json({
+        keyLength: VAPID_PRIVATE_KEY.length,
+        urlSafe: /^[A-Za-z0-9\-_]+$/.test(VAPID_PRIVATE_KEY),
+        vapidError,
+      });
+    }
     if (!VAPID_PRIVATE_KEY) return json({ error: 'VAPID_PRIVATE_KEY not configured' }, 500);
     if (vapidError) return json({ error: `VAPID configuration invalid: ${vapidError}` }, 500);
 
