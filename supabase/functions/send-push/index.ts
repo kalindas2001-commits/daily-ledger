@@ -41,6 +41,7 @@ Deno.serve(async (req) => {
 
   try {
     if (!VAPID_PRIVATE_KEY) return json({ error: 'VAPID_PRIVATE_KEY not configured' }, 500);
+    if (vapidError) return json({ error: `VAPID configuration invalid: ${vapidError}` }, 500);
 
     const body = await req.json().catch(() => ({}));
     const { user_id, user_ids, broadcast, title, message, severity, url, alert_id, tag, pref_event } = body;
