@@ -103,11 +103,13 @@ Deno.serve(async (req) => {
           );
           return { endpoint: s.endpoint, ok: true };
         } catch (e: any) {
-          // 404/410 = subscription expired -> delete
-          if (e.statusCode === 404 || e.statusCode === 410) {
+          const code = e?.statusCode;
+          // Expired, revoked, or legacy (retired FCM /fcm/send/) endpoints -> drop so the
+          // device re-registers a fresh subscription next time it opens the app.
+          if ([400, 401, 403, 404, 410].includes(code) || s.endpoint.includes('/fcm/send/')) {
             await admin.from('push_subscriptions').delete().eq('endpoint', s.endpoint);
           }
-          return { endpoint: s.endpoint, ok: false, error: String(e?.message ?? e) };
+          return { endpoint: s.endpoint, ok: false, statusCode: code ?? null, error: String(e?.message ?? e) };
         }
       }),
     );
