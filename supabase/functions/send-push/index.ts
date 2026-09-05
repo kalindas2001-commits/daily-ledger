@@ -5,7 +5,10 @@ import { createClient } from 'npm:@supabase/supabase-js@2';
 
 const VAPID_PUBLIC_KEY = 'BO56kMgGELrS8sOY2wUeghV158DGgm4V_i1e4LTvBYfDheLyRpJeDzo2tAbXeSsQOoYt4uR0UU9_-IKSqqM8fVE';
 const VAPID_PRIVATE_KEY = Deno.env.get('VAPID_PRIVATE_KEY');
-const VAPID_SUBJECT = Deno.env.get('VAPID_SUBJECT') ?? 'mailto:info@rossets.rw';
+// Sanitize: strip angle brackets/spaces so a value like "mailto: <a@b.c>" stays valid.
+const rawSubject = Deno.env.get('VAPID_SUBJECT') ?? 'mailto:info@rossets.rw';
+const cleaned = rawSubject.replace(/[<>\s]/g, '');
+const VAPID_SUBJECT = /^(mailto:|https?:\/\/)/.test(cleaned) ? cleaned : `mailto:${cleaned}`;
 
 if (VAPID_PRIVATE_KEY) {
   webpush.setVapidDetails(VAPID_SUBJECT, VAPID_PUBLIC_KEY, VAPID_PRIVATE_KEY);
