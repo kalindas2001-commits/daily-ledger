@@ -306,24 +306,47 @@ export default function Dashboard() {
       {/* Analytics Insights */}
       {insights.length > 0 && (
         <Card>
-          <CardHeader className="pb-2">
+          <CardHeader className="pb-3">
             <CardTitle className="text-sm flex items-center gap-2">
               <Lightbulb className="w-4 h-4 text-accent" /> Smart Insights
+              <span className="ml-auto text-[10px] font-normal text-muted-foreground uppercase tracking-wider">
+                {range.label} · {insights.length} findings
+              </span>
             </CardTitle>
           </CardHeader>
-          <CardContent className="space-y-2">
-            {insights.map((insight, i) => (
-              <div key={i} className={cn(
-                'flex items-center gap-3 p-3 rounded-lg text-sm',
-                insight.type === 'warning' ? 'bg-accent/10 text-accent' : insight.type === 'success' ? 'bg-income/10 text-income' : 'bg-muted text-foreground'
-              )}>
-                <insight.icon className="w-4 h-4 shrink-0" />
-                <span>{insight.text}</span>
-              </div>
-            ))}
+          <CardContent className="grid grid-cols-1 lg:grid-cols-2 gap-3">
+            {insights.map((insight, i) => {
+              const tone =
+                insight.type === 'critical' ? 'border-destructive/40 bg-destructive/5'
+                : insight.type === 'warning' ? 'border-accent/40 bg-accent/5'
+                : insight.type === 'success' ? 'border-income/40 bg-income/5'
+                : 'border-border bg-muted/40';
+              const iconTone =
+                insight.type === 'critical' ? 'bg-destructive/10 text-destructive'
+                : insight.type === 'warning' ? 'bg-accent/10 text-accent'
+                : insight.type === 'success' ? 'bg-income/10 text-income'
+                : 'bg-primary/10 text-primary';
+              return (
+                <div key={i} className={cn('rounded-xl border p-3 flex gap-3', tone)}>
+                  <div className={cn('w-9 h-9 rounded-lg flex items-center justify-center shrink-0', iconTone)}>
+                    <insight.icon className="w-4 h-4" />
+                  </div>
+                  <div className="min-w-0 space-y-1">
+                    <p className="text-sm font-semibold leading-tight text-foreground">{insight.title}</p>
+                    <p className="text-xs text-muted-foreground leading-snug">{insight.text}</p>
+                    {insight.suggestion && (
+                      <p className="text-xs leading-snug text-foreground/90">
+                        <span className="font-medium">Do this: </span>{insight.suggestion}
+                      </p>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
           </CardContent>
         </Card>
       )}
+
 
       {/* Budget alerts */}
       {budgetAlerts.length > 0 && (
