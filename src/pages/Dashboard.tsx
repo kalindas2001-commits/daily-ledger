@@ -94,53 +94,178 @@ export default function Dashboard() {
   }, [budgets, monthTx]);
 
   const fmt = (n: number) => Number(n).toLocaleString('en-RW', { minimumFractionDigits: 0 });
-  // Analytics insights
+
+  // ---- Advanced Smart Insights engine -------------------------------------
   const insights = useMemo(() => {
-    if (!txData || txData.length === 0) return [];
-    const result: { icon: any; text: string; type: 'info' | 'warning' | 'success' }[] = [];
-    const days = differenceInDays(new Date(range.to), new Date(range.from)) + 1;
+    const result: {
+      icon: any; title: string; text: string; suggestion?: string; type: 'info' | 'warning' | 'success' | 'critical';
+    }[] = [];
+    if (!txData || txData.length === 0) return result;
 
-    // Burn rate
-    const burnRate = days > 0 ? stats.expense / days : 0;
-    if (burnRate > 0) {
-      result.push({ icon: Flame, text: `Daily burn rate: ${fmt(Math.round(burnRate))} RWF/day`, type: 'info' });
-    }
+    const days = Math.max(differenceInDays(new Date(range.to), new Date(range.from)) + 1, 1);
+    const expenses = txData.filter(t => t.type === 'EXPENSE');
+    const incomes = txData.filter(t => t.type === 'INCOME');
+    const amt = (t: any) => Number(t.total_amount ?? 0);
+    const net = stats.income - stats.expense;
 
-    // Savings rate
+    // 1. Savings rate & health verdict
     if (stats.income > 0) {
-      const savingsRate = ((stats.income - stats.expense) / stats.income * 100).toFixed(1);
-      const sr = parseFloat(savingsRate);
+      const sr = ((stats.income - stats.expense) / stats.income) * 100;
       result.push({
         icon: PiggyBank,
-        text: `Savings rate: ${savingsRate}%${sr < 0 ? ' (overspending!)' : sr > 30 ? ' (excellent!)' : ''}`,
-        type: sr < 0 ? 'warning' : sr > 20 ? 'success' : 'info'
+        title: `Savings rate ${sr.toFixed(1)}%`,
+        text: sr < 0
+          ? `You spent ${fmt(Math.abs(net))} RWF more than you earned in ${range.label.toLowerCase()}.`
+          : `You kept ${fmt(net)} RWF of ${fmt(stats.income)} RWF earned.`,
+        suggestion: sr < 0
+          ? 'Cut the top expense category first, then set a monthly budget for it.'
+          : sr < 10 ? 'Target at least 20% — automate a fixed transfer to savings on payday.'
+          : sr < 30 ? 'Solid. Push toward 30% by trimming one recurring cost.'
+          : 'Excellent — move the surplus into a savings goal so it is not spent.',
+        type: sr < 0 ? 'critical' : sr < 10 ? 'warning' : sr >= 30 ? 'success' : 'info',
       });
     }
 
-    // Top expense category
-    if (categoryExpenseData.length > 0 && stats.expense > 0) {
-      const top = categoryExpenseData[0];
-      const pct = ((top.value / stats.expense) * 100).toFixed(0);
-      result.push({ icon: Lightbulb, text: `${top.name} is ${pct}% of total expenses (${fmt(top.value)} RWF)`, type: 'info' });
+    // 2. Burn rate + projected month-end spend
+    const burn = stats.expense / days;
+    if (burn > 0) {
+      const projected = burn * 30;
+      result.push({
+        icon: Flame,
+        title: `Burn rate ${fmt(Math.round(burn))} RWF/day`,
+        text: `At this pace a full 30 days costs about ${fmt(Math.round(projected))} RWF.`,
+        suggestion: stats.income > 0 && projected > stats.income
+          ? 'Projected spend exceeds your income pace — reduce daily spend or add income.'
+          : 'Keep the daily pace and you stay within your earning pace.',
+        type: stats.income > 0 && projected > stats.income ? 'warning' : 'info',
+      });
     }
 
-    // Category concentration warning
+    // 3. Runway from surplus
+    if (burn > 0 && net > 0) {
+      result.push({
+        icon: TrendingUp,
+        title: `${Math.round(net / burn)} days of runway`,
+        text: `Your ${fmt(net)} RWF surplus covers ${Math.round(net / burn)} more days at the current spend rate.`,
+        suggestion: net / burn < 30 ? 'Aim for at least 90 days of cover as an emergency buffer.' : 'Healthy buffer — consider investing part of it.',
+        type: net / burn < 30 ? 'warning' : 'success',
+      });
+    }
+
+    // 4. Category concentration
     if (categoryExpenseData.length > 0 && stats.expense > 0) {
-      const topPct = (categoryExpenseData[0].value / stats.expense) * 100;
-      if (topPct > 60) {
-        result.push({ icon: AlertTriangle, text: `High concentration: ${categoryExpenseData[0].name} dominates spending at ${topPct.toFixed(0)}%`, type: 'warning' });
+      const top = categoryExpenseData[0];
+      const pct = (top.value / stats.expense) * 100;
+      result.push({
+        icon: pct > 60 ? AlertTriangle : Lightbulb,
+        title: `${top.name} drives ${pct.toFixed(0)}% of spending`,
+        text: `${fmt(top.value)} RWF of ${fmt(stats.expense)} RWF total expenses.`,
+        suggestion: pct > 60
+          ? 'One category dominates — a 10% cut here saves more than trimming everything else.'
+          : `A 10% reduction in ${top.name} would free about ${fmt(Math.round(top.value * 0.1))} RWF.`,
+        type: pct > 60 ? 'warning' : 'info',
+      });
+    }
+
+    // 5. Anomaly: unusually large single expense
+    if (expenses.length >= 3) {
+      const sorted = [...expenses].sort((a, b) => amt(b) - amt(a));
+      const biggest = sorted[0];
+      const avg = expenses.reduce((s, t) => s + amt(t), 0) / expenses.length;
+      if (avg > 0 && amt(biggest) > avg * 3) {
+        result.push({
+          icon: AlertTriangle,
+          title: 'Unusual expense detected',
+          text: `${biggest.category} of ${fmt(amt(biggest))} RWF is ${(amt(biggest) / avg).toFixed(1)}x your typical ${fmt(Math.round(avg))} RWF expense.`,
+          suggestion: 'Confirm it was planned. If it repeats monthly, budget for it instead of absorbing it.',
+          type: 'warning',
+        });
       }
     }
 
-    // Runway
-    if (burnRate > 0 && stats.income > stats.expense) {
-      const balance = stats.income - stats.expense;
-      const runway = Math.round(balance / burnRate);
-      result.push({ icon: TrendingUp, text: `Current surplus covers ${runway} more days at this spend rate`, type: 'success' });
+    // 6. Income concentration risk
+    if (categoryIncomeData.length > 0 && stats.income > 0) {
+      const topIn = categoryIncomeData[0];
+      const pct = (topIn.value / stats.income) * 100;
+      if (pct > 80 && categoryIncomeData.length <= 2) {
+        result.push({
+          icon: AlertTriangle,
+          title: 'Single income dependency',
+          text: `${pct.toFixed(0)}% of income comes from ${topIn.name}.`,
+          suggestion: 'Build a second income stream so one disruption does not stop all cash flow.',
+          type: 'warning',
+        });
+      }
     }
 
-    return result;
-  }, [txData, stats, categoryExpenseData, range]);
+    // 7. Spending consistency (volatility)
+    if (chartData.length >= 4) {
+      const vals = chartData.map(d => Number(d.Expense) || 0);
+      const mean = vals.reduce((a, b) => a + b, 0) / vals.length;
+      if (mean > 0) {
+        const sd = Math.sqrt(vals.reduce((s, v) => s + (v - mean) ** 2, 0) / vals.length);
+        const cv = (sd / mean) * 100;
+        result.push({
+          icon: BarChart3,
+          title: cv > 80 ? 'Spending is very irregular' : 'Spending is fairly steady',
+          text: `Daily expenses vary by about ${cv.toFixed(0)}% around a ${fmt(Math.round(mean))} RWF average.`,
+          suggestion: cv > 80
+            ? 'Irregular spikes make planning hard — spread large purchases or set weekly caps.'
+            : 'Predictable spending — a fixed monthly budget will work well for you.',
+          type: cv > 80 ? 'warning' : 'success',
+        });
+      }
+    }
+
+    // 8. Budget risk from live budget usage
+    if (budgetAlerts.length > 0) {
+      const worst = [...budgetAlerts].sort((a, b) => b.pct - a.pct)[0];
+      result.push({
+        icon: AlertTriangle,
+        title: worst.exceeded ? `${worst.category} budget exceeded` : `${worst.category} budget at ${Math.round(worst.pct)}%`,
+        text: `${fmt(worst.spent)} RWF used of ${fmt(Number(worst.monthly_limit))} RWF this month${budgetAlerts.length > 1 ? ` (+${budgetAlerts.length - 1} other budget${budgetAlerts.length > 2 ? 's' : ''} at risk)` : ''}.`,
+        suggestion: worst.exceeded
+          ? 'Pause discretionary spend in this category until next month, or raise the limit deliberately.'
+          : 'Slow down here to finish the month inside plan.',
+        type: worst.exceeded ? 'critical' : 'warning',
+      });
+    }
+
+    // 9. Loan exposure
+    const pending = (loans ?? []).filter(l => l.status === 'PENDING');
+    const oweMe = pending.filter(l => l.type === 'GIVEN').reduce((s, l) => s + Number(l.amount), 0);
+    const iOwe = pending.filter(l => l.type === 'RECEIVED').reduce((s, l) => s + Number(l.amount), 0);
+    if (oweMe > 0 || iOwe > 0) {
+      const heavy = stats.income > 0 && iOwe > stats.income * 0.5;
+      result.push({
+        icon: HandCoins,
+        title: heavy ? 'Debt load is heavy' : 'Open loan positions',
+        text: `${fmt(oweMe)} RWF owed to you, ${fmt(iOwe)} RWF owed by you.`,
+        suggestion: heavy
+          ? 'Debt is over half your income for this range — prioritise repayment before new spending.'
+          : oweMe > iOwe
+            ? 'Collect the oldest receivable first; unpaid loans behave like frozen cash.'
+            : 'Schedule repayments from your surplus so debts do not accumulate interest or strain.',
+        type: heavy ? 'critical' : 'info',
+      });
+    }
+
+    // 10. Activity coverage — records discipline
+    const perDay = txData.length / days;
+    if (perDay < 0.5 && days >= 7) {
+      result.push({
+        icon: Lightbulb,
+        title: 'Thin record coverage',
+        text: `Only ${txData.length} records over ${days} days — some activity is likely unrecorded.`,
+        suggestion: 'Record daily, even small cash spend; insights get sharper with complete data.',
+        type: 'info',
+      });
+    }
+
+    const rank = { critical: 0, warning: 1, success: 2, info: 3 } as const;
+    return result.sort((a, b) => rank[a.type] - rank[b.type]);
+  }, [txData, stats, categoryExpenseData, categoryIncomeData, chartData, budgetAlerts, loans, range]);
+
 
   const net = stats.income - stats.expense;
 
