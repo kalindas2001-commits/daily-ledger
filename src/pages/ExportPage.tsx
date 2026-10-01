@@ -303,7 +303,7 @@ export default function ExportPage() {
     const d = report.doc;
 
     // 4. Executive Summary
-    let y = report.beginSection('Executive Summary', y);
+    let y = report.beginSection('Executive Summary');
     d.setTextColor(...CHARCOAL); d.setFont('helvetica', 'normal'); d.setFontSize(10);
     const days = differenceInDays(to, from) + 1;
     const savingsRate = totals.income > 0 ? (totals.net / totals.income) * 100 : 0;
@@ -525,7 +525,7 @@ export default function ExportPage() {
     const report = await openReport('Transaction Register', 'TR');
     const d = report.doc;
 
-    let y = report.beginSection('Executive Summary', y);
+    let y = report.beginSection('Executive Summary');
     d.setTextColor(...CHARCOAL); d.setFont('helvetica', 'normal'); d.setFontSize(10);
     const txt = `This register lists every financial transaction recorded on the CungaCash platform for ${report.meta.company} from ${format(from, 'dd MMM yyyy')} to ${format(to, 'dd MMM yyyy')}. It is intended as an official record for review, reconciliation and audit purposes.`;
     d.text(d.splitTextToSize(txt, report.pageW - 28), 14, y);
@@ -570,7 +570,7 @@ export default function ExportPage() {
     const report = await openReport('Daily Activity Statement', 'DA');
     const d = report.doc;
 
-    let y = report.beginSection('KPI Dashboard', y);
+    let y = report.beginSection('KPI Dashboard');
     y = report.drawKpiCards(y, kpiRow());
 
     y = report.beginSection('Charts & Graphs', y);
@@ -642,7 +642,7 @@ export default function ExportPage() {
     const deposits = txs.filter((t: any) => t.action === 'DEPOSIT').reduce((s, t: any) => s + Number(t.amount), 0);
     const withdrawals = txs.filter((t: any) => t.action === 'WITHDRAW').reduce((s, t: any) => s + Number(t.amount), 0);
 
-    let y = report.beginSection('KPI Dashboard', y);
+    let y = report.beginSection('KPI Dashboard');
     report.drawKpiCards(y, [
       { label: 'Current Balance', value: `${fmt(totalBalance)} RWF`, sub: `${accounts.length} account${accounts.length !== 1 ? 's' : ''}`, color: EMERALD },
       { label: 'Deposits', value: `${fmt(deposits)} RWF`, sub: 'Inflows in period', color: EMERALD },
@@ -711,7 +711,7 @@ export default function ExportPage() {
     const iOwe = loans.filter((l: any) => l.type === 'RECEIVED' && l.status === 'PENDING').reduce((s, l: any) => s + Number(l.amount), 0);
     const repaid = ltxs.filter((t: any) => t.action !== 'ADD').reduce((s, t: any) => s + Number(t.amount), 0);
 
-    let y = report.beginSection('KPI Dashboard', y);
+    let y = report.beginSection('KPI Dashboard');
     report.drawKpiCards(y, [
       { label: 'People Owe Me', value: `${fmt(oweMe)} RWF`, sub: 'Outstanding receivables', color: EMERALD },
       { label: 'I Owe', value: `${fmt(iOwe)} RWF`, sub: 'Outstanding payables', color: EXPENSE },
@@ -883,7 +883,7 @@ export default function ExportPage() {
     const d = report.doc;
     const total = accounts.reduce((s: number, a: any) => s + Number(a.current_balance ?? 0), 0);
 
-    let y = report.beginSection('KPI Dashboard', y);
+    let y = report.beginSection('KPI Dashboard');
     report.drawKpiCards(y, [
       { label: 'Portfolio Value', value: `${fmt(total)} RWF`, sub: 'All active accounts', color: EMERALD },
       { label: 'Accounts', value: `${accounts.length}`, sub: 'Active', color: NAVY },
@@ -937,7 +937,7 @@ export default function ExportPage() {
     const totalCurrent = goals.reduce((s: number, g: any) => s + Number(g.current_amount ?? 0), 0);
     const completed = goals.filter((g: any) => g.status === 'completed').length;
 
-    let y = report.beginSection('KPI Dashboard', y);
+    let y = report.beginSection('KPI Dashboard');
     report.drawKpiCards(y, [
       { label: 'Total Target', value: `${fmt(totalTarget)} RWF`, sub: 'Combined objective', color: NAVY },
       { label: 'Saved So Far', value: `${fmt(totalCurrent)} RWF`, sub: 'Current progress', color: EMERALD },
