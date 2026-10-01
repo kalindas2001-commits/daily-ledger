@@ -81,6 +81,12 @@ Deno.serve(async (req) => {
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
 
+    await admin.from("audit_logs").insert({
+      tenant_id: targetTenant, actor_user_id: userData.user.id, action: "member.credentials_reset",
+      target_type: "user", target_id: target_user_id,
+      metadata: { email_changed: !!updates.email, password_changed: !!updates.password },
+    });
+
     return new Response(JSON.stringify({ ok: true }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } });
   } catch (e) {
