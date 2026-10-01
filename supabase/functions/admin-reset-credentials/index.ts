@@ -45,6 +45,22 @@ Deno.serve(async (req) => {
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
 
+    // Tenant admins may only reset members of their own team; super admins may reset anyone.
+    const { data: superRow } = await admin.from("user_roles").select("role")
+      .eq("user_id", userData.user.id).eq("role", "super_admin").maybeSingle();
+    let targetTenant: string | null = null;
+    {
+      const { data: tp } = await admin.from("profiles").select("tenant_id").eq("user_id", target_user_id).maybeSingle();
+      targetTenant = tp?.tenant_id ?? null;
+      if (!superRow) {
+        const { data: me } = await admin.from("profiles").select("tenant_id").eq("user_id", userData.user.id).maybeSingle();
+        if (!me?.tenant_id || me.tenant_id !== targetTenant) {
+          return new Response(JSON.stringify({ error: "This member is not in your team" }),
+            { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+        }
+      }
+    }
+
     const updates: Record<string, unknown> = { email_confirm: true };
     if (new_email && typeof new_email === "string") updates.email = new_email.trim();
     if (new_password && typeof new_password === "string") {
