@@ -50,7 +50,16 @@ export class EnterpriseReport {
   constructor(meta: ReportMeta) {
     this.doc = new jsPDF({ unit: 'mm', format: 'a4' });
     this.meta = meta;
+    // Every table keeps clear of the page header & footer bands on every page.
+    (this.doc as any).__autoTableDocumentDefaults = {
+      margin: { top: EnterpriseReport.CONTENT_TOP, bottom: EnterpriseReport.CONTENT_BOTTOM, left: 14, right: 14 },
+    };
   }
+
+  static CONTENT_TOP = 28;      // header band (0–18) + breathing room
+  static CONTENT_BOTTOM = 24;   // footer band + breathing room
+  private cursorY = 0;
+  private lastTableSeen: any = null;
 
   get pageW() { return this.doc.internal.pageSize.getWidth(); }
   get pageH() { return this.doc.internal.pageSize.getHeight(); }
@@ -106,7 +115,10 @@ export class EnterpriseReport {
     (d as any).setGState?.(new (d as any).GState({ opacity: 1 }));
   }
 
-  drawWatermark() {
+  /** Kept for backwards compatibility — watermark is painted in finalize(). */
+  drawWatermark() { /* no-op */ }
+
+  private paintWatermark() {
     const wm = this.meta.watermark;
     if (!wm) return;
     const d = this.doc;
@@ -121,7 +133,11 @@ export class EnterpriseReport {
   }
 
   // ---------- Header (compact on inner pages) ----------
-  drawInnerHeader(sectionTitle: string) {
+  /** Kept for backwards compatibility — headers are now drawn once per page in finalize(). */
+  drawInnerHeader(_sectionTitle?: string) { /* no-op */ }
+
+  private paintHeader() {
+    const sectionTitle = this.meta.reportType;
     const d = this.doc;
     d.setFillColor(...NAVY);
     d.rect(0, 0, this.pageW, 16, 'F');
@@ -146,7 +162,11 @@ export class EnterpriseReport {
     const total = d.getNumberOfPages();
     for (let i = 1; i <= total; i++) {
       d.setPage(i);
+      if (i > 1) { this.paintWatermark(); this.paintHeader(); }
       const y = this.pageH - 10;
+      // clean footer band, visually separate from content
+      d.setFillColor(248, 250, 252);
+      d.rect(0, this.pageH - 17, this.pageW, 17, 'F');
       d.setDrawColor(...GOLD); d.setLineWidth(0.3);
       d.line(10, y - 4, this.pageW - 10, y - 4);
       d.setFont('helvetica', 'normal'); d.setFontSize(6.5); d.setTextColor(...MUTED);
@@ -281,14 +301,8 @@ export class EnterpriseReport {
 
   // ---------- 3. Table of Contents (placeholder — filled at end) ----------
   private tocPageNumber = 0;
-  tocPagePlaceholder() {
-    this.doc.addPage();
-    this.tocPageNumber = this.doc.getNumberOfPages();
-    this.drawInnerHeader('Table of Contents');
-    this.drawWatermark();
-    // record its own entry
-    this.toc.push({ title: 'Table of Contents', page: this.tocPageNumber });
-  }
+  /** Table of contents removed — sections flow continuously. */
+  tocPagePlaceholder() { /* no-op */ }
   private renderToc() {
     if (!this.tocPageNumber) return;
     this.doc.setPage(this.tocPageNumber);
@@ -315,26 +329,54 @@ export class EnterpriseReport {
   }
 
   // ---------- Generic section opener ----------
-  beginSection(title: string) {
-    this.doc.addPage();
-    this.drawInnerHeader(title);
-    this.drawWatermark();
-    this.toc.push({ title, page: this.doc.getNumberOfPages() });
-    const d = this.doc;
-    d.setTextColor(...NAVY); d.setFont('helvetica', 'bold'); d.setFontSize(15);
-    d.text(title, 14, 28);
-    d.setDrawColor(...GOLD); d.setLineWidth(0.4);
-    d.line(14, 31, 44, 31);
-    return 40; // starting y
+  /** Where the previous content ended on the current page. */
+  private flowStart(prevY = 0) {
+    const last = (this.doc as any).lastAutoTable;
+    let y = Math.max(prevY, this.cursorY);
+    if (last && last !== this.lastTableSeen) {
+      y = Math.max(y, last.finalY ?? 0);
+      this.lastTableSeen = last;
+    }
+    return y;
   }
 
-  ensureSpace(y: number, needed: number, sectionTitle: string) {
-    if (y + needed > this.pageH - 18) {
-      this.doc.addPage();
-      this.drawInnerHeader(sectionTitle);
-      this.drawWatermark();
-      return 24;
+  /** Mark how far content has been drawn (used by non-table blocks). */
+  setCursor(y: number) { this.cursorY = Math.max(this.cursorY, y); return y; }
+
+  /**
+   * Opens a section directly after the previous one. A new page is only added
+   * when the remaining space can't fit the section heading plus some content.
+   */
+  beginSection(title: string, prevY = 0) {
+    const d = this.doc;
+    const isCover = d.getNumberOfPages() === 1 && this.cursorY === 0 && !(d as any).lastAutoTable;
+    let y = isCover ? 0 : this.flowStart(prevY);
+    if (isCover || y === 0 || y + 45 > this.pageH - EnterpriseReport.CONTENT_BOTTOM) {
+      d.addPage();
+      y = EnterpriseReport.CONTENT_TOP;
+    } else {
+      y += 12;
     }
+    this.toc.push({ title, page: d.getNumberOfPages() });
+    // Section heading: emerald marker + navy title + soft rule
+    d.setFillColor(...EMERALD);
+    d.roundedRect(14, y - 4.5, 1.6, 6, 0.6, 0.6, 'F');
+    d.setTextColor(...NAVY); d.setFont('helvetica', 'bold'); d.setFontSize(13.5);
+    d.text(title, 18.5, y);
+    d.setDrawColor(226, 232, 240); d.setLineWidth(0.3);
+    d.line(14, y + 3.5, this.pageW - 14, y + 3.5);
+    const start = y + 11;
+    this.cursorY = start;
+    return start;
+  }
+
+  ensureSpace(y: number, needed: number, _sectionTitle?: string) {
+    if (y + needed > this.pageH - EnterpriseReport.CONTENT_BOTTOM) {
+      this.doc.addPage();
+      this.cursorY = EnterpriseReport.CONTENT_TOP;
+      return EnterpriseReport.CONTENT_TOP;
+    }
+    this.setCursor(y + needed);
     return y;
   }
 
@@ -368,7 +410,7 @@ export class EnterpriseReport {
       }
     });
     const rows = Math.ceil(cards.length / perRow);
-    return y + rows * (cardH + gap);
+    return this.setCursor(y + rows * (cardH + gap));
   }
 
   // ---------- Notes/Approval/QR/Metadata sections ----------
@@ -497,7 +539,6 @@ export class EnterpriseReport {
   }
 
   finalize() {
-    this.renderToc();
     this.addFooters();
   }
 
