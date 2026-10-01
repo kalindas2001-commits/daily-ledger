@@ -1632,6 +1632,10 @@ export type Database = {
       }
       tenant_drilldown: { Args: { _tenant_id: string }; Returns: Json }
       tenant_has_seat: { Args: { _tid: string }; Returns: boolean }
+      tenant_set_member_role: {
+        Args: { _make_admin: boolean; _target: string }
+        Returns: undefined
+      }
       update_business_profile: {
         Args: { _business_name: string; _tin_number: string }
         Returns: undefined
