@@ -247,7 +247,7 @@ export default function ExportPage() {
     };
   };
 
-  /** Build scaffold: cover + TOC placeholder (personal, professional — no corporate notices). */
+  /** Build scaffold: cover page (personal, professional — no corporate notices). */
   const openReport = async (reportType: string, kindCode: string) => {
     const meta = await buildMeta(reportType, kindCode);
     const report = new EnterpriseReport(meta);
@@ -256,7 +256,6 @@ export default function ExportPage() {
     await report.computeHash();
     await report.buildQr();
     report.coverPage();
-    report.tocPagePlaceholder();
     return report;
   };
 
@@ -304,7 +303,7 @@ export default function ExportPage() {
     const d = report.doc;
 
     // 4. Executive Summary
-    let y = report.beginSection('Executive Summary');
+    let y = report.beginSection('Executive Summary', y);
     d.setTextColor(...CHARCOAL); d.setFont('helvetica', 'normal'); d.setFontSize(10);
     const days = differenceInDays(to, from) + 1;
     const savingsRate = totals.income > 0 ? (totals.net / totals.income) * 100 : 0;
@@ -313,11 +312,11 @@ export default function ExportPage() {
     y += Math.ceil(summary.length / 90) * 5 + 10;
 
     // 5. KPI Dashboard
-    y = report.beginSection('KPI Dashboard');
+    y = report.beginSection('KPI Dashboard', y);
     report.drawKpiCards(y, kpiRow());
 
     // 6. Charts & Graphs
-    y = report.beginSection('Charts & Graphs');
+    y = report.beginSection('Charts & Graphs', y);
     const expenseMap: Record<string, number> = {};
     const incomeMap: Record<string, number> = {};
     const paymentMap: Record<string, number> = {};
@@ -350,11 +349,11 @@ export default function ExportPage() {
       }));
       d.setTextColor(...NAVY); d.setFont('helvetica', 'bold'); d.setFontSize(10);
       d.text('Daily Income vs Expense (last 14 days)', 14, y);
-      drawBars(d, 14, y + 2, report.pageW - 28, 55, recent);
+      drawBars(d, 14, y + 2, report.pageW - 28, 55, recent); y += 64;
     }
 
     // 7. Main Financial Report
-    y = report.beginSection('Main Financial Report');
+    y = report.beginSection('Main Financial Report', y);
     const expenseRows = Object.entries(expenseMap).sort((a, b) => b[1] - a[1]).map(([cat, amt]) => [
       cat, `${fmt(amt)} RWF`, `${totals.expense > 0 ? ((amt / totals.expense) * 100).toFixed(1) : 0}%`,
     ]);
@@ -386,7 +385,7 @@ export default function ExportPage() {
 
     // 8. Comparative Analysis
     const prior = await fetchPriorTotals();
-    y = report.beginSection('Comparative Analysis');
+    y = report.beginSection('Comparative Analysis', y);
     const pctChange = (curr: number, prev: number) => {
       if (prev === 0) return curr === 0 ? '0%' : '+∞';
       const p = ((curr - prev) / prev) * 100;
@@ -407,7 +406,7 @@ export default function ExportPage() {
     });
 
     // 9. AI Insights
-    y = report.beginSection('AI Insights');
+    y = report.beginSection('AI Insights', y);
     const insights = computeInsights();
     d.setTextColor(...CHARCOAL); d.setFont('helvetica', 'normal'); d.setFontSize(10);
     insights.forEach((t) => {
@@ -422,7 +421,7 @@ export default function ExportPage() {
     });
 
     // 10. Risk Assessment
-    y = report.beginSection('Risk Assessment');
+    y = report.beginSection('Risk Assessment', y);
     const risks: [string, string, string][] = [];
     if (savingsRate < 0) risks.push(['Cash flow deficit', 'HIGH', 'Expenses exceed income; corrective action required.']);
     else if (savingsRate < 10) risks.push(['Low savings buffer', 'MEDIUM', 'Savings rate below 10%; limited resilience to shocks.']);
@@ -448,7 +447,7 @@ export default function ExportPage() {
     });
 
     // 11. Detailed Transactions
-    y = report.beginSection('Detailed Transactions');
+    y = report.beginSection('Detailed Transactions', y);
     autoTable(d, {
       startY: y,
       head: [['Date', 'Type', 'Category', 'Description', 'Qty', 'Unit', 'Total', 'Payment']],
@@ -471,16 +470,12 @@ export default function ExportPage() {
           data.cell.styles.fontStyle = 'bold';
         }
       },
-      didDrawPage: () => {
-        report.drawInnerHeader('Detailed Transactions');
-        report.drawWatermark();
-      },
-      margin: { top: 22, bottom: 18 },
+      margin: { top: 28, bottom: 24, left: 14, right: 14 },
     });
 
     // 12. Supporting Schedules (payment methods)
     if (Object.keys(paymentMap).length > 0) {
-      y = report.beginSection('Supporting Schedules');
+      y = report.beginSection('Supporting Schedules', y);
       d.setTextColor(...NAVY); d.setFont('helvetica', 'bold'); d.setFontSize(10);
       d.text('Schedule A — Payment Method Breakdown', 14, y); y += 4;
       const totalAll = totals.income + totals.expense;
@@ -499,7 +494,7 @@ export default function ExportPage() {
     }
 
     // 16. Appendix
-    y = report.beginSection('Appendix');
+    y = report.beginSection('Appendix', y);
     d.setTextColor(...CHARCOAL); d.setFont('helvetica', 'normal'); d.setFontSize(9);
     const glossary: [string, string][] = [
       ['Savings Rate', 'Net balance divided by total income, expressed as a percentage.'],
@@ -530,15 +525,15 @@ export default function ExportPage() {
     const report = await openReport('Transaction Register', 'TR');
     const d = report.doc;
 
-    let y = report.beginSection('Executive Summary');
+    let y = report.beginSection('Executive Summary', y);
     d.setTextColor(...CHARCOAL); d.setFont('helvetica', 'normal'); d.setFontSize(10);
     const txt = `This register lists every financial transaction recorded on the CungaCash platform for ${report.meta.company} from ${format(from, 'dd MMM yyyy')} to ${format(to, 'dd MMM yyyy')}. It is intended as an official record for review, reconciliation and audit purposes.`;
     d.text(d.splitTextToSize(txt, report.pageW - 28), 14, y);
 
-    y = report.beginSection('KPI Dashboard');
+    y = report.beginSection('KPI Dashboard', y);
     report.drawKpiCards(y, kpiRow());
 
-    y = report.beginSection('Detailed Transactions');
+    y = report.beginSection('Detailed Transactions', y);
     autoTable(d, {
       startY: y,
       head: [['Date', 'Type', 'Category', 'Description', 'Qty', 'Unit Price', 'Total', 'Payment']],
@@ -561,8 +556,7 @@ export default function ExportPage() {
           data.cell.styles.fontStyle = 'bold';
         }
       },
-      didDrawPage: () => { report.drawInnerHeader('Detailed Transactions'); report.drawWatermark(); },
-      margin: { top: 22, bottom: 18 },
+      margin: { top: 28, bottom: 24, left: 14, right: 14 },
     });
 
     closeReport(report);
@@ -576,10 +570,10 @@ export default function ExportPage() {
     const report = await openReport('Daily Activity Statement', 'DA');
     const d = report.doc;
 
-    let y = report.beginSection('KPI Dashboard');
+    let y = report.beginSection('KPI Dashboard', y);
     y = report.drawKpiCards(y, kpiRow());
 
-    y = report.beginSection('Charts & Graphs');
+    y = report.beginSection('Charts & Graphs', y);
     const recent = summaries.slice(-14).map((s) => ({
       label: format(new Date(s.summary_date), 'd/M'),
       income: Number(s.total_income ?? 0),
@@ -587,9 +581,9 @@ export default function ExportPage() {
     }));
     d.setTextColor(...NAVY); d.setFont('helvetica', 'bold'); d.setFontSize(10);
     d.text('Daily Income vs Expense (last 14 days)', 14, y);
-    drawBars(d, 14, y + 2, report.pageW - 28, 60, recent);
+    drawBars(d, 14, y + 2, report.pageW - 28, 60, recent); y += 64;
 
-    y = report.beginSection('Daily Detail');
+    y = report.beginSection('Daily Detail', y);
     autoTable(d, {
       startY: y,
       head: [['Date', 'Income', 'Expense', 'Net Balance']],
@@ -606,8 +600,7 @@ export default function ExportPage() {
         2: { halign: 'right', textColor: EXPENSE },
         3: { halign: 'right', fontStyle: 'bold' },
       },
-      didDrawPage: () => { report.drawInnerHeader('Daily Detail'); report.drawWatermark(); },
-      margin: { top: 22, bottom: 18 },
+      margin: { top: 28, bottom: 24, left: 14, right: 14 },
     });
 
     closeReport(report);
@@ -649,7 +642,7 @@ export default function ExportPage() {
     const deposits = txs.filter((t: any) => t.action === 'DEPOSIT').reduce((s, t: any) => s + Number(t.amount), 0);
     const withdrawals = txs.filter((t: any) => t.action === 'WITHDRAW').reduce((s, t: any) => s + Number(t.amount), 0);
 
-    let y = report.beginSection('KPI Dashboard');
+    let y = report.beginSection('KPI Dashboard', y);
     report.drawKpiCards(y, [
       { label: 'Current Balance', value: `${fmt(totalBalance)} RWF`, sub: `${accounts.length} account${accounts.length !== 1 ? 's' : ''}`, color: EMERALD },
       { label: 'Deposits', value: `${fmt(deposits)} RWF`, sub: 'Inflows in period', color: EMERALD },
@@ -658,7 +651,7 @@ export default function ExportPage() {
     ]);
 
     if (accounts.length > 0) {
-      y = report.beginSection('Savings Accounts');
+      y = report.beginSection('Savings Accounts', y);
       autoTable(d, {
         startY: y,
         head: [['Account', 'Current Balance', 'Goal', 'Progress']],
@@ -677,7 +670,7 @@ export default function ExportPage() {
     }
 
     if (txs.length > 0) {
-      y = report.beginSection('Transaction History');
+      y = report.beginSection('Transaction History', y);
       const acctMap = new Map(accounts.map((a: any) => [a.id, a.name]));
       autoTable(d, {
         startY: y,
@@ -698,8 +691,7 @@ export default function ExportPage() {
             data.cell.styles.fontStyle = 'bold';
           }
         },
-        didDrawPage: () => { report.drawInnerHeader('Transaction History'); report.drawWatermark(); },
-        margin: { top: 22, bottom: 18 },
+        margin: { top: 28, bottom: 24, left: 14, right: 14 },
       });
     }
 
@@ -719,7 +711,7 @@ export default function ExportPage() {
     const iOwe = loans.filter((l: any) => l.type === 'RECEIVED' && l.status === 'PENDING').reduce((s, l: any) => s + Number(l.amount), 0);
     const repaid = ltxs.filter((t: any) => t.action !== 'ADD').reduce((s, t: any) => s + Number(t.amount), 0);
 
-    let y = report.beginSection('KPI Dashboard');
+    let y = report.beginSection('KPI Dashboard', y);
     report.drawKpiCards(y, [
       { label: 'People Owe Me', value: `${fmt(oweMe)} RWF`, sub: 'Outstanding receivables', color: EMERALD },
       { label: 'I Owe', value: `${fmt(iOwe)} RWF`, sub: 'Outstanding payables', color: EXPENSE },
@@ -728,7 +720,7 @@ export default function ExportPage() {
     ]);
 
     if (loans.length > 0) {
-      y = report.beginSection('Loan Ledger');
+      y = report.beginSection('Loan Ledger', y);
       autoTable(d, {
         startY: y,
         head: [['Date', 'Person', 'Type', 'Outstanding', 'Status', 'Notes']],
@@ -754,7 +746,7 @@ export default function ExportPage() {
     }
 
     if (ltxs.length > 0) {
-      y = report.beginSection('Action History');
+      y = report.beginSection('Action History', y);
       const loanMap = new Map(loans.map((l: any) => [l.id, l.person_name]));
       autoTable(d, {
         startY: y,
@@ -775,8 +767,7 @@ export default function ExportPage() {
             dc.cell.styles.fontStyle = 'bold';
           }
         },
-        didDrawPage: () => { report.drawInnerHeader('Action History'); report.drawWatermark(); },
-        margin: { top: 22, bottom: 18 },
+        margin: { top: 28, bottom: 24, left: 14, right: 14 },
       });
     }
 
@@ -892,7 +883,7 @@ export default function ExportPage() {
     const d = report.doc;
     const total = accounts.reduce((s: number, a: any) => s + Number(a.current_balance ?? 0), 0);
 
-    let y = report.beginSection('KPI Dashboard');
+    let y = report.beginSection('KPI Dashboard', y);
     report.drawKpiCards(y, [
       { label: 'Portfolio Value', value: `${fmt(total)} RWF`, sub: 'All active accounts', color: EMERALD },
       { label: 'Accounts', value: `${accounts.length}`, sub: 'Active', color: NAVY },
@@ -900,7 +891,7 @@ export default function ExportPage() {
       { label: 'Currency', value: 'RWF', sub: 'Base currency', color: NAVY },
     ]);
 
-    y = report.beginSection('Accounts Ledger');
+    y = report.beginSection('Accounts Ledger', y);
     autoTable(d, {
       startY: y,
       head: [['Account', 'Type', 'Number', 'Current Balance', '% of Portfolio']],
@@ -946,7 +937,7 @@ export default function ExportPage() {
     const totalCurrent = goals.reduce((s: number, g: any) => s + Number(g.current_amount ?? 0), 0);
     const completed = goals.filter((g: any) => g.status === 'completed').length;
 
-    let y = report.beginSection('KPI Dashboard');
+    let y = report.beginSection('KPI Dashboard', y);
     report.drawKpiCards(y, [
       { label: 'Total Target', value: `${fmt(totalTarget)} RWF`, sub: 'Combined objective', color: NAVY },
       { label: 'Saved So Far', value: `${fmt(totalCurrent)} RWF`, sub: 'Current progress', color: EMERALD },
@@ -954,7 +945,7 @@ export default function ExportPage() {
       { label: 'Completed', value: `${completed}/${goals.length}`, sub: 'Goals achieved', color: EMERALD },
     ]);
 
-    y = report.beginSection('Goals Detail');
+    y = report.beginSection('Goals Detail', y);
     autoTable(d, {
       startY: y,
       head: [['Goal', 'Category', 'Target', 'Current', 'Progress', 'Target Date', 'Status']],

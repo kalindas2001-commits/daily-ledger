@@ -439,6 +439,7 @@ export class EnterpriseReport {
       d.text(lines, 14, y);
       y += lines.length * 5 + 6;
     });
+    this.setCursor(y);
   }
 
   approvalPage() {
@@ -504,6 +505,7 @@ export class EnterpriseReport {
     d.text('Digital Signature', 18, y + 25);
     d.setFont('helvetica', 'normal'); d.setTextColor(...CHARCOAL); d.setFontSize(9);
     d.text(`${this.meta.generatedBy} · ${format(new Date(), 'yyyy-MM-dd HH:mm:ss')} · Report ${this.meta.reportId}`, 18, y + 31, { maxWidth: this.pageW - 36 });
+    this.setCursor(y + 42);
   }
 
   metadataPage() {
@@ -536,6 +538,7 @@ export class EnterpriseReport {
       d.text(lines, 60, y);
       y += Math.max(6, lines.length * 5) + 1;
     });
+    this.setCursor(y);
   }
 
   finalize() {
