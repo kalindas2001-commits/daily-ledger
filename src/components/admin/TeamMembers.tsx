@@ -12,6 +12,10 @@ import { toast } from 'sonner';
 import { UserPlus, KeyRound, Copy, Ban, RefreshCw, Users, AlertCircle, Eye, TrendingUp, TrendingDown } from 'lucide-react';
 import { format } from 'date-fns';
 import UserTransactionsDrawer from '@/components/admin/UserTransactionsDrawer';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
+import { MoreVertical, Search, Download, ShieldCheck, ShieldOff, LockKeyhole, ArrowUpCircle } from 'lucide-react';
+import { useAuth } from '@/hooks/useAuth';
 
 interface Invite {
   id: string; code: string; max_uses: number; uses: number;
@@ -22,7 +26,10 @@ interface Member {
   id: string; email: string; full_name: string; is_admin: boolean;
   is_disabled: boolean; created_at: string;
   tx_count?: number; total_income?: number; total_expense?: number;
+  phone?: string; last_sign_in_at?: string | null;
 }
+
+type PendingAction = { kind: 'disable' | 'role'; member: Member } | null;
 
 export default function TeamMembers() {
   const { info, reload } = useMyTenant();
@@ -48,6 +55,19 @@ export default function TeamMembers() {
 
   // Transaction viewer
   const [viewer, setViewer] = useState<{ userId: string | null; name?: string } | null>(null);
+
+  const { user } = useAuth();
+  const [query, setQuery] = useState('');
+  const [roleFilter, setRoleFilter] = useState<'all' | 'admin' | 'user'>('all');
+  const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'disabled'>('all');
+  const [pending, setPending] = useState<PendingAction>(null);
+  const [busy, setBusy] = useState(false);
+  const [resetFor, setResetFor] = useState<Member | null>(null);
+  const [rsEmail, setRsEmail] = useState('');
+  const [rsPass, setRsPass] = useState('');
+  const [openSeats, setOpenSeats] = useState(false);
+  const [seatTarget, setSeatTarget] = useState(10);
+  const [seatReason, setSeatReason] = useState('');
 
 
   const load = async () => {
@@ -105,12 +125,83 @@ export default function TeamMembers() {
     toast.success('Invite revoked'); load();
   };
 
-  const toggleDisable = async (m: Member) => {
-    const { error } = await supabase.rpc('admin_set_user_disabled', { _target_user: m.id, _disabled: !m.is_disabled });
+  const runPending = async () => {
+    if (!pending) return;
+    setBusy(true);
+    const m = pending.member;
+    const { error } = pending.kind === 'disable'
+      ? await supabase.rpc('admin_set_user_disabled', { _target_user: m.id, _disabled: !m.is_disabled })
+      : await (supabase.rpc as any)('tenant_set_member_role', { _target: m.id, _make_admin: !m.is_admin });
+    setBusy(false);
+    setPending(null);
     if (error) return toast.error(error.message);
-    toast.success(m.is_disabled ? 'User enabled' : 'User disabled');
+    toast.success(pending.kind === 'disable'
+      ? (m.is_disabled ? 'Member enabled' : 'Member disabled')
+      : (m.is_admin ? 'Changed to regular user' : 'Promoted to admin'));
     load();
   };
+
+  const submitReset = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!resetFor) return;
+    setBusy(true);
+    const { data, error } = await supabase.functions.invoke('admin-reset-credentials', {
+      body: { target_user_id: resetFor.id, new_email: rsEmail || undefined, new_password: rsPass || undefined },
+    });
+    setBusy(false);
+    if (error || (data as any)?.error) return toast.error((data as any)?.error ?? error?.message ?? 'Reset failed');
+    toast.success('New login details saved — share them with the member securely');
+    setResetFor(null); setRsEmail(''); setRsPass(''); load();
+  };
+
+  const genPassword = () => {
+    const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789';
+    const arr = new Uint32Array(10); crypto.getRandomValues(arr);
+    setRsPass(Array.from(arr, (n) => chars[n % chars.length]).join(''));
+  };
+
+  const requestSeats = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!info || !user) return;
+    if (seatTarget <= seatsMax) return toast.error(`Ask for more than your current ${seatsMax} seats`);
+    setBusy(true);
+    const { error } = await supabase.from('quota_requests').insert({
+      tenant_id: info.tenant_id, requested_by: user.id, requested_max_users: seatTarget, reason: seatReason || null,
+    });
+    setBusy(false);
+    if (error) return toast.error(error.message);
+    toast.success('Seat request sent to the Super Admin');
+    setOpenSeats(false); setSeatReason(''); reload();
+  };
+
+  const filtered = members.filter((m) => {
+    const q = query.trim().toLowerCase();
+    if (q && !`${m.full_name} ${m.email} ${m.phone ?? ''}`.toLowerCase().includes(q)) return false;
+    if (roleFilter === 'admin' && !m.is_admin) return false;
+    if (roleFilter === 'user' && m.is_admin) return false;
+    if (statusFilter === 'active' && m.is_disabled) return false;
+    if (statusFilter === 'disabled' && !m.is_disabled) return false;
+    return true;
+  });
+
+  const exportCsv = () => {
+    const esc = (v: any) => `"${String(v ?? '').replace(/"/g, '""')}"`;
+    const rows = [['Full name', 'Email', 'Phone', 'Role', 'Status', 'Joined', 'Last active', 'Transactions', 'Income (RWF)', 'Expense (RWF)']];
+    filtered.forEach((m) => rows.push([
+      m.full_name, m.email, m.phone ?? '', m.is_admin ? 'Admin' : 'User', m.is_disabled ? 'Disabled' : 'Active',
+      format(new Date(m.created_at), 'yyyy-MM-dd'),
+      m.last_sign_in_at ? format(new Date(m.last_sign_in_at), 'yyyy-MM-dd h:mm a') : 'Never',
+      String(m.tx_count ?? 0), String(m.total_income ?? 0), String(m.total_expense ?? 0),
+    ]));
+    const blob = new Blob([rows.map((r) => r.map(esc).join(',')).join('\n')], { type: 'text/csv;charset=utf-8' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = `team-members-${format(new Date(), 'yyyy-MM-dd')}.csv`;
+    a.click(); URL.revokeObjectURL(a.href);
+  };
+
+  const activeCount = members.filter((m) => !m.is_disabled).length;
+  const adminCount = members.filter((m) => m.is_admin).length;
 
   return (
     <div className="space-y-4">
@@ -118,13 +209,21 @@ export default function TeamMembers() {
       <Card>
         <CardHeader className="pb-3">
           <div className="flex items-center justify-between flex-wrap gap-3">
-            <div>
+            <div className="min-w-0">
               <CardTitle className="text-base flex items-center gap-2">
                 <Users className="w-4 h-4 text-primary" /> Team Seats
               </CardTitle>
               <CardDescription>{seatsUsed} of {seatsMax} used · {seatsLeft} available</CardDescription>
+              <div className="mt-2 h-1.5 w-48 max-w-full rounded-full bg-muted overflow-hidden">
+                <div className={`h-full rounded-full ${atLimit ? 'bg-destructive' : 'bg-primary'}`} style={{ width: `${seatsMax ? Math.min(100, (Number(seatsUsed) / seatsMax) * 100) : 0}%` }} />
+              </div>
             </div>
-            <div className="flex gap-2">
+            <div className="flex gap-2 flex-wrap">
+              {!atLimit && (
+                <Button variant="ghost" size="sm" disabled={info?.pending_request} onClick={() => { setSeatTarget(seatsMax + 5); setOpenSeats(true); }}>
+                  <ArrowUpCircle className="w-4 h-4 mr-1.5" /> {info?.pending_request ? 'Seat request pending' : 'More seats'}
+                </Button>
+              )}
               <Dialog open={openInvite} onOpenChange={setOpenInvite}>
                 <DialogTrigger asChild>
                   <Button variant="outline" size="sm" disabled={atLimit}>
@@ -187,7 +286,10 @@ export default function TeamMembers() {
           {atLimit && (
             <div className="mt-3 p-2.5 rounded-lg bg-destructive/10 text-destructive flex items-start gap-2 text-xs">
               <AlertCircle className="w-4 h-4 mt-0.5" />
-              <span>Your business is at its user limit. Request a quota increase from the Super Admin.</span>
+              <span className="flex-1">Your business is at its user limit. Request more seats from the Super Admin.</span>
+              <Button size="sm" variant="outline" className="h-7" disabled={info?.pending_request} onClick={() => { setSeatTarget(seatsMax + 5); setOpenSeats(true); }}>
+                {info?.pending_request ? 'Request pending' : 'Request seats'}
+              </Button>
             </div>
           )}
         </CardHeader>
@@ -235,37 +337,93 @@ export default function TeamMembers() {
 
       {/* Members list */}
       <Card>
-        <CardHeader className="pb-3"><CardTitle className="text-base">Team Members</CardTitle></CardHeader>
+        <CardHeader className="pb-3 space-y-3">
+          <div className="flex items-center justify-between gap-2 flex-wrap">
+            <div>
+              <CardTitle className="text-base">Team Members</CardTitle>
+              <CardDescription>{members.length} total · {activeCount} active · {adminCount} admin{adminCount === 1 ? '' : 's'}</CardDescription>
+            </div>
+            <Button size="sm" variant="outline" onClick={exportCsv} disabled={filtered.length === 0}>
+              <Download className="w-4 h-4 mr-1.5" /> Export list
+            </Button>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-[1fr_140px_140px] gap-2">
+            <div className="relative">
+              <Search className="w-4 h-4 absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground" />
+              <Input className="pl-8" placeholder="Search name, email or phone" value={query} onChange={(e) => setQuery(e.target.value)} />
+            </div>
+            <Select value={roleFilter} onValueChange={(v: any) => setRoleFilter(v)}>
+              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All roles</SelectItem>
+                <SelectItem value="admin">Admins</SelectItem>
+                <SelectItem value="user">Users</SelectItem>
+              </SelectContent>
+            </Select>
+            <Select value={statusFilter} onValueChange={(v: any) => setStatusFilter(v)}>
+              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All statuses</SelectItem>
+                <SelectItem value="active">Active</SelectItem>
+                <SelectItem value="disabled">Disabled</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        </CardHeader>
         <CardContent>
           {loading ? <p className="text-muted-foreground text-sm">Loading…</p> :
-           members.length === 0 ? <p className="text-muted-foreground text-sm">No members.</p> : (
+           filtered.length === 0 ? <p className="text-muted-foreground text-sm text-center py-6">No members match your filters.</p> : (
             <div className="space-y-2">
-              {members.map(m => {
+              {filtered.map(m => {
                 const fmt = (n: any) => Number(n ?? 0).toLocaleString('en-RW');
+                const isMe = m.id === user?.id;
+                const initials = (m.full_name || m.email).split(/[\s@.]+/).filter(Boolean).slice(0, 2).map((p) => p[0]?.toUpperCase()).join('');
                 return (
-                  <div key={m.id} className="p-3 rounded-lg border bg-card">
-                    <div className="flex items-center justify-between gap-2 flex-wrap">
-                      <div className="min-w-0">
-                        <div className="flex items-center gap-2 flex-wrap">
+                  <div key={m.id} className={`p-3 rounded-lg border bg-card ${m.is_disabled ? 'opacity-70' : ''}`}>
+                    <div className="flex items-center gap-3">
+                      <div className="w-9 h-9 shrink-0 rounded-full bg-primary/10 text-primary flex items-center justify-center text-xs font-bold">{initials}</div>
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center gap-1.5 flex-wrap">
                           <span className="font-medium text-sm truncate">{m.full_name || m.email}</span>
+                          {isMe && <Badge variant="outline" className="text-[10px]">You</Badge>}
                           {m.is_admin && <Badge className="text-[10px]">Admin</Badge>}
                           {m.is_disabled && <Badge variant="destructive" className="text-[10px]">Disabled</Badge>}
                         </div>
-                        <div className="text-[11px] text-muted-foreground truncate">{m.email}</div>
+                        <div className="text-[11px] text-muted-foreground truncate">{m.email}{m.phone ? ` · ${m.phone}` : ''}</div>
                       </div>
-                      <div className="flex gap-1.5">
-                        <Button size="sm" variant="outline" onClick={() => setViewer({ userId: m.id, name: m.full_name || m.email })}>
-                          <Eye className="w-3.5 h-3.5 mr-1" /> View
-                        </Button>
-                        <Button size="sm" variant="outline" onClick={() => toggleDisable(m)}>
-                          {m.is_disabled ? 'Enable' : 'Disable'}
-                        </Button>
-                      </div>
+                      <Button size="sm" variant="outline" className="hidden sm:inline-flex" onClick={() => setViewer({ userId: m.id, name: m.full_name || m.email })}>
+                        <Eye className="w-3.5 h-3.5 mr-1" /> View
+                      </Button>
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button size="icon" variant="ghost" aria-label="Member actions"><MoreVertical className="w-4 h-4" /></Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end" className="w-52">
+                          <DropdownMenuItem onClick={() => setViewer({ userId: m.id, name: m.full_name || m.email })}>
+                            <Eye className="w-4 h-4 mr-2" /> View transactions
+                          </DropdownMenuItem>
+                          {!isMe && (<>
+                            <DropdownMenuItem onClick={() => { setResetFor(m); setRsEmail(''); setRsPass(''); }}>
+                              <LockKeyhole className="w-4 h-4 mr-2" /> Reset login details
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => setPending({ kind: 'role', member: m })}>
+                              {m.is_admin ? <ShieldOff className="w-4 h-4 mr-2" /> : <ShieldCheck className="w-4 h-4 mr-2" />}
+                              {m.is_admin ? 'Make regular user' : 'Make admin'}
+                            </DropdownMenuItem>
+                            <DropdownMenuSeparator />
+                            <DropdownMenuItem className={m.is_disabled ? '' : 'text-destructive focus:text-destructive'} onClick={() => setPending({ kind: 'disable', member: m })}>
+                              <Ban className="w-4 h-4 mr-2" /> {m.is_disabled ? 'Enable member' : 'Disable member'}
+                            </DropdownMenuItem>
+                          </>)}
+                        </DropdownMenuContent>
+                      </DropdownMenu>
                     </div>
-                    <div className="flex gap-3 mt-2 text-[11px] text-muted-foreground">
+                    <div className="flex gap-x-3 gap-y-1 mt-2 text-[11px] text-muted-foreground flex-wrap pl-12">
                       <span className="flex items-center gap-1"><TrendingUp className="w-3 h-3 text-income" /> {fmt(m.total_income)} RWF</span>
                       <span className="flex items-center gap-1"><TrendingDown className="w-3 h-3 text-expense" /> {fmt(m.total_expense)} RWF</span>
-                      <span>· {m.tx_count ?? 0} tx</span>
+                      <span>{m.tx_count ?? 0} tx</span>
+                      <span>Joined {format(new Date(m.created_at), 'MMM d, yyyy')}</span>
+                      <span>Last active {m.last_sign_in_at ? format(new Date(m.last_sign_in_at), 'MMM d, h:mm a') : 'never'}</span>
                     </div>
                   </div>
                 );
@@ -274,6 +432,68 @@ export default function TeamMembers() {
           )}
         </CardContent>
       </Card>
+
+      {/* Confirm role / status change */}
+      <AlertDialog open={!!pending} onOpenChange={(o) => !o && setPending(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              {pending?.kind === 'disable'
+                ? (pending.member.is_disabled ? 'Enable this member?' : 'Disable this member?')
+                : (pending?.member.is_admin ? 'Change to regular user?' : 'Make this member an admin?')}
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              {pending?.kind === 'disable'
+                ? (pending.member.is_disabled
+                    ? `${pending.member.full_name || pending.member.email} will be able to sign in again.`
+                    : `${pending.member.full_name || pending.member.email} will be signed out and blocked from signing in. Their records stay safe.`)
+                : (pending?.member.is_admin
+                    ? `${pending?.member.full_name || pending?.member.email} will lose access to Team management.`
+                    : `${pending?.member.full_name || pending?.member.email} will be able to manage members, invites and team records.`)}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={busy}>Cancel</AlertDialogCancel>
+            <AlertDialogAction disabled={busy} onClick={(e) => { e.preventDefault(); runPending(); }}
+              className={pending?.kind === 'disable' && !pending.member.is_disabled ? 'bg-destructive text-destructive-foreground hover:bg-destructive/90' : ''}>
+              {busy ? 'Saving…' : 'Confirm'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Reset credentials */}
+      <Dialog open={!!resetFor} onOpenChange={(o) => !o && setResetFor(null)}>
+        <DialogContent>
+          <DialogHeader><DialogTitle>Reset login details</DialogTitle></DialogHeader>
+          <p className="text-xs text-muted-foreground -mt-2">For {resetFor?.full_name || resetFor?.email}. Leave a field empty to keep it unchanged.</p>
+          <form onSubmit={submitReset} className="space-y-3">
+            <div><Label>New email (optional)</Label><Input type="email" value={rsEmail} onChange={(e) => setRsEmail(e.target.value)} placeholder={resetFor?.email} /></div>
+            <div>
+              <Label>New password (optional)</Label>
+              <div className="flex gap-2">
+                <Input value={rsPass} minLength={6} onChange={(e) => setRsPass(e.target.value)} placeholder="At least 6 characters" />
+                <Button type="button" variant="outline" onClick={genPassword}>Generate</Button>
+              </div>
+            </div>
+            <DialogFooter>
+              <Button type="submit" disabled={busy || (!rsEmail && !rsPass)}>{busy ? 'Saving…' : 'Save new details'}</Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
+
+      {/* Request more seats */}
+      <Dialog open={openSeats} onOpenChange={setOpenSeats}>
+        <DialogContent>
+          <DialogHeader><DialogTitle>Request more seats</DialogTitle></DialogHeader>
+          <form onSubmit={requestSeats} className="space-y-3">
+            <div><Label>Total seats needed (currently {seatsMax})</Label><Input type="number" min={seatsMax + 1} max={1000} value={seatTarget} onChange={(e) => setSeatTarget(Number(e.target.value))} /></div>
+            <div><Label>Reason (optional)</Label><Input value={seatReason} onChange={(e) => setSeatReason(e.target.value)} placeholder="e.g. New branch staff" /></div>
+            <DialogFooter><Button type="submit" disabled={busy}>{busy ? 'Sending…' : 'Send request'}</Button></DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
 
       <UserTransactionsDrawer
         open={!!viewer}
