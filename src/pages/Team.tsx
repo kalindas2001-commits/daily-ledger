@@ -2,12 +2,13 @@ import TeamMembers from '@/components/admin/TeamMembers';
 import EditRequestsQueue from '@/components/admin/EditRequestsQueue';
 import UserTransactionsDrawer from '@/components/admin/UserTransactionsDrawer';
 import TeamTransactionsPanel from '@/components/admin/TeamTransactionsPanel';
+import TeamActivity from '@/components/admin/TeamActivity';
 import { useAuth } from '@/hooks/useAuth';
 import { Navigate } from 'react-router-dom';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Users, PencilLine, ListChecks, LayoutDashboard, Eye } from 'lucide-react';
+import { Users, PencilLine, ListChecks, LayoutDashboard, Eye, History } from 'lucide-react';
 import { useState } from 'react';
 import { useTenantTransactions, useTenantEditRequests } from '@/hooks/useEditRequests';
 
@@ -91,7 +92,7 @@ export default function TeamPage() {
         <h2 className="text-xl font-bold">Team Management</h2>
       </div>
       <Tabs defaultValue="overview" className="w-full">
-        <TabsList className="grid w-full grid-cols-4 h-auto">
+        <TabsList className="grid w-full grid-cols-5 h-auto">
           <TabsTrigger value="overview" className="text-[11px] sm:text-sm px-1 py-2"><LayoutDashboard className="w-4 h-4 sm:mr-1.5" /><span className="hidden sm:inline">Overview</span></TabsTrigger>
           <TabsTrigger value="members" className="text-[11px] sm:text-sm px-1 py-2"><Users className="w-4 h-4 sm:mr-1.5" /><span className="hidden sm:inline">Members</span></TabsTrigger>
           <TabsTrigger value="edits" className="relative text-[11px] sm:text-sm px-1 py-2">
@@ -101,6 +102,7 @@ export default function TeamPage() {
             )}
           </TabsTrigger>
           <TabsTrigger value="transactions" className="text-[11px] sm:text-sm px-1 py-2"><ListChecks className="w-4 h-4 sm:mr-1.5" /><span className="hidden sm:inline">Records</span></TabsTrigger>
+          <TabsTrigger value="activity" className="text-[11px] sm:text-sm px-1 py-2"><History className="w-4 h-4 sm:mr-1.5" /><span className="hidden sm:inline">Activity</span></TabsTrigger>
         </TabsList>
         <TabsContent value="overview" className="mt-4">
           <TeamOverview onOpenAll={() => setAllOpen(true)} onOpenUser={(id, name) => setFocus({ id, name })} />
@@ -110,6 +112,7 @@ export default function TeamPage() {
         <TabsContent value="transactions" className="mt-4">
           <TeamTransactionsPanel userId={null} />
         </TabsContent>
+        <TabsContent value="activity" className="mt-4"><TeamActivity /></TabsContent>
       </Tabs>
       <UserTransactionsDrawer open={allOpen} onOpenChange={setAllOpen} userId={null} userName="Team" />
       <UserTransactionsDrawer
