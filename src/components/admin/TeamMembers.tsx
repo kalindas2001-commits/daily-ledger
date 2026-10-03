@@ -12,9 +12,8 @@ import { useMyTenant } from '@/hooks/useTenant';
 import { toast } from 'sonner';
 import { UserPlus, KeyRound, Copy, Ban, RefreshCw, Users, AlertCircle, Eye } from 'lucide-react';
 import { format } from 'date-fns';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
-import { MoreVertical, Search, Download, ShieldOff, LockKeyhole, ArrowUpCircle } from 'lucide-react';
+import { Search, Download, ShieldOff, LockKeyhole, ArrowUpCircle } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 
 interface Invite {
@@ -385,28 +384,14 @@ export default function TeamMembers() {
                           {m.is_disabled && <Badge variant="destructive" className="text-[10px]">Disabled</Badge>}
                         </div>
                       </div>
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button size="icon" variant="ghost" aria-label={`Actions for ${m.full_name || m.email}`}><MoreVertical className="w-4 h-4" /></Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end" className="w-52">
-                          <DropdownMenuItem asChild><Link to={`/team/members/${m.id}`}>
-                            <Eye className="w-4 h-4 mr-2" /> View transactions
-                          </Link></DropdownMenuItem>
-                          {!isMe && (<>
-                            <DropdownMenuItem onClick={() => { setResetFor(m); setRsEmail(''); setRsPass(''); }}>
-                              <LockKeyhole className="w-4 h-4 mr-2" /> Reset login details
-                            </DropdownMenuItem>
-                            {m.is_admin && <DropdownMenuItem onClick={() => setPending({ kind: 'role', member: m })}>
-                              <ShieldOff className="w-4 h-4 mr-2" /> Make regular user
-                            </DropdownMenuItem>}
-                            <DropdownMenuSeparator />
-                            <DropdownMenuItem className={m.is_disabled ? '' : 'text-destructive focus:text-destructive'} onClick={() => setPending({ kind: 'disable', member: m })}>
-                              <Ban className="w-4 h-4 mr-2" /> {m.is_disabled ? 'Enable member' : 'Disable member'}
-                            </DropdownMenuItem>
-                          </>)}
-                        </DropdownMenuContent>
-                      </DropdownMenu>
+                    </div>
+                    <div className="mt-3 flex flex-wrap gap-2 sm:pl-12">
+                      <Button size="sm" variant="outline" asChild><Link to={`/team/members/${m.id}`}><Eye className="mr-1.5 h-4 w-4" />View transactions</Link></Button>
+                      {!isMe && <>
+                        <Button size="sm" variant="outline" onClick={() => { setResetFor(m); setRsEmail(''); setRsPass(''); }}><LockKeyhole className="mr-1.5 h-4 w-4" />Reset login details</Button>
+                        {m.is_admin && <Button size="sm" variant="outline" onClick={() => setPending({ kind: 'role', member: m })}><ShieldOff className="mr-1.5 h-4 w-4" />Make regular user</Button>}
+                        <Button size="sm" variant="outline" className={m.is_disabled ? '' : 'text-destructive hover:text-destructive'} onClick={() => setPending({ kind: 'disable', member: m })}><Ban className="mr-1.5 h-4 w-4" />{m.is_disabled ? 'Enable member' : 'Disable member'}</Button>
+                      </>}
                     </div>
                   </div>
                 );
