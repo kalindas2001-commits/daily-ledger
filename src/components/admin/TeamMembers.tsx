@@ -369,28 +369,38 @@ export default function TeamMembers() {
         <CardContent>
           {loading ? <p className="text-muted-foreground text-sm">Loading…</p> :
            filtered.length === 0 ? <p className="text-muted-foreground text-sm text-center py-6">No members match your filters.</p> : (
-            <div className="space-y-2">
+            <div className="grid gap-3 sm:gap-2.5">
               {filtered.map(m => {
                 const isMe = m.id === user?.id;
                 const initials = (m.full_name || m.email).split(/[\s@.]+/).filter(Boolean).slice(0, 2).map((p) => p[0]?.toUpperCase()).join('');
                 return (
-                  <div key={m.id} className="p-3 rounded-md border bg-card text-card-foreground">
+                  <div key={m.id} className="p-3 sm:p-4 rounded-lg border bg-card text-card-foreground transition-colors hover:border-primary/40">
                     <div className="flex items-center gap-3">
-                      <div className="w-9 h-9 shrink-0 rounded-full bg-primary/10 text-primary flex items-center justify-center text-xs font-bold">{initials}</div>
+                      <div className="w-10 h-10 shrink-0 rounded-full bg-primary/10 text-primary flex items-center justify-center text-xs font-bold">{initials}</div>
                       <div className="min-w-0 flex-1">
-                        <div className="flex items-center gap-1.5 flex-wrap">
-                          <Link className="font-medium text-sm break-words hover:underline focus-visible:underline" to={`/team/members/${m.id}`}>{m.full_name || m.email}</Link>
-                          {isMe && <Badge variant="outline" className="text-[10px]">You</Badge>}
-                          {m.is_disabled && <Badge variant="destructive" className="text-[10px]">Disabled</Badge>}
+                        <div className="flex items-center gap-1.5 min-w-0">
+                          <Link className="font-medium text-sm truncate hover:underline focus-visible:underline" to={`/team/members/${m.id}`}>{m.full_name || m.email}</Link>
+                          {isMe && <Badge variant="outline" className="text-[10px] shrink-0">You</Badge>}
+                          {m.is_disabled && <Badge variant="destructive" className="text-[10px] shrink-0">Disabled</Badge>}
                         </div>
                       </div>
                     </div>
-                    <div className="mt-3 flex flex-wrap gap-2 sm:pl-12">
-                      <Button size="sm" variant="outline" asChild><Link to={`/team/members/${m.id}`}><Eye className="mr-1.5 h-4 w-4" />View transactions</Link></Button>
+                    <div className="mt-3 grid grid-cols-2 gap-2 lg:grid-cols-4 lg:pl-14">
+                      <Button size="sm" variant="outline" className="w-full text-xs" asChild>
+                        <Link to={`/team/members/${m.id}`}><Eye className="mr-1.5 h-3.5 w-3.5 shrink-0" /><span className="truncate">View transactions</span></Link>
+                      </Button>
                       {!isMe && <>
-                        <Button size="sm" variant="outline" onClick={() => { setResetFor(m); setRsEmail(''); setRsPass(''); }}><LockKeyhole className="mr-1.5 h-4 w-4" />Reset login details</Button>
-                        {m.is_admin && <Button size="sm" variant="outline" onClick={() => setPending({ kind: 'role', member: m })}><ShieldOff className="mr-1.5 h-4 w-4" />Make regular user</Button>}
-                        <Button size="sm" variant="outline" className={m.is_disabled ? '' : 'text-destructive hover:text-destructive'} onClick={() => setPending({ kind: 'disable', member: m })}><Ban className="mr-1.5 h-4 w-4" />{m.is_disabled ? 'Enable member' : 'Disable member'}</Button>
+                        <Button size="sm" variant="outline" className="w-full text-xs" onClick={() => { setResetFor(m); setRsEmail(''); setRsPass(''); }}>
+                          <LockKeyhole className="mr-1.5 h-3.5 w-3.5 shrink-0" /><span className="truncate">Reset login details</span>
+                        </Button>
+                        {m.is_admin && (
+                          <Button size="sm" variant="outline" className="w-full text-xs" onClick={() => setPending({ kind: 'role', member: m })}>
+                            <ShieldOff className="mr-1.5 h-3.5 w-3.5 shrink-0" /><span className="truncate">Make regular user</span>
+                          </Button>
+                        )}
+                        <Button size="sm" variant="outline" className={`w-full text-xs ${m.is_disabled ? '' : 'text-destructive hover:text-destructive'}`} onClick={() => setPending({ kind: 'disable', member: m })}>
+                          <Ban className="mr-1.5 h-3.5 w-3.5 shrink-0" /><span className="truncate">{m.is_disabled ? 'Enable member' : 'Disable member'}</span>
+                        </Button>
                       </>}
                     </div>
                   </div>
