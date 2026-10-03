@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -9,12 +10,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { supabase } from '@/integrations/supabase/client';
 import { useMyTenant } from '@/hooks/useTenant';
 import { toast } from 'sonner';
-import { UserPlus, KeyRound, Copy, Ban, RefreshCw, Users, AlertCircle, Eye, TrendingUp, TrendingDown } from 'lucide-react';
+import { UserPlus, KeyRound, Copy, Ban, RefreshCw, Users, AlertCircle, Eye } from 'lucide-react';
 import { format } from 'date-fns';
-import UserTransactionsDrawer from '@/components/admin/UserTransactionsDrawer';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
-import { MoreVertical, Search, Download, ShieldCheck, ShieldOff, LockKeyhole, ArrowUpCircle } from 'lucide-react';
+import { Search, Download, ShieldOff, LockKeyhole, ArrowUpCircle } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 
 interface Invite {
@@ -53,9 +52,6 @@ export default function TeamMembers() {
   const [invNote, setInvNote] = useState('');
   const [invLoading, setInvLoading] = useState(false);
 
-  // Transaction viewer
-  const [viewer, setViewer] = useState<{ userId: string | null; name?: string } | null>(null);
-
   const { user } = useAuth();
   const [query, setQuery] = useState('');
   const [roleFilter, setRoleFilter] = useState<'all' | 'admin' | 'user'>('all');
@@ -65,6 +61,7 @@ export default function TeamMembers() {
   const [resetFor, setResetFor] = useState<Member | null>(null);
   const [rsEmail, setRsEmail] = useState('');
   const [rsPass, setRsPass] = useState('');
+  const [confirmReset, setConfirmReset] = useState(false);
   const [openSeats, setOpenSeats] = useState(false);
   const [seatTarget, setSeatTarget] = useState(10);
   const [seatReason, setSeatReason] = useState('');
@@ -141,8 +138,7 @@ export default function TeamMembers() {
     load();
   };
 
-  const submitReset = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const submitReset = async () => {
     if (!resetFor) return;
     setBusy(true);
     const { data, error } = await supabase.functions.invoke('admin-reset-credentials', {
@@ -151,7 +147,7 @@ export default function TeamMembers() {
     setBusy(false);
     if (error || (data as any)?.error) return toast.error((data as any)?.error ?? error?.message ?? 'Reset failed');
     toast.success('New login details saved — share them with the member securely');
-    setResetFor(null); setRsEmail(''); setRsPass(''); load();
+    setConfirmReset(false); setResetFor(null); setRsEmail(''); setRsPass(''); load();
   };
 
   const genPassword = () => {
@@ -375,55 +371,27 @@ export default function TeamMembers() {
            filtered.length === 0 ? <p className="text-muted-foreground text-sm text-center py-6">No members match your filters.</p> : (
             <div className="space-y-2">
               {filtered.map(m => {
-                const fmt = (n: any) => Number(n ?? 0).toLocaleString('en-RW');
                 const isMe = m.id === user?.id;
                 const initials = (m.full_name || m.email).split(/[\s@.]+/).filter(Boolean).slice(0, 2).map((p) => p[0]?.toUpperCase()).join('');
                 return (
-                  <div key={m.id} className={`p-3 rounded-lg border bg-card ${m.is_disabled ? 'opacity-70' : ''}`}>
+                  <div key={m.id} className="p-3 rounded-md border bg-card text-card-foreground">
                     <div className="flex items-center gap-3">
                       <div className="w-9 h-9 shrink-0 rounded-full bg-primary/10 text-primary flex items-center justify-center text-xs font-bold">{initials}</div>
                       <div className="min-w-0 flex-1">
                         <div className="flex items-center gap-1.5 flex-wrap">
-                          <span className="font-medium text-sm truncate">{m.full_name || m.email}</span>
+                          <Link className="font-medium text-sm break-words hover:underline focus-visible:underline" to={`/team/members/${m.id}`}>{m.full_name || m.email}</Link>
                           {isMe && <Badge variant="outline" className="text-[10px]">You</Badge>}
-                          {m.is_admin && <Badge className="text-[10px]">Admin</Badge>}
                           {m.is_disabled && <Badge variant="destructive" className="text-[10px]">Disabled</Badge>}
                         </div>
-                        <div className="text-[11px] text-muted-foreground truncate">{m.email}{m.phone ? ` · ${m.phone}` : ''}</div>
                       </div>
-                      <Button size="sm" variant="outline" className="hidden sm:inline-flex" onClick={() => setViewer({ userId: m.id, name: m.full_name || m.email })}>
-                        <Eye className="w-3.5 h-3.5 mr-1" /> View
-                      </Button>
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button size="icon" variant="ghost" aria-label="Member actions"><MoreVertical className="w-4 h-4" /></Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end" className="w-52">
-                          <DropdownMenuItem onClick={() => setViewer({ userId: m.id, name: m.full_name || m.email })}>
-                            <Eye className="w-4 h-4 mr-2" /> View transactions
-                          </DropdownMenuItem>
-                          {!isMe && (<>
-                            <DropdownMenuItem onClick={() => { setResetFor(m); setRsEmail(''); setRsPass(''); }}>
-                              <LockKeyhole className="w-4 h-4 mr-2" /> Reset login details
-                            </DropdownMenuItem>
-                            <DropdownMenuItem onClick={() => setPending({ kind: 'role', member: m })}>
-                              {m.is_admin ? <ShieldOff className="w-4 h-4 mr-2" /> : <ShieldCheck className="w-4 h-4 mr-2" />}
-                              {m.is_admin ? 'Make regular user' : 'Make admin'}
-                            </DropdownMenuItem>
-                            <DropdownMenuSeparator />
-                            <DropdownMenuItem className={m.is_disabled ? '' : 'text-destructive focus:text-destructive'} onClick={() => setPending({ kind: 'disable', member: m })}>
-                              <Ban className="w-4 h-4 mr-2" /> {m.is_disabled ? 'Enable member' : 'Disable member'}
-                            </DropdownMenuItem>
-                          </>)}
-                        </DropdownMenuContent>
-                      </DropdownMenu>
                     </div>
-                    <div className="flex gap-x-3 gap-y-1 mt-2 text-[11px] text-muted-foreground flex-wrap pl-12">
-                      <span className="flex items-center gap-1"><TrendingUp className="w-3 h-3 text-income" /> {fmt(m.total_income)} RWF</span>
-                      <span className="flex items-center gap-1"><TrendingDown className="w-3 h-3 text-expense" /> {fmt(m.total_expense)} RWF</span>
-                      <span>{m.tx_count ?? 0} tx</span>
-                      <span>Joined {format(new Date(m.created_at), 'MMM d, yyyy')}</span>
-                      <span>Last active {m.last_sign_in_at ? format(new Date(m.last_sign_in_at), 'MMM d, h:mm a') : 'never'}</span>
+                    <div className="mt-3 flex flex-wrap gap-2 sm:pl-12">
+                      <Button size="sm" variant="outline" asChild><Link to={`/team/members/${m.id}`}><Eye className="mr-1.5 h-4 w-4" />View transactions</Link></Button>
+                      {!isMe && <>
+                        <Button size="sm" variant="outline" onClick={() => { setResetFor(m); setRsEmail(''); setRsPass(''); }}><LockKeyhole className="mr-1.5 h-4 w-4" />Reset login details</Button>
+                        {m.is_admin && <Button size="sm" variant="outline" onClick={() => setPending({ kind: 'role', member: m })}><ShieldOff className="mr-1.5 h-4 w-4" />Make regular user</Button>}
+                        <Button size="sm" variant="outline" className={m.is_disabled ? '' : 'text-destructive hover:text-destructive'} onClick={() => setPending({ kind: 'disable', member: m })}><Ban className="mr-1.5 h-4 w-4" />{m.is_disabled ? 'Enable member' : 'Disable member'}</Button>
+                      </>}
                     </div>
                   </div>
                 );
@@ -440,34 +408,32 @@ export default function TeamMembers() {
             <AlertDialogTitle>
               {pending?.kind === 'disable'
                 ? (pending.member.is_disabled ? 'Enable this member?' : 'Disable this member?')
-                : (pending?.member.is_admin ? 'Change to regular user?' : 'Make this member an admin?')}
+                : 'Make this member a regular user?'}
             </AlertDialogTitle>
             <AlertDialogDescription>
               {pending?.kind === 'disable'
                 ? (pending.member.is_disabled
-                    ? `${pending.member.full_name || pending.member.email} will be able to sign in again.`
-                    : `${pending.member.full_name || pending.member.email} will be signed out and blocked from signing in. Their records stay safe.`)
-                : (pending?.member.is_admin
-                    ? `${pending?.member.full_name || pending?.member.email} will lose access to Team management.`
-                    : `${pending?.member.full_name || pending?.member.email} will be able to manage members, invites and team records.`)}
+                     ? `${pending.member.full_name || pending.member.email} will regain access to sign in and use their existing records. Review their access before continuing.`
+                     : `${pending.member.full_name || pending.member.email} will lose access to the app and will not be able to sign in. Their transactions and history will remain; this does not delete any data.`)
+                : `${pending?.member.full_name || pending?.member.email} will lose admin permissions, including access to Team management, member controls, invites and team-wide records. Their own records remain available.`}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel disabled={busy}>Cancel</AlertDialogCancel>
             <AlertDialogAction disabled={busy} onClick={(e) => { e.preventDefault(); runPending(); }}
               className={pending?.kind === 'disable' && !pending.member.is_disabled ? 'bg-destructive text-destructive-foreground hover:bg-destructive/90' : ''}>
-              {busy ? 'Saving…' : 'Confirm'}
+              {busy ? 'Saving…' : pending?.kind === 'disable' ? (pending.member.is_disabled ? 'Enable member' : 'Disable member') : 'Make regular user'}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
 
       {/* Reset credentials */}
-      <Dialog open={!!resetFor} onOpenChange={(o) => !o && setResetFor(null)}>
+      <Dialog open={!!resetFor && !confirmReset} onOpenChange={(o) => !o && setResetFor(null)}>
         <DialogContent>
           <DialogHeader><DialogTitle>Reset login details</DialogTitle></DialogHeader>
           <p className="text-xs text-muted-foreground -mt-2">For {resetFor?.full_name || resetFor?.email}. Leave a field empty to keep it unchanged.</p>
-          <form onSubmit={submitReset} className="space-y-3">
+          <form onSubmit={(e) => { e.preventDefault(); setConfirmReset(true); }} className="space-y-3">
             <div><Label>New email (optional)</Label><Input type="email" value={rsEmail} onChange={(e) => setRsEmail(e.target.value)} placeholder={resetFor?.email} /></div>
             <div>
               <Label>New password (optional)</Label>
@@ -477,11 +443,30 @@ export default function TeamMembers() {
               </div>
             </div>
             <DialogFooter>
-              <Button type="submit" disabled={busy || (!rsEmail && !rsPass)}>{busy ? 'Saving…' : 'Save new details'}</Button>
+              <Button type="submit" disabled={busy || (!rsEmail && !rsPass)}>Review changes</Button>
             </DialogFooter>
           </form>
         </DialogContent>
       </Dialog>
+
+      <AlertDialog open={confirmReset} onOpenChange={(o) => { if (!o && !busy) setConfirmReset(false); }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Change login details for {resetFor?.full_name || resetFor?.email}?</AlertDialogTitle>
+            <AlertDialogDescription>
+              {rsEmail && 'Their current email will no longer work for sign-in. '}
+              {rsPass && 'Their current password will stop working. '}
+              Share the new details privately with this member. They may need to sign in again on their devices; their financial records will not change.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={busy}>Go back</AlertDialogCancel>
+            <AlertDialogAction disabled={busy} onClick={(e) => { e.preventDefault(); void submitReset(); }}>
+              {busy ? 'Saving…' : 'Confirm login change'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       {/* Request more seats */}
       <Dialog open={openSeats} onOpenChange={setOpenSeats}>
@@ -495,12 +480,6 @@ export default function TeamMembers() {
         </DialogContent>
       </Dialog>
 
-      <UserTransactionsDrawer
-        open={!!viewer}
-        onOpenChange={(o) => !o && setViewer(null)}
-        userId={viewer?.userId ?? null}
-        userName={viewer?.name}
-      />
     </div>
   );
 }

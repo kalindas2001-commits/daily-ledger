@@ -23,6 +23,7 @@ import GoalsPage from "./pages/Goals";
 import Admin from "./pages/Admin";
 import TenantDetail from "./pages/admin/TenantDetail";
 import Team from "./pages/Team";
+import TeamMemberDetail from "./pages/TeamMemberDetail";
 import Alerts from "./pages/Alerts";
 import Assist from "./pages/Assist";
 import CungaAI from "./pages/CungaAI";
@@ -80,6 +81,7 @@ function AppRoutes() {
         <Route path="/admin" element={<Admin />} />
         <Route path="/admin/tenants/:id" element={<TenantDetail />} />
         <Route path="/team" element={<Team />} />
+        <Route path="/team/members/:id" element={<TeamMemberDetail />} />
         <Route path="/alerts" element={<Alerts />} />
         <Route path="/ai" element={<CungaAI />} />
         <Route path="/assist" element={<Assist />} />
