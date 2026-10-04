@@ -12,8 +12,7 @@ import { useMyTenant } from '@/hooks/useTenant';
 import { toast } from 'sonner';
 import { UserPlus, KeyRound, Copy, Ban, RefreshCw, Users, AlertCircle, Eye } from 'lucide-react';
 import { format } from 'date-fns';
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
-import { Search, Download, ShieldOff, LockKeyhole, ArrowUpCircle } from 'lucide-react';
+import { Search, Download, ArrowUpCircle } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 
 interface Invite {
@@ -28,7 +27,6 @@ interface Member {
   phone?: string; last_sign_in_at?: string | null;
 }
 
-type PendingAction = { kind: 'disable' | 'role'; member: Member } | null;
 
 export default function TeamMembers() {
   const { info, reload } = useMyTenant();
@@ -56,12 +54,7 @@ export default function TeamMembers() {
   const [query, setQuery] = useState('');
   const [roleFilter, setRoleFilter] = useState<'all' | 'admin' | 'user'>('all');
   const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'disabled'>('all');
-  const [pending, setPending] = useState<PendingAction>(null);
   const [busy, setBusy] = useState(false);
-  const [resetFor, setResetFor] = useState<Member | null>(null);
-  const [rsEmail, setRsEmail] = useState('');
-  const [rsPass, setRsPass] = useState('');
-  const [confirmReset, setConfirmReset] = useState(false);
   const [openSeats, setOpenSeats] = useState(false);
   const [seatTarget, setSeatTarget] = useState(10);
   const [seatReason, setSeatReason] = useState('');
