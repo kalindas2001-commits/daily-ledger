@@ -115,39 +115,6 @@ export default function TeamMembers() {
     toast.success('Invite revoked'); load();
   };
 
-  const runPending = async () => {
-    if (!pending) return;
-    setBusy(true);
-    const m = pending.member;
-    const { error } = pending.kind === 'disable'
-      ? await supabase.rpc('admin_set_user_disabled', { _target_user: m.id, _disabled: !m.is_disabled })
-      : await (supabase.rpc as any)('tenant_set_member_role', { _target: m.id, _make_admin: !m.is_admin });
-    setBusy(false);
-    setPending(null);
-    if (error) return toast.error(error.message);
-    toast.success(pending.kind === 'disable'
-      ? (m.is_disabled ? 'Member enabled' : 'Member disabled')
-      : (m.is_admin ? 'Changed to regular user' : 'Promoted to admin'));
-    load();
-  };
-
-  const submitReset = async () => {
-    if (!resetFor) return;
-    setBusy(true);
-    const { data, error } = await supabase.functions.invoke('admin-reset-credentials', {
-      body: { target_user_id: resetFor.id, new_email: rsEmail || undefined, new_password: rsPass || undefined },
-    });
-    setBusy(false);
-    if (error || (data as any)?.error) return toast.error((data as any)?.error ?? error?.message ?? 'Reset failed');
-    toast.success('New login details saved — share them with the member securely');
-    setConfirmReset(false); setResetFor(null); setRsEmail(''); setRsPass(''); load();
-  };
-
-  const genPassword = () => {
-    const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789';
-    const arr = new Uint32Array(10); crypto.getRandomValues(arr);
-    setRsPass(Array.from(arr, (n) => chars[n % chars.length]).join(''));
-  };
 
   const requestSeats = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -378,23 +345,10 @@ export default function TeamMembers() {
                         </div>
                       </div>
                     </div>
-                    <div className="mt-3 grid grid-cols-2 gap-2 lg:grid-cols-4 lg:pl-14">
-                      <Button size="sm" variant="outline" className="w-full text-xs" asChild>
-                        <Link to={`/team/members/${m.id}`}><Eye className="mr-1.5 h-3.5 w-3.5 shrink-0" /><span className="truncate sm:hidden">View</span><span className="truncate hidden sm:inline">View transactions</span></Link>
+                    <div className="mt-3 lg:pl-14">
+                      <Button size="sm" variant="outline" className="text-xs" asChild>
+                        <Link to={`/team/members/${m.id}`}><Eye className="mr-1.5 h-3.5 w-3.5 shrink-0" />View transactions</Link>
                       </Button>
-                      {!isMe && <>
-                        <Button size="sm" variant="outline" className="w-full text-xs" onClick={() => { setResetFor(m); setRsEmail(''); setRsPass(''); }}>
-                          <LockKeyhole className="mr-1.5 h-3.5 w-3.5 shrink-0" /><span className="truncate sm:hidden">Reset</span><span className="truncate hidden sm:inline">Reset login details</span>
-                        </Button>
-                        {m.is_admin && (
-                          <Button size="sm" variant="outline" className="w-full text-xs" onClick={() => setPending({ kind: 'role', member: m })}>
-                            <ShieldOff className="mr-1.5 h-3.5 w-3.5 shrink-0" /><span className="truncate">Make regular user</span>
-                          </Button>
-                        )}
-                        <Button size="sm" variant="outline" className={`w-full text-xs ${m.is_disabled ? '' : 'text-destructive hover:text-destructive'}`} onClick={() => setPending({ kind: 'disable', member: m })}>
-                          <Ban className="mr-1.5 h-3.5 w-3.5 shrink-0" /><span className="truncate sm:hidden">{m.is_disabled ? 'Enable' : 'Disable'}</span><span className="truncate hidden sm:inline">{m.is_disabled ? 'Enable member' : 'Disable member'}</span>
-                        </Button>
-                      </>}
                     </div>
                   </div>
                 );
@@ -403,73 +357,6 @@ export default function TeamMembers() {
           )}
         </CardContent>
       </Card>
-
-      {/* Confirm role / status change */}
-      <AlertDialog open={!!pending} onOpenChange={(o) => !o && setPending(null)}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>
-              {pending?.kind === 'disable'
-                ? (pending.member.is_disabled ? 'Enable this member?' : 'Disable this member?')
-                : 'Make this member a regular user?'}
-            </AlertDialogTitle>
-            <AlertDialogDescription>
-              {pending?.kind === 'disable'
-                ? (pending.member.is_disabled
-                     ? `${pending.member.full_name || pending.member.email} will regain access to sign in and use their existing records. Review their access before continuing.`
-                     : `${pending.member.full_name || pending.member.email} will lose access to the app and will not be able to sign in. Their transactions and history will remain; this does not delete any data.`)
-                : `${pending?.member.full_name || pending?.member.email} will lose admin permissions, including access to Team management, member controls, invites and team-wide records. Their own records remain available.`}
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel disabled={busy}>Cancel</AlertDialogCancel>
-            <AlertDialogAction disabled={busy} onClick={(e) => { e.preventDefault(); runPending(); }}
-              className={pending?.kind === 'disable' && !pending.member.is_disabled ? 'bg-destructive text-destructive-foreground hover:bg-destructive/90' : ''}>
-              {busy ? 'Saving…' : pending?.kind === 'disable' ? (pending.member.is_disabled ? 'Enable member' : 'Disable member') : 'Make regular user'}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-
-      {/* Reset credentials */}
-      <Dialog open={!!resetFor && !confirmReset} onOpenChange={(o) => !o && setResetFor(null)}>
-        <DialogContent>
-          <DialogHeader><DialogTitle>Reset login details</DialogTitle></DialogHeader>
-          <p className="text-xs text-muted-foreground -mt-2">For {resetFor?.full_name || resetFor?.email}. Leave a field empty to keep it unchanged.</p>
-          <form onSubmit={(e) => { e.preventDefault(); setConfirmReset(true); }} className="space-y-3">
-            <div><Label>New email (optional)</Label><Input type="email" value={rsEmail} onChange={(e) => setRsEmail(e.target.value)} placeholder={resetFor?.email} /></div>
-            <div>
-              <Label>New password (optional)</Label>
-              <div className="flex gap-2">
-                <Input value={rsPass} minLength={6} onChange={(e) => setRsPass(e.target.value)} placeholder="At least 6 characters" />
-                <Button type="button" variant="outline" onClick={genPassword}>Generate</Button>
-              </div>
-            </div>
-            <DialogFooter>
-              <Button type="submit" disabled={busy || (!rsEmail && !rsPass)}>Review changes</Button>
-            </DialogFooter>
-          </form>
-        </DialogContent>
-      </Dialog>
-
-      <AlertDialog open={confirmReset} onOpenChange={(o) => { if (!o && !busy) setConfirmReset(false); }}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Change login details for {resetFor?.full_name || resetFor?.email}?</AlertDialogTitle>
-            <AlertDialogDescription>
-              {rsEmail && 'Their current email will no longer work for sign-in. '}
-              {rsPass && 'Their current password will stop working. '}
-              Share the new details privately with this member. They may need to sign in again on their devices; their financial records will not change.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel disabled={busy}>Go back</AlertDialogCancel>
-            <AlertDialogAction disabled={busy} onClick={(e) => { e.preventDefault(); void submitReset(); }}>
-              {busy ? 'Saving…' : 'Confirm login change'}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
 
       {/* Request more seats */}
       <Dialog open={openSeats} onOpenChange={setOpenSeats}>
