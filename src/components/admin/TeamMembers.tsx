@@ -387,11 +387,11 @@ export default function TeamMembers() {
                     </div>
                     <div className="mt-3 grid grid-cols-2 gap-2 lg:grid-cols-4 lg:pl-14">
                       <Button size="sm" variant="outline" className="w-full text-xs" asChild>
-                        <Link to={`/team/members/${m.id}`}><Eye className="mr-1.5 h-3.5 w-3.5 shrink-0" /><span className="truncate">View transactions</span></Link>
+                        <Link to={`/team/members/${m.id}`}><Eye className="mr-1.5 h-3.5 w-3.5 shrink-0" /><span className="truncate sm:hidden">View</span><span className="truncate hidden sm:inline">View transactions</span></Link>
                       </Button>
                       {!isMe && <>
                         <Button size="sm" variant="outline" className="w-full text-xs" onClick={() => { setResetFor(m); setRsEmail(''); setRsPass(''); }}>
-                          <LockKeyhole className="mr-1.5 h-3.5 w-3.5 shrink-0" /><span className="truncate">Reset login details</span>
+                          <LockKeyhole className="mr-1.5 h-3.5 w-3.5 shrink-0" /><span className="truncate sm:hidden">Reset</span><span className="truncate hidden sm:inline">Reset login details</span>
                         </Button>
                         {m.is_admin && (
                           <Button size="sm" variant="outline" className="w-full text-xs" onClick={() => setPending({ kind: 'role', member: m })}>
@@ -399,7 +399,7 @@ export default function TeamMembers() {
                           </Button>
                         )}
                         <Button size="sm" variant="outline" className={`w-full text-xs ${m.is_disabled ? '' : 'text-destructive hover:text-destructive'}`} onClick={() => setPending({ kind: 'disable', member: m })}>
-                          <Ban className="mr-1.5 h-3.5 w-3.5 shrink-0" /><span className="truncate">{m.is_disabled ? 'Enable member' : 'Disable member'}</span>
+                          <Ban className="mr-1.5 h-3.5 w-3.5 shrink-0" /><span className="truncate sm:hidden">{m.is_disabled ? 'Enable' : 'Disable'}</span><span className="truncate hidden sm:inline">{m.is_disabled ? 'Enable member' : 'Disable member'}</span>
                         </Button>
                       </>}
                     </div>
