@@ -143,12 +143,10 @@ export default function CungaAI() {
         body: JSON.stringify({ messages: next, snapshot }),
       });
 
-      if (res.status === 429) throw new Error('CungaCash AI is busy right now — please retry in a moment.');
-      if (res.status === 402) throw new Error('AI credits are exhausted for this workspace. Add credits to continue.');
       if (res.status === 401) throw new Error('Please sign in again to use CungaCash AI.');
       if (!res.ok || !res.body) {
-        const err = await res.json().catch(() => ({}));
-        throw new Error(err.error ?? 'CungaCash AI could not answer. Please try again.');
+        useFallback(question);
+        return;
       }
 
       const reader = res.body.getReader();
