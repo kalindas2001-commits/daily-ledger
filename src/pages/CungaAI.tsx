@@ -13,6 +13,7 @@ import { useAccounts } from '@/hooks/useAccounts';
 import { useSavingsAccounts } from '@/hooks/useSavings';
 import { useLoans } from '@/hooks/useLoans';
 import { useGoals } from '@/hooks/useGoals';
+import { fallbackAnswer } from '@/lib/aiFallback';
 
 
 const fmt = (n: number) => Number(n ?? 0).toLocaleString('en-RW', { maximumFractionDigits: 0 });
@@ -124,6 +125,15 @@ export default function CungaAI() {
 
   useEffect(() => { endRef.current?.scrollIntoView({ behavior: 'smooth' }); }, [messages, streaming]);
 
+  const applyFallback = (question: string) => {
+    const answer = fallbackAnswer(question, snapshot);
+    setMessages(prev => {
+      const copy = [...prev];
+      copy[copy.length - 1] = { role: 'assistant', content: answer };
+      return copy;
+    });
+  };
+
   const send = async (text: string) => {
     const question = text.trim();
     if (!question || streaming) return;
@@ -143,12 +153,10 @@ export default function CungaAI() {
         body: JSON.stringify({ messages: next, snapshot }),
       });
 
-      if (res.status === 429) throw new Error('CungaCash AI is busy right now — please retry in a moment.');
-      if (res.status === 402) throw new Error('AI credits are exhausted for this workspace. Add credits to continue.');
       if (res.status === 401) throw new Error('Please sign in again to use CungaCash AI.');
       if (!res.ok || !res.body) {
-        const err = await res.json().catch(() => ({}));
-        throw new Error(err.error ?? 'CungaCash AI could not answer. Please try again.');
+        applyFallback(question);
+        return;
       }
 
       const reader = res.body.getReader();
@@ -172,8 +180,12 @@ export default function CungaAI() {
         });
       }
     } catch (e: any) {
-      setMessages(prev => prev.slice(0, -1));
-      toast.error(e?.message ?? 'CungaCash AI failed');
+      if (String(e?.message ?? '').includes('sign in')) {
+        setMessages(prev => prev.slice(0, -1));
+        toast.error(e.message);
+      } else {
+        applyFallback(question);
+      }
     } finally {
       setStreaming(false);
     }
