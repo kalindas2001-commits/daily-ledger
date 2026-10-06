@@ -13,6 +13,7 @@ import { useAccounts } from '@/hooks/useAccounts';
 import { useSavingsAccounts } from '@/hooks/useSavings';
 import { useLoans } from '@/hooks/useLoans';
 import { useGoals } from '@/hooks/useGoals';
+import { fallbackAnswer } from '@/lib/aiFallback';
 
 
 const fmt = (n: number) => Number(n ?? 0).toLocaleString('en-RW', { maximumFractionDigits: 0 });
@@ -124,6 +125,15 @@ export default function CungaAI() {
 
   useEffect(() => { endRef.current?.scrollIntoView({ behavior: 'smooth' }); }, [messages, streaming]);
 
+  const useFallback = (question: string) => {
+    const answer = fallbackAnswer(question, snapshot);
+    setMessages(prev => {
+      const copy = [...prev];
+      copy[copy.length - 1] = { role: 'assistant', content: answer };
+      return copy;
+    });
+  };
+
   const send = async (text: string) => {
     const question = text.trim();
     if (!question || streaming) return;
@@ -170,8 +180,12 @@ export default function CungaAI() {
         });
       }
     } catch (e: any) {
-      setMessages(prev => prev.slice(0, -1));
-      toast.error(e?.message ?? 'CungaCash AI failed');
+      if (String(e?.message ?? '').includes('sign in')) {
+        setMessages(prev => prev.slice(0, -1));
+        toast.error(e.message);
+      } else {
+        useFallback(question);
+      }
     } finally {
       setStreaming(false);
     }
