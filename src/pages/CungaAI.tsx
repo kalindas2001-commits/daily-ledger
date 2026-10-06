@@ -125,7 +125,7 @@ export default function CungaAI() {
 
   useEffect(() => { endRef.current?.scrollIntoView({ behavior: 'smooth' }); }, [messages, streaming]);
 
-  const useFallback = (question: string) => {
+  const applyFallback = (question: string) => {
     const answer = fallbackAnswer(question, snapshot);
     setMessages(prev => {
       const copy = [...prev];
@@ -155,7 +155,7 @@ export default function CungaAI() {
 
       if (res.status === 401) throw new Error('Please sign in again to use CungaCash AI.');
       if (!res.ok || !res.body) {
-        useFallback(question);
+        applyFallback(question);
         return;
       }
 
@@ -184,7 +184,7 @@ export default function CungaAI() {
         setMessages(prev => prev.slice(0, -1));
         toast.error(e.message);
       } else {
-        useFallback(question);
+        applyFallback(question);
       }
     } finally {
       setStreaming(false);
