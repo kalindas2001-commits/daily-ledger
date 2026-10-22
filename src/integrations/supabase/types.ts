@@ -347,6 +347,304 @@ export type Database = {
         }
         Relationships: []
       }
+      capture_audit_events: {
+        Row: {
+          candidate_id: string | null
+          created_at: string
+          details: Json
+          event: string
+          id: string
+          job_id: string | null
+          tenant_id: string
+          user_id: string
+        }
+        Insert: {
+          candidate_id?: string | null
+          created_at?: string
+          details?: Json
+          event: string
+          id?: string
+          job_id?: string | null
+          tenant_id: string
+          user_id: string
+        }
+        Update: {
+          candidate_id?: string | null
+          created_at?: string
+          details?: Json
+          event?: string
+          id?: string
+          job_id?: string | null
+          tenant_id?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      capture_candidates: {
+        Row: {
+          account_id: string | null
+          amount_minor: number | null
+          category: string
+          created_at: string
+          currency: string
+          description: string
+          direction: string | null
+          evidence_excerpt: string
+          evidence_id: string
+          field_confidence: Json
+          findings: Json
+          id: string
+          job_id: string
+          occurred_on: string | null
+          occurred_time: string | null
+          posted_at: string | null
+          provider: string
+          reference: string | null
+          status: string
+          tenant_id: string
+          treatment: string
+          user_id: string
+          version: number
+        }
+        Insert: {
+          account_id?: string | null
+          amount_minor?: number | null
+          category?: string
+          created_at?: string
+          currency?: string
+          description?: string
+          direction?: string | null
+          evidence_excerpt?: string
+          evidence_id: string
+          field_confidence?: Json
+          findings?: Json
+          id?: string
+          job_id: string
+          occurred_on?: string | null
+          occurred_time?: string | null
+          posted_at?: string | null
+          provider?: string
+          reference?: string | null
+          status?: string
+          tenant_id: string
+          treatment?: string
+          user_id: string
+          version?: number
+        }
+        Update: {
+          account_id?: string | null
+          amount_minor?: number | null
+          category?: string
+          created_at?: string
+          currency?: string
+          description?: string
+          direction?: string | null
+          evidence_excerpt?: string
+          evidence_id?: string
+          field_confidence?: Json
+          findings?: Json
+          id?: string
+          job_id?: string
+          occurred_on?: string | null
+          occurred_time?: string | null
+          posted_at?: string | null
+          provider?: string
+          reference?: string | null
+          status?: string
+          tenant_id?: string
+          treatment?: string
+          user_id?: string
+          version?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "capture_candidates_evidence_id_fkey"
+            columns: ["evidence_id"]
+            isOneToOne: false
+            referencedRelation: "capture_evidence"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "capture_candidates_job_id_fkey"
+            columns: ["job_id"]
+            isOneToOne: false
+            referencedRelation: "capture_import_jobs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      capture_evidence: {
+        Row: {
+          created_at: string
+          id: string
+          job_id: string
+          raw_text: string
+          tenant_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          job_id: string
+          raw_text: string
+          tenant_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          job_id?: string
+          raw_text?: string
+          tenant_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "capture_evidence_job_id_fkey"
+            columns: ["job_id"]
+            isOneToOne: false
+            referencedRelation: "capture_import_jobs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      capture_import_jobs: {
+        Row: {
+          created_at: string
+          file_name: string
+          id: string
+          input_hash: string
+          parser_version: string
+          source_id: string
+          status: string
+          tenant_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          file_name: string
+          id?: string
+          input_hash: string
+          parser_version: string
+          source_id: string
+          status?: string
+          tenant_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          file_name?: string
+          id?: string
+          input_hash?: string
+          parser_version?: string
+          source_id?: string
+          status?: string
+          tenant_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "capture_import_jobs_source_id_fkey"
+            columns: ["source_id"]
+            isOneToOne: false
+            referencedRelation: "capture_sources"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      capture_posting_links: {
+        Row: {
+          account_id: string
+          amount_minor: number
+          balance_applied: boolean
+          candidate_id: string
+          created_at: string
+          direction: string
+          id: string
+          provider: string
+          reference: string | null
+          tenant_id: string
+          transaction_id: string | null
+          treatment: string
+          user_id: string
+        }
+        Insert: {
+          account_id: string
+          amount_minor: number
+          balance_applied?: boolean
+          candidate_id: string
+          created_at?: string
+          direction: string
+          id?: string
+          provider: string
+          reference?: string | null
+          tenant_id: string
+          transaction_id?: string | null
+          treatment: string
+          user_id: string
+        }
+        Update: {
+          account_id?: string
+          amount_minor?: number
+          balance_applied?: boolean
+          candidate_id?: string
+          created_at?: string
+          direction?: string
+          id?: string
+          provider?: string
+          reference?: string | null
+          tenant_id?: string
+          transaction_id?: string | null
+          treatment?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "capture_posting_links_candidate_id_fkey"
+            columns: ["candidate_id"]
+            isOneToOne: true
+            referencedRelation: "capture_candidates"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "capture_posting_links_transaction_id_fkey"
+            columns: ["transaction_id"]
+            isOneToOne: false
+            referencedRelation: "transactions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      capture_sources: {
+        Row: {
+          consent_version: string
+          consented_at: string
+          enabled: boolean
+          id: string
+          kind: string
+          tenant_id: string
+          user_id: string
+        }
+        Insert: {
+          consent_version?: string
+          consented_at?: string
+          enabled?: boolean
+          id?: string
+          kind: string
+          tenant_id: string
+          user_id: string
+        }
+        Update: {
+          consent_version?: string
+          consented_at?: string
+          enabled?: boolean
+          id?: string
+          kind?: string
+          tenant_id?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       categories: {
         Row: {
           created_at: string | null
@@ -1533,6 +1831,32 @@ export type Database = {
         Returns: undefined
       }
       assist_expert_for_category: { Args: { _cat: string }; Returns: string }
+      capture_register_import: {
+        Args: {
+          _account_id: string
+          _file_name: string
+          _kind: string
+          _parser_version: string
+          _raw_text: string
+          _records: Json
+        }
+        Returns: string
+      }
+      capture_resolve: {
+        Args: {
+          _action: string
+          _fields?: Json
+          _id: string
+          _match_id?: string
+          _separate?: boolean
+          _version: number
+        }
+        Returns: string
+      }
+      capture_set_consent: {
+        Args: { _enabled: boolean; _kind: string }
+        Returns: undefined
+      }
       get_my_tenant: { Args: never; Returns: string }
       has_role: {
         Args: {
