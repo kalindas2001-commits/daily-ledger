@@ -4,6 +4,7 @@ import LanguageDetector from 'i18next-browser-languagedetector';
 import en from './locales/en.json';
 import fr from './locales/fr.json';
 import rw from './locales/rw.json';
+import { captureTranslations } from '@/lib/capture/translations';
 
 export const SUPPORTED_LANGUAGES = [
   { code: 'en', label: 'English', flag: '🇬🇧' },
@@ -16,9 +17,9 @@ i18n
   .use(initReactI18next)
   .init({
     resources: {
-      en: { translation: en },
-      fr: { translation: fr },
-      rw: { translation: rw },
+      en: { translation: { ...en, capture: captureTranslations.en } },
+      fr: { translation: { ...fr, capture: captureTranslations.fr } },
+      rw: { translation: { ...rw, capture: captureTranslations.rw } },
     },
     fallbackLng: 'en',
     supportedLngs: ['en', 'fr', 'rw'],
