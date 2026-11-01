@@ -26,11 +26,12 @@ export async function readCaptureFile(file: File, progress: (message: string) =>
     if(new TextDecoder().decode(bytes.slice(0,5))!=='%PDF-') throw new Error('Invalid PDF signature.');
     const pdfjs=await import('pdfjs-dist');
     pdfjs.GlobalWorkerOptions.workerSrc=pdfWorkerUrl;
-    const pdf=await pdfjs.getDocument({data:bytes,enableXfa:false}).promise;
-    try { if(pdf.numPages>20) throw new Error('Import a PDF with at most 20 pages.');
+    const loadingTask=pdfjs.getDocument({data:bytes,enableXfa:false});
+    try { const pdf=await loadingTask.promise;
+      if(pdf.numPages>20) throw new Error('Import a PDF with at most 20 pages.');
       for(let p=1;p<=pdf.numPages;p++) {progress(`Reading page ${p} of ${pdf.numPages}`); const page=await pdf.getPage(p); const content=await page.getTextContent(); text+=`\n\n${content.items.map(item=>'str' in item ? item.str+('hasEOL' in item && item.hasEOL?'\n':' '):'').join('')}`; }
       if(text.trim().length<20) throw new Error('This PDF is scanned. Import individual pages as receipt images for OCR.');
-    } finally { await pdf.destroy(); }
+    } finally { await loadingTask.destroy(); }
   } else if(['jpg','jpeg','png','webp'].includes(ext ?? '')) {
     const valid=bytes[0]===0xff && bytes[1]===0xd8 || bytes[0]===0x89 && bytes[1]===0x50 || new TextDecoder().decode(bytes.slice(0,4))==='RIFF' && new TextDecoder().decode(bytes.slice(8,12))==='WEBP';
     if(!valid) throw new Error('Invalid receipt image signature.');
