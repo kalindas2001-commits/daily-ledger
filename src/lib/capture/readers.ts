@@ -1,4 +1,5 @@
 import Papa from 'papaparse';
+import pdfWorkerUrl from 'pdfjs-dist/build/pdf.worker.min.mjs?url';
 import { parseText, parseStatementRows, type CaptureRecord } from './parser';
 export const MAX_FILE_BYTES = 10 * 1024 * 1024;
 export async function readCaptureFile(file: File, progress: (message: string) => void): Promise<{text: string; records: CaptureRecord[]}> {
@@ -24,8 +25,8 @@ export async function readCaptureFile(file: File, progress: (message: string) =>
   } else if(ext==='pdf') {
     if(new TextDecoder().decode(bytes.slice(0,5))!=='%PDF-') throw new Error('Invalid PDF signature.');
     const pdfjs=await import('pdfjs-dist');
-    pdfjs.GlobalWorkerOptions.workerSrc=new URL('pdfjs-dist/build/pdf.worker.min.mjs',import.meta.url).toString();
-    const pdf=await pdfjs.getDocument({data:bytes,isEvalSupported:false,enableXfa:false}).promise;
+    pdfjs.GlobalWorkerOptions.workerSrc=pdfWorkerUrl;
+    const pdf=await pdfjs.getDocument({data:bytes,enableXfa:false}).promise;
     try { if(pdf.numPages>20) throw new Error('Import a PDF with at most 20 pages.');
       for(let p=1;p<=pdf.numPages;p++) {progress(`Reading page ${p} of ${pdf.numPages}`); const page=await pdf.getPage(p); const content=await page.getTextContent(); text+=`\n\n${content.items.map(item=>'str' in item ? item.str+('hasEOL' in item && item.hasEOL?'\n':' '):'').join('')}`; }
       if(text.trim().length<20) throw new Error('This PDF is scanned. Import individual pages as receipt images for OCR.');
