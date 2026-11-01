@@ -1,4 +1,5 @@
 # Current work
+- [ ] Fix errors blocking the website preview and verify it opens.
 - [ ] Build Money Capture import and review inbox with private evidence, consent, duplicate checks and atomic posting.
 - [ ] Test capture parsing, financial safeguards and the signed-in import-to-ledger flow.
 - [ ] Document remaining staged Money Capture capabilities and release checks.
