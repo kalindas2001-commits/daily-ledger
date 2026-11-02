@@ -27,6 +27,7 @@ import TeamMemberDetail from "./pages/TeamMemberDetail";
 import Alerts from "./pages/Alerts";
 import Assist from "./pages/Assist";
 import CungaAI from "./pages/CungaAI";
+import MoneyCapture from "./pages/MoneyCapture";
 import AppLayout from "./components/AppLayout";
 import WhatsNewDialog from "./components/WhatsNewDialog";
 import InfoPopup from "./components/InfoPopup";
@@ -69,6 +70,7 @@ function AppRoutes() {
         <Route path="/add" element={<AddTransaction />} />
         <Route path="/calendar" element={<CalendarView />} />
         <Route path="/transactions" element={<TransactionsList />} />
+        <Route path="/capture" element={<MoneyCapture />} />
         <Route path="/export" element={<ExportPage />} />
         <Route path="/categories" element={<Categories />} />
         <Route path="/recurring" element={<RecurringTransactions />} />
