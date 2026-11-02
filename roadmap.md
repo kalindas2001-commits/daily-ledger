@@ -1,4 +1,5 @@
 # Current work
+- [ ] Finish and expose Money Capture through navigation with import, review, evidence and decision screens.
 - [x] Fix errors blocking the website preview and verify it opens — PDF compatibility corrected; 13 tests pass.
 - [ ] Verify signed-in preview flows — hosted database is paused; requires resuming Lovable Cloud.
 - [ ] Build Money Capture import and review inbox with private evidence, consent, duplicate checks and atomic posting.
