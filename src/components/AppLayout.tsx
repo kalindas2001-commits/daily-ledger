@@ -6,7 +6,7 @@ import { useTheme } from '@/hooks/useTheme';
 import {
   LayoutDashboard, PlusCircle, CalendarDays, List, Menu, FileDown,
   ExternalLink, X, Tag, Repeat, Target, Database, Moon, Sun, HandCoins,
-  StickyNote, Shield, UserCircle2, PiggyBank, Users, LifeBuoy, Wallet, Trophy, Sparkles,
+  StickyNote, Shield, UserCircle2, PiggyBank, Users, LifeBuoy, Wallet, Trophy, Sparkles, FileSearch,
 } from 'lucide-react';
 import OfflineIndicator from './OfflineIndicator';
 import AlertsBell from './AlertsBell';
@@ -26,6 +26,7 @@ const mainNavCfg = [
 
 
 const moreNavCfg = [
+  { path: '/capture', key: 'capture.title', icon: FileSearch, translatedKey: true },
   { path: '/accounts', key: 'accounts', icon: Wallet, fallback: 'Accounts' },
   { path: '/goals', key: 'goals', icon: Trophy, fallback: 'Goals' },
   { path: '/savings', key: 'savings', icon: PiggyBank },
@@ -55,7 +56,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   const mainNav = isAdmin
     ? [...baseMain, { path: '/team', key: 'team', label: (t as any)('nav.team', { defaultValue: 'Team' }), icon: Users }]
     : baseMain;
-  const moreNav = moreNavCfg.map(i => ({ ...i, label: (i as any).fallback ? ((t as any)(`nav.${i.key}`, { defaultValue: (i as any).fallback })) : t(`nav.${i.key}`) }));
+  const moreNav = moreNavCfg.map(i => ({ ...i, label: 'translatedKey' in i ? t(i.key) : (i as any).fallback ? ((t as any)(`nav.${i.key}`, { defaultValue: (i as any).fallback })) : t(`nav.${i.key}`) }));
   const assistanceNav = assistanceNavCfg.map(i => ({ ...i, label: (i as any).fallback ? ((t as any)(`nav.${i.key}`, { defaultValue: (i as any).fallback })) : t(`nav.${i.key}`) }));
   const extras: any[] = [];
   if (isSuperAdmin) extras.push({ path: '/admin', key: 'superAdmin', label: t('nav.superAdmin'), icon: Shield });

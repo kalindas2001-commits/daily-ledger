@@ -24,6 +24,7 @@ export const captureTranslations = {
     more: 'Load more', permissionsError: 'Source permissions could not be loaded.', accountError: 'Accounts could not be loaded.',
     noAccounts: 'Create an active RWF account before importing.', accounts: 'Open accounts',
     importing: 'Processing…', matchesError: 'Duplicate checks are unavailable. Retry before posting.',
+    importLimit: 'Import 1–200 records with at most 1 MB of text at a time.',
     importTime: 'Imported', parser: 'Parser version', source: 'Source', transaction: 'View transaction',
   },
   fr: {
@@ -51,6 +52,7 @@ export const captureTranslations = {
     more: 'Charger davantage', permissionsError: 'Impossible de charger les autorisations.', accountError: 'Impossible de charger les comptes.',
     noAccounts: 'Créez un compte RWF actif avant d’importer.', accounts: 'Ouvrir les comptes',
     importing: 'Traitement…', matchesError: 'Vérification des doublons indisponible. Réessayez avant de comptabiliser.',
+    importLimit: 'Importez 1 à 200 écritures avec au maximum 1 Mo de texte à la fois.',
     importTime: 'Importée', parser: 'Version du lecteur', source: 'Source', transaction: 'Voir la transaction',
   },
   rw: {
@@ -78,6 +80,7 @@ export const captureTranslations = {
     more: 'Fungura izindi', permissionsError: 'Uburenganzira ntibwashoboye gufungurwa.', accountError: 'Konti ntizashoboye gufungurwa.',
     noAccounts: 'Banza ufungure konti ya RWF ikora.', accounts: 'Fungura konti',
     importing: 'Birimo gukorwa…', matchesError: 'Kugenzura inyandiko zisubiramo ntibikora ubu. Ongera ugerageze mbere yo kwandika.',
+    importLimit: 'Injiza inyandiko 1–200 n’inyandiko zitarenze MB 1 icyarimwe.',
     importTime: 'Yinjijwe', parser: 'Verisiyo y’umusomyi', source: 'Inkomoko', transaction: 'Reba ubwishyu',
   },
 };
