@@ -1,11 +1,12 @@
 # Current work
-- [ ] Finish and expose Money Capture through navigation with import, review, evidence and decision screens.
+- [x] Finish and expose Money Capture through navigation with import, review, evidence and decision screens.
 - [x] Fix errors blocking the website preview and verify it opens — PDF compatibility corrected; 13 tests pass.
-- [ ] Verify signed-in preview flows — hosted database is paused; requires resuming Lovable Cloud.
-- [ ] Build Money Capture import and review inbox with private evidence, consent, duplicate checks and atomic posting.
-- [ ] Complete the Money Capture import screen, source controls, evidence review and safe decision dialogs.
-- [ ] Test capture parsing, financial safeguards and the signed-in import-to-ledger flow.
-- [ ] Document remaining staged Money Capture capabilities and release checks.
+- [ ] Verify signed-in preview flows — no app account matches the requesting user's email; requires preview sign-in.
+- [x] Build Money Capture import and review inbox with private evidence, consent, duplicate checks and atomic posting.
+- [x] Complete the Money Capture import screen, source controls, evidence review and safe decision dialogs.
+- [x] Test capture parsing and financial safeguards — 28 tests pass.
+- [ ] Verify signed-in import-to-ledger flow and balance read-back — requires preview sign-in.
+- [x] Document remaining staged Money Capture capabilities and release checks in src/lib/capture/RELEASE.md.
 - [x] Simplify Team member cards and keep member details on their own page.
 - [x] Add explicit warnings and confirmation for member access and login changes.
 - [ ] Verify signed-in Team member actions and layout on desktop and mobile — blocked until an admin signs in to the preview.
