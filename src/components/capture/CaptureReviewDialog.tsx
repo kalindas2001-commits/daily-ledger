@@ -11,7 +11,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { AlertDialog, AlertDialogContent, AlertDialogHeader, AlertDialogTitle, AlertDialogDescription, AlertDialogFooter, AlertDialogCancel } from '@/components/ui/alert-dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import PaymentMethodLogo from '@/components/PaymentMethodLogo';
+import { PaymentMethodLogo } from '@/components/PaymentMethodLogo';
 import { useCaptureEvidence, useCaptureMatches, useMoneyCapture } from '@/hooks/useMoneyCapture';
 import type { Account } from '@/hooks/useAccounts';
 import { canPostCapture, type CaptureCandidate, type CaptureFields } from '@/lib/capture/review';
@@ -80,7 +80,7 @@ export default function CaptureReviewDialog({ candidate, accounts, onClose }: { 
         {evidence.data && <>
           <dl className="grid gap-2 text-xs text-muted-foreground sm:grid-cols-2"><div><dt>{tr('source')}</dt><dd className="break-words text-foreground">{evidence.data.job?.file_name}</dd></div><div><dt>{tr('parser')}</dt><dd className="text-foreground">{evidence.data.job?.parser_version}</dd></div><div><dt>{tr('importTime')}</dt><dd className="text-foreground">{evidence.data.job?.created_at ? new Date(evidence.data.job.created_at).toLocaleString() : '—'}</dd></div></dl>
           <details><summary className="cursor-pointer text-sm font-medium">{tr('evidence')}</summary><pre className="mt-2 max-h-64 overflow-auto whitespace-pre-wrap break-words bg-muted p-3 text-xs">{evidence.data.evidence?.raw_text}</pre></details>
-          <details><summary className="cursor-pointer text-sm font-medium">{tr('history')}</summary><ol className="mt-3 space-y-3 border-l pl-4">{evidence.data.audit?.map(event => <li key={event.id} className="text-xs"><p className="font-medium">{event.event.replaceAll('_', ' ')}</p><time className="text-muted-foreground">{new Date(event.created_at).toLocaleString()}</time><pre className="whitespace-pre-wrap break-words text-muted-foreground">{JSON.stringify(event.details)}</pre></li>)}</ol></details>
+          <details><summary className="cursor-pointer text-sm font-medium">{tr('history')}</summary><ol className="mt-3 space-y-3 border-l pl-4">{evidence.data.audit?.map(event => <li key={event.id} className="text-xs"><p className="font-medium">{event.event.replace(/_/g, ' ')}</p><time className="text-muted-foreground">{new Date(event.created_at).toLocaleString()}</time><pre className="whitespace-pre-wrap break-words text-muted-foreground">{JSON.stringify(event.details)}</pre></li>)}</ol></details>
           {evidence.data.link?.transaction_id && <Button asChild variant="outline"><Link to="/transactions">{tr('transaction')}</Link></Button>}
         </>}
       </section>
