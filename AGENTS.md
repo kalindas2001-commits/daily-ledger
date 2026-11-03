@@ -3,3 +3,4 @@
 - Money Capture uses owner-only evidence and server-controlled import/decision RPCs with row locks and unique posting links; browser extraction produces untrusted candidates, never direct ledger writes.
 - Capture adapters and document readers are isolated under src/lib/capture; versioned deterministic parsing works without AI credits and unfamiliar financial treatments remain review-only.
 - Money Capture screens use separate import and review components under authenticated /capture; decisions require explicit confirmation and completed duplicate checks before posting, preserving the evidence-to-ledger boundary.
+- Scanned PDF pages use bounded local canvas OCR with one reusable worker and guaranteed resource cleanup; extracted text remains untrusted review evidence.

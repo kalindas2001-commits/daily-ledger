@@ -1,4 +1,6 @@
 # Current work
+- [x] Add receipt camera capture, drag-and-drop, scanned PDF OCR and visible extraction progress from the original specification.
+- [x] Test document limits, scanned PDF reading and import input safeguards — 33 tests pass; real browser OCR reads 25,000 RWF from a scanned PDF.
 - [x] Finish and expose Money Capture through navigation with import, review, evidence and decision screens.
 - [x] Fix errors blocking the website preview and verify it opens — PDF compatibility corrected; 13 tests pass.
 - [ ] Verify signed-in preview flows — no app account matches the requesting user's email; requires preview sign-in.
