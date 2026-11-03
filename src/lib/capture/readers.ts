@@ -1,22 +1,25 @@
 import Papa from 'papaparse';
 import pdfWorkerUrl from 'pdfjs-dist/build/pdf.worker.min.mjs?url';
 import { parseText, parseStatementRows, type CaptureRecord } from './parser';
+import { checkStatement, preserveStatementChecks, type StatementCheck } from './statement';
+export interface CaptureReadResult { text: string; records: CaptureRecord[]; statementChecks?: StatementCheck[] }
 export const MAX_FILE_BYTES = 10 * 1024 * 1024;
 export interface CaptureProgress { stage: 'reading' | 'ocr'; page?: number; pages?: number; percent?: number }
 export function validateCaptureFile(file: Pick<File, 'size' | 'name'>) {
   if (!file.size || file.size > MAX_FILE_BYTES) throw new Error('Select a nonempty file up to 10 MB.');
   if (!/\.(txt|csv|xlsx|pdf|jpg|jpeg|png|webp)$/i.test(file.name)) throw new Error('Supported files: TXT, CSV, XLSX, PDF, JPG, PNG and WEBP.');
 }
-export async function readCaptureFile(file: File, progress: (state: CaptureProgress) => void): Promise<{text: string; records: CaptureRecord[]}> {
+export async function readCaptureFile(file: File, progress: (state: CaptureProgress) => void): Promise<CaptureReadResult> {
   validateCaptureFile(file);
   progress({ stage: 'reading' });
   const bytes = new Uint8Array(await file.arrayBuffer());
   const ext = file.name.split('.').pop()?.toLowerCase();
   let text = ''; let records: CaptureRecord[] | undefined;
+  let statementChecks: StatementCheck[] | undefined;
   if (ext === 'txt' || ext === 'csv') {
     if (bytes.includes(0)) throw new Error('This is not a supported text file.');
     text = new TextDecoder('utf-8', {fatal:true}).decode(bytes);
-    if (ext === 'csv') { const parsed = Papa.parse<Record<string,string>>(text, {header:true,skipEmptyLines:true}); if (parsed.errors.length) throw new Error('CSV rows are malformed. Check headers and separators.'); records = parseStatementRows(parsed.data); }
+    if (ext === 'csv') { const parsed = Papa.parse<Record<string,string>>(text, {header:true,skipEmptyLines:true}); if (parsed.errors.length) throw new Error('CSV rows are malformed. Check headers and separators.'); const check = checkStatement(parsed.data); statementChecks = [check]; records = preserveStatementChecks(parseStatementRows(parsed.data), check); }
   } else if (ext === 'xlsx') {
     if (bytes[0] !== 0x50 || bytes[1] !== 0x4b) throw new Error('Invalid spreadsheet signature.');
     // Inspect ZIP entry sizes before decompressing the workbook.
@@ -25,9 +28,11 @@ export async function readCaptureFile(file: File, progress: (state: CaptureProgr
     if(total>30*1024*1024 || entries>2000 || !entries) throw new Error('Spreadsheet is too large to safely unpack.');
     const XLSX = await import('xlsx'); const workbook = XLSX.read(bytes, {type:'array',cellFormula:false,cellHTML:false,cellText:true,raw:true});
     if(workbook.SheetNames.length>10) throw new Error('Use a workbook with at most 10 sheets.');
-    const rows = workbook.SheetNames.flatMap(name => XLSX.utils.sheet_to_json<Record<string,unknown>>(workbook.Sheets[name], {raw:false}));
+    const sheets = workbook.SheetNames.map(name => XLSX.utils.sheet_to_json<Record<string,unknown>>(workbook.Sheets[name], {raw:false}));
+    const rows = sheets.flat();
     if(rows.length>200) throw new Error('Import at most 200 statement rows at a time.');
-    text=JSON.stringify(rows); records=parseStatementRows(rows);
+    statementChecks = sheets.filter(sheet => sheet.length > 0).map(checkStatement);
+    text=JSON.stringify(rows); records=sheets.flatMap(sheet => preserveStatementChecks(parseStatementRows(sheet), checkStatement(sheet)));
   } else if(ext==='pdf') {
     if(new TextDecoder().decode(bytes.slice(0,5))!=='%PDF-') throw new Error('Invalid PDF signature.');
     const pdfjs=await import('pdfjs-dist');
@@ -83,5 +88,5 @@ export async function readCaptureFile(file: File, progress: (state: CaptureProgr
   if(new TextEncoder().encode(text).length>1000000) throw new Error('Extracted text exceeds 1 MB. Import a smaller file.');
   const candidates=records ?? parseText(text);
   if(!candidates.length || candidates.length>200) throw new Error('Import 1–200 records at a time.');
-  return {text,records:candidates};
+  return {text,records:candidates,statementChecks};
 }
