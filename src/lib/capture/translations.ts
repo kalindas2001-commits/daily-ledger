@@ -1,5 +1,6 @@
 export const captureTranslations = {
   en: {
+    camera: 'Photograph receipt', dropFile: 'Drop a document here', removeFile: 'Remove file', oneFile: 'Select one document at a time.', readingFile: 'Reading document…', readingReceipt: 'Recognizing receipt text…',
     title: 'Money Capture', import: 'Import', inbox: 'Review inbox', sources: 'Source permissions',
     sms: 'Selected messages', document: 'Receipts & documents', statement: 'Statements',
     account: 'Account', chooseAccount: 'Select an RWF account', paste: 'Paste messages', upload: 'Upload file',
@@ -28,6 +29,7 @@ export const captureTranslations = {
     importTime: 'Imported', parser: 'Parser version', source: 'Source', transaction: 'View transaction',
   },
   fr: {
+    camera: 'Photographier le reçu', dropFile: 'Déposer un document ici', removeFile: 'Retirer le fichier', oneFile: 'Sélectionnez un document à la fois.', readingFile: 'Lecture du document…', readingReceipt: 'Reconnaissance du texte…',
     title: 'Capture financière', import: 'Importer', inbox: 'À vérifier', sources: 'Autorisations des sources',
     sms: 'Messages sélectionnés', document: 'Reçus et documents', statement: 'Relevés',
     account: 'Compte', chooseAccount: 'Sélectionner un compte RWF', paste: 'Coller des messages', upload: 'Importer un fichier',
@@ -56,6 +58,7 @@ export const captureTranslations = {
     importTime: 'Importée', parser: 'Version du lecteur', source: 'Source', transaction: 'Voir la transaction',
   },
   rw: {
+    camera: 'Fata ifoto y’inyemezabwishyu', dropFile: 'Shyira inyandiko hano', removeFile: 'Kuraho dosiye', oneFile: 'Hitamo inyandiko imwe icyarimwe.', readingFile: 'Gusoma inyandiko…', readingReceipt: 'Gusoma amagambo ari ku ifoto…',
     title: 'Kwinjiza inyandiko z’amafaranga', import: 'Kwinjiza', inbox: 'Izo kugenzura', sources: 'Uburenganzira bw’inkomoko',
     sms: 'Ubutumwa bwatoranyijwe', document: 'Inyemezabwishyu n’inyandiko', statement: 'Inyandiko za konti',
     account: 'Konti', chooseAccount: 'Hitamo konti ya RWF', paste: 'Shyiramo ubutumwa', upload: 'Ohereza dosiye',
