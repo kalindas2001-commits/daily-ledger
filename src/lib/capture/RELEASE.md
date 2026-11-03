@@ -3,6 +3,8 @@
 ## Available
 - Authenticated `/capture` route, desktop navigation and mobile menu entry.
 - Selected-message import and local TXT, CSV, XLSX, PDF and receipt-image reading.
+- Receipt camera selection on supported devices, single-file drag-and-drop, and visible document/OCR progress.
+- Scanned PDF pages are rendered locally for OCR within the existing 20-page limit; OCR output still requires review.
 - Explicit source consent; extracted records remain private review candidates.
 - Paginated inbox with status filters, original evidence, import metadata and decision history.
 - Editable payment details, compatible transaction matching, duplicate-review acknowledgement, and confirmed post/match/reject/defer decisions.
@@ -17,4 +19,4 @@
 ## Later stages (not available)
 - Provider integrations, background SMS access, controlled automation and unfamiliar financial treatments are not included.
 - Transfers, loans, withdrawals, invoices, failures and unmatched reversals stay review-only in this workflow.
-- Scanned PDFs require receipt-image uploads; statement formats require supported structured columns or manual field review.
+- Statement formats require supported structured columns or manual field review. Receipt cropping, line-item extraction and statement balance reconciliation remain staged work.
