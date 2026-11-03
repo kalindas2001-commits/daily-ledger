@@ -1,4 +1,4 @@
-export const PARSER_VERSION = 'rw-capture/1.0.0';
+export const PARSER_VERSION = 'rw-capture/1.1.0';
 export interface CaptureRecord {
   amount_minor: number | null; currency: string; direction: string | null; treatment: string;
   occurred_on: string | null; occurred_time: string | null; provider: string; reference: string | null;
@@ -52,7 +52,8 @@ export function parseStatementRows(rows: Record<string, unknown>[]): CaptureReco
     const original = JSON.stringify(row);
     const base = parseMessage(Object.values(r).join(' '));
     const amount = incoming ?? outgoing ?? parseRwf(r.amount ?? '');
-    const direction = incoming && !outgoing ? 'INCOME' : outgoing && !incoming ? 'EXPENSE' : /^(income|credit|incoming)$/i.test(r.type ?? r.direction ?? '') ? 'INCOME' : /^(expense|debit|outgoing)$/i.test(r.type ?? r.direction ?? '') ? 'EXPENSE' : null;
-    return { ...base, amount_minor: amount, direction, currency: (r.currency || 'RWF').toUpperCase(), occurred_on: normalizeDate(r.date ?? r.transaction_date ?? ''), occurred_time: null, reference: r.reference || r.transaction_reference || base.reference, description: r.description || r.merchant || base.description, category: r.category || '', treatment: /failed|pending|reversal|transfer|withdrawal|invoice|loan/i.test(r.status ?? r.type ?? '') ? 'unknown_special' : 'payment', evidence_excerpt: original, findings: [...(incoming && outgoing ? ['Both debit and credit present; review direction.'] : []), 'Statement row: verify payment status, date and account.'], field_confidence: { amount: amount ? 'extracted' : 'missing', direction: direction ? 'extracted' : 'missing', source: 'unverified' } };
+    const special = /failed|pending|declined|revers|refund|chargeback|transfer|withdraw|invoice|loan/i.test(`${r.status ?? ''} ${r.type ?? ''} ${r.direction ?? ''}`);
+    const direction = special || incoming && outgoing ? null : incoming ? 'INCOME' : outgoing ? 'EXPENSE' : /^(income|credit|incoming)$/i.test(r.type ?? r.direction ?? '') ? 'INCOME' : /^(expense|debit|outgoing)$/i.test(r.type ?? r.direction ?? '') ? 'EXPENSE' : null;
+    return { ...base, amount_minor: amount, direction, currency: (r.currency || 'RWF').toUpperCase(), occurred_on: normalizeDate(r.date ?? r.transaction_date ?? ''), occurred_time: null, reference: r.reference || r.transaction_reference || base.reference, description: r.description || r.merchant || base.description, category: r.category || '', treatment: special ? 'unknown_special' : 'payment', evidence_excerpt: original, findings: [...(incoming && outgoing ? ['Both debit and credit present; review direction.'] : []), 'Statement row: verify payment status, date and account.'], field_confidence: { amount: amount ? 'extracted' : 'missing', direction: direction ? 'extracted' : 'missing', source: 'unverified' } };
   });
 }
