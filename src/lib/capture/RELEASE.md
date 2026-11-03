@@ -12,6 +12,7 @@
 
 ## Release checks
 - Parser, PDF-reader and posting validation tests pass.
+- 33 capture tests pass; browser OCR reads a generated scanned payment PDF as 25,000 RWF without runtime errors.
 - Preview opens without runtime errors and requires sign-in for `/capture`.
 - Real-account import, match, post, repeated-post protection and balance read-back remain unverified: session minting cannot match the requesting user's account. A signed-in preview is required.
 - Verify signed-in layouts at desktop and phone widths before announcing fully verified delivery.
