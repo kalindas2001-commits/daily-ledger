@@ -26,6 +26,44 @@ function getRange(key: RangeKey): { from: string; to: string; label: string } {
   }
 }
 
+type Insight = {
+  icon: any;
+  title: string;
+  text: string;
+  suggestion?: string;
+  type: 'info' | 'warning' | 'success' | 'critical';
+};
+
+function InsightCard({ insight }: { insight: Insight }) {
+  const tone =
+    insight.type === 'critical' ? 'border-destructive/40 bg-destructive/5'
+    : insight.type === 'warning' ? 'border-accent/40 bg-accent/5'
+    : insight.type === 'success' ? 'border-income/40 bg-income/5'
+    : 'border-border bg-muted/40';
+  const iconTone =
+    insight.type === 'critical' ? 'bg-destructive/10 text-destructive'
+    : insight.type === 'warning' ? 'bg-accent/10 text-accent'
+    : insight.type === 'success' ? 'bg-income/10 text-income'
+    : 'bg-primary/10 text-primary';
+
+  return (
+    <div className={cn('rounded-xl border p-3 flex items-center gap-3', tone)}>
+      <div className={cn('w-9 h-9 rounded-lg flex items-center justify-center shrink-0', iconTone)}>
+        <insight.icon className="w-4 h-4" />
+      </div>
+      <div className="min-w-0 space-y-1">
+        <p className="text-sm font-semibold leading-tight text-foreground">{insight.title}</p>
+        <p className="text-xs text-muted-foreground leading-snug">{insight.text}</p>
+        {insight.suggestion && (
+          <p className="text-xs leading-snug text-foreground/90">
+            <span className="font-medium">Do this: </span>{insight.suggestion}
+          </p>
+        )}
+      </div>
+    </div>
+  );
+}
+
 export default function Dashboard() {
   const [rangeKey, setRangeKey] = useState<RangeKey>('month');
   const range = getRange(rangeKey);
@@ -97,9 +135,7 @@ export default function Dashboard() {
 
   // ---- Advanced Smart Insights engine -------------------------------------
   const insights = useMemo(() => {
-    const result: {
-      icon: any; title: string; text: string; suggestion?: string; type: 'info' | 'warning' | 'success' | 'critical';
-    }[] = [];
+    const result: Insight[] = [];
     if (!txData || txData.length === 0) return result;
 
     const days = Math.max(differenceInDays(new Date(range.to), new Date(range.from)) + 1, 1);
