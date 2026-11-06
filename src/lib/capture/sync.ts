@@ -3,12 +3,12 @@ import { analyzeSms, compareSmsRecords, smsEvidence, type PhoneSms } from './sms
 import type { CaptureRecord } from './parser';
 
 const cursorSchema = z.object({ after: z.number().int().positive(), afterId: z.string().regex(/^\d+$/) });
-export type SmsCursor = z.infer<typeof cursorSchema>;
+export type SmsCursor = { after: number; afterId: string };
 export type SmsPage = { messages: PhoneSms[]; cursor: SmsCursor; hasMore: boolean };
 export function restoreSmsCursor(raw: string | null, now = Date.now()): SmsCursor {
   try {
     const parsed = cursorSchema.safeParse(JSON.parse(raw ?? 'null'));
-    if (parsed.success && parsed.data.after <= now) return parsed.data;
+    if (parsed.success && parsed.data.after <= now) return { after: parsed.data.after, afterId: parsed.data.afterId };
   } catch { /* Recover corrupted browser storage without losing the initial lookback. */ }
   return { after: now - 7 * 86400000, afterId: '0' };
 }
