@@ -1,4 +1,7 @@
 # Current work
+- [ ] Correct Smart Insights dividers inside cards and verify responsive spacing and contrast.
+- [ ] Add permission-gated Android background message collection and reliable resume syncing.
+- [ ] Verify background delivery and automatic posting on a physical phone — requires device testing and validated automation safeguards.
 - [x] Add permission-based Android SMS capture, advertisement filtering, counterparty detection and one-minute active sync (Phone payment messages panel on /capture).
 - [ ] Validate controlled automatic posting before enabling it; unusual or uncertain messages stay in review.
 - [ ] Verify SMS access on a physical Android device — requires Android tooling and device permission.
