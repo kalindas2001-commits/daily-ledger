@@ -4,3 +4,4 @@
 - Capture adapters and document readers are isolated under src/lib/capture; versioned deterministic parsing works without AI credits and unfamiliar financial treatments remain review-only.
 - Money Capture screens use separate import and review components under authenticated /capture; decisions require explicit confirmation and completed duplicate checks before posting, preserving the evidence-to-ledger boundary.
 - Scanned PDF pages use bounded local canvas OCR with one reusable worker and guaranteed resource cleanup; extracted text remains untrusted review evidence.
+- Native SMS delivery collection stores owner-scoped evidence in app-private storage without auth tokens; authenticated foreground reconciliation controls upload, and sign-out or revocation stops collection and clears queued evidence.

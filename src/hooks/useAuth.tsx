@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, createContext, useContext } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import type { User, Session } from '@supabase/supabase-js';
+import { nativeSmsAvailable, PhoneMessages } from '@/lib/capture/nativeSms';
 
 interface AuthContextType {
   user: User | null;
@@ -36,6 +37,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [isSuperAdmin, setIsSuperAdmin] = useState(false);
 
   const signOut = useCallback(async () => {
+    if (nativeSmsAvailable()) await PhoneMessages.setCollection({ enabled: false });
     await supabase.auth.signOut();
   }, []);
 
@@ -59,6 +61,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     const applySession = (nextSession: Session | null) => {
       if (!mounted) return;
+      if (!nextSession && nativeSmsAvailable()) PhoneMessages.setCollection({ enabled: false }).catch(() => {});
       setSession(nextSession);
       setUser(nextSession?.user ?? null);
       setLoading(false);
