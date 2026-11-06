@@ -115,13 +115,13 @@
   .safe-bottom {
     padding-bottom: env(safe-area-inset-bottom, 0px);
   }
-  /* Dashed "trending" section separator: long dashes, themed by --border */
+  /* Compact internal insight dividers. */
   .trending-separator {
     height: 1px;
     background-image: repeating-linear-gradient(
       to right,
-      hsl(var(--border)) 0 12px,
-      transparent 12px 20px
+      hsl(var(--muted-foreground)) 0 3px,
+      transparent 3px 4px
     );
   }
 }

@@ -1,6 +1,9 @@
 # Money Capture delivery status
 
 ## Available
+- Android carrier-inbox permission request, one-minute checks while Money Capture is visible, resume/online reconciliation and per-message checkpoints. Failed uploads are retried without advancing past the unsaved payment.
+- Android SMS_RECEIVED receiver captures financial delivery evidence in app-private, owner-scoped storage without a running WebView. Requires READ_SMS and RECEIVE_SMS permission and device/distribution eligibility. Stop/revocation/sign-out clears queued evidence.
+- Destination accounts are ledger destinations, not SMS sources. All financial interpretation remains pending explicit review.
 - Authenticated `/capture` route, desktop navigation and mobile menu entry.
 - Selected-message import and local TXT, CSV, XLSX, PDF and receipt-image reading.
 - Receipt camera selection on supported devices, single-file drag-and-drop, and visible document/OCR progress.
@@ -18,6 +21,7 @@
 - Verify signed-in layouts at desktop and phone widths before announcing fully verified delivery.
 
 ## Later stages (not available)
-- Provider integrations, background SMS access, controlled automation and unfamiliar financial treatments are not included.
+- Background cloud uploads and controlled automatic ledger posting are not enabled. Native compilation, receiver delivery, app-killed behavior and physical-device permissions remain unverified: this environment has no Android SDK, Java or attached phone. Android may delay/suppress background delivery; Google Play SMS permission eligibility must be resolved before release.
+- Provider integrations and unfamiliar financial treatments are not included.
 - Transfers, loans, withdrawals, invoices, failures and unmatched reversals stay review-only in this workflow.
 - Statement formats require supported structured columns or manual field review. Receipt cropping, line-item extraction and statement balance reconciliation remain staged work.

@@ -1,5 +1,9 @@
 export const captureTranslations = {
   en: {
+    smsTitle: 'Phone payment messages', smsIntro: 'Carrier SMS · MTN MoMo, Airtel Money and banks', smsDestination: 'Destination account',
+    smsPrivacy: 'Allow access to carrier payment SMS on this phone and privately save payment evidence for review? Other conversations stay on your phone.',
+    smsBackground: 'Background collection enabled · uploads resume in Money Capture. Android may delay delivery. Payments still require review.',
+    smsAllow: 'Allow message access', smsStop: 'Stop message access', smsSyncNow: 'Check now', smsNativeError: 'Update the Android app to enable phone-message collection.',
     camera: 'Photograph receipt', dropFile: 'Drop a document here', removeFile: 'Remove file', oneFile: 'Select one document at a time.', readingFile: 'Reading document…', readingReceipt: 'Recognizing receipt text…',
     title: 'Money Capture', import: 'Import', inbox: 'Review inbox', sources: 'Source permissions',
     sms: 'Selected messages', document: 'Receipts & documents', statement: 'Statements',
@@ -29,6 +33,10 @@ export const captureTranslations = {
     importTime: 'Imported', parser: 'Parser version', source: 'Source', transaction: 'View transaction',
   },
   fr: {
+    smsTitle: 'Messages de paiement du téléphone', smsIntro: 'SMS opérateur · MTN MoMo, Airtel Money et banques', smsDestination: 'Compte de destination',
+    smsPrivacy: 'Autoriser l’accès aux SMS de paiement de ce téléphone et conserver les preuves en privé pour vérification ? Les autres conversations restent sur votre téléphone.',
+    smsBackground: 'Collecte en arrière-plan activée · envoi à la réouverture de la capture. Android peut retarder la réception. Les paiements restent à vérifier.',
+    smsAllow: 'Autoriser les messages', smsStop: 'Arrêter l’accès aux messages', smsSyncNow: 'Vérifier maintenant', smsNativeError: 'Mettez à jour l’application Android pour activer la collecte des messages.',
     camera: 'Photographier le reçu', dropFile: 'Déposer un document ici', removeFile: 'Retirer le fichier', oneFile: 'Sélectionnez un document à la fois.', readingFile: 'Lecture du document…', readingReceipt: 'Reconnaissance du texte…',
     title: 'Capture financière', import: 'Importer', inbox: 'À vérifier', sources: 'Autorisations des sources',
     sms: 'Messages sélectionnés', document: 'Reçus et documents', statement: 'Relevés',
@@ -58,6 +66,10 @@ export const captureTranslations = {
     importTime: 'Importée', parser: 'Version du lecteur', source: 'Source', transaction: 'Voir la transaction',
   },
   rw: {
+    smsTitle: 'Ubutumwa bw’ubwishyu kuri telefoni', smsIntro: 'SMS za telefoni · MTN MoMo, Airtel Money na banki', smsDestination: 'Konti izakira inyandiko',
+    smsPrivacy: 'Uremera gusoma SMS z’ubwishyu kuri iyi telefoni no kubika ibimenyetso mu ibanga kugira ngo ubigenzure? Ubundi butumwa buguma kuri telefoni.',
+    smsBackground: 'Gukusanya ubutumwa byaratangiye · bwoherezwa wongeye gufungura Money Capture. Android ishobora gutinza ubutumwa. Ubwishyu buracyakeneye kugenzurwa.',
+    smsAllow: 'Emera gusoma ubutumwa', smsStop: 'Hagarika gusoma ubutumwa', smsSyncNow: 'Genzura ubu', smsNativeError: 'Vugurura porogaramu ya Android kugira ngo ikusanye ubutumwa.',
     camera: 'Fata ifoto y’inyemezabwishyu', dropFile: 'Shyira inyandiko hano', removeFile: 'Kuraho dosiye', oneFile: 'Hitamo inyandiko imwe icyarimwe.', readingFile: 'Gusoma inyandiko…', readingReceipt: 'Gusoma amagambo ari ku ifoto…',
     title: 'Kwinjiza inyandiko z’amafaranga', import: 'Kwinjiza', inbox: 'Izo kugenzura', sources: 'Uburenganzira bw’inkomoko',
     sms: 'Ubutumwa bwatoranyijwe', document: 'Inyemezabwishyu n’inyandiko', statement: 'Inyandiko za konti',

@@ -15,7 +15,7 @@ import com.getcapacitor.annotation.PermissionCallback;
 import java.util.regex.Pattern;
 
 @CapacitorPlugin(name = "PhoneMessages", permissions = {
-  @Permission(alias = "sms", strings = { Manifest.permission.READ_SMS })
+  @Permission(alias = "sms", strings = { Manifest.permission.READ_SMS, Manifest.permission.RECEIVE_SMS })
 })
 public class PhoneMessagesPlugin extends Plugin {
   private static final Pattern FINANCIAL = Pattern.compile("RWF|FRW|USD|EUR|momo|airtel|payment|wakiriye|wohereje|wishyuye", Pattern.CASE_INSENSITIVE);
@@ -26,6 +26,43 @@ public class PhoneMessagesPlugin extends Plugin {
   }
   @PermissionCallback
   private void smsPermissionResult(PluginCall call) { super.checkPermissions(call); }
+
+  @PluginMethod
+  public void setCollection(PluginCall call) {
+    boolean enabled = Boolean.TRUE.equals(call.getBoolean("enabled", false));
+    String owner = call.getString("owner", "");
+    if (enabled && (getPermissionState("sms") != PermissionState.GRANTED || !owner.matches("[a-fA-F0-9-]{36}"))) {
+      call.reject("SMS permission and a signed-in owner are required"); return;
+    }
+    android.content.SharedPreferences settings = getContext().getSharedPreferences(SmsPendingStore.SETTINGS, android.content.Context.MODE_PRIVATE);
+    String previous = settings.getString("owner", "");
+    settings.edit().putBoolean("enabled", false).commit();
+    try (SmsPendingStore store = new SmsPendingStore(getContext())) {
+      if (!enabled || !owner.equals(previous)) store.clear();
+    }
+    settings.edit().putString("owner", enabled ? owner : "").putBoolean("enabled", enabled).commit();
+    call.resolve();
+  }
+
+  @PluginMethod
+  public void readPending(PluginCall call) {
+    if (getPermissionState("sms") != PermissionState.GRANTED) { call.reject("SMS permission is required", "SMS_DENIED"); return; }
+    String owner = call.getString("owner", "");
+    android.content.SharedPreferences settings = getContext().getSharedPreferences(SmsPendingStore.SETTINGS, android.content.Context.MODE_PRIVATE);
+    if (!settings.getBoolean("enabled", false) || !owner.equals(settings.getString("owner", null))) { call.reject("SMS collection is not enabled for this user"); return; }
+    try (SmsPendingStore store = new SmsPendingStore(getContext())) {
+      JSObject result = new JSObject(); result.put("messages", store.pending(owner)); call.resolve(result);
+    } catch (Exception error) { call.reject("Could not read saved phone messages"); }
+  }
+
+  @PluginMethod
+  public void acknowledge(PluginCall call) {
+    String owner = call.getString("owner", ""); String id = call.getString("id", "");
+    android.content.SharedPreferences settings = getContext().getSharedPreferences(SmsPendingStore.SETTINGS, android.content.Context.MODE_PRIVATE);
+    if (!id.matches("\\d+") || !owner.equals(settings.getString("owner", null))) { call.reject("Invalid saved message"); return; }
+    try (SmsPendingStore store = new SmsPendingStore(getContext())) { store.acknowledge(owner, id); call.resolve(); }
+    catch (Exception error) { call.reject("Could not acknowledge saved message"); }
+  }
 
   @PluginMethod
   public void readMessages(PluginCall call) {
