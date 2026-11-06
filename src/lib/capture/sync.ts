@@ -23,7 +23,7 @@ export async function syncCarrierMessages(options: {
 }) {
   let cursor = options.cursor;
   const seen: CaptureRecord[] = [];
-  const stats = { checked: 0, adverts: 0, unrelated: 0, queued: 0, duplicates: 0, hasMore: true };
+  const stats = { checked: 0, adverts: 0, unrelated: 0, queued: 0, duplicates: 0, hasMore: true, processed: [] as PhoneSms[] };
   for (let page = 0; page < 10; page++) {
     if (options.active && !options.active()) throw new Error('Phone message syncing was stopped.');
     const result = await options.read(cursor);
@@ -47,6 +47,7 @@ export async function syncCarrierMessages(options: {
       }
       cursor = { after: sms.receivedAt, afterId: sms.id };
       options.checkpoint(cursor);
+      stats.processed.push(sms);
     }
     // The native cursor also covers unrelated rows filtered locally. Only advance after all returned evidence is saved.
     cursor = result.cursor;

@@ -24,6 +24,8 @@ final class SmsPendingStore extends SQLiteOpenHelper {
     values.put("owner", owner); values.put("sender", sender == null ? "" : sender);
     values.put("body", body); values.put("received", received);
     getWritableDatabase().insertWithOnConflict("pending", null, values, SQLiteDatabase.CONFLICT_IGNORE);
+    // Bound private evidence retention to seven days; foreground scanning remains the source of truth.
+    getWritableDatabase().delete("pending", "received < ?", new String[]{String.valueOf(System.currentTimeMillis() - 7L * 86400000L)});
   }
   JSArray pending(String owner) {
     JSArray messages = new JSArray();

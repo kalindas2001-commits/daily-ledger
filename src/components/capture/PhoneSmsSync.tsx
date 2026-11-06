@@ -63,18 +63,23 @@ export default function PhoneSmsSync({ accounts }: { accounts: Account[] }) {
     try {
       const pending = await PhoneMessages.readPending({ owner: user.id });
       setPendingCount(pending.messages.length);
+      const savedCursor = restoreSmsCursor(localStorage.getItem(`${storeKey}_cursor`));
+      const firstPending = pending.messages.reduce((first, sms) => Math.min(first, sms.receivedAt - 86400000), savedCursor.after);
       const next = await syncCarrierMessages({
-        cursor: restoreSmsCursor(localStorage.getItem(`${storeKey}_cursor`)),
+        cursor: firstPending < savedCursor.after ? { after: firstPending, afterId: '0' } : savedCursor,
         read: cursor => PhoneMessages.readMessages({ ...cursor, limit: 100 }),
         save: (sms, text, record) => registerMessage({ kind: 'sms', accountId, name: `SMS ${sms.sender}`.slice(0, 120), text, records: [record] }),
         checkpoint: cursor => localStorage.setItem(`${storeKey}_cursor`, JSON.stringify(cursor)),
         active: () => active.current,
       });
       // Canonical carrier inbox timestamps prevent a background delivery event from becoming a second import.
-      if (!next.hasMore) {
-        for (const sms of pending.messages) await PhoneMessages.acknowledge({ owner: user.id, id: sms.id });
-        setPendingCount(0);
+      let acknowledged = 0;
+      for (const sms of pending.messages) {
+        if (next.processed.some(original => original.sender === sms.sender && original.body === sms.body && Math.abs(original.receivedAt - sms.receivedAt) < 86400000)) {
+          await PhoneMessages.acknowledge({ owner: user.id, id: sms.id }); acknowledged++;
+        }
       }
+      setPendingCount(pending.messages.length - acknowledged);
       setStats(prev => ({ checked: prev.checked + next.checked, adverts: prev.adverts + next.adverts, unrelated: prev.unrelated + next.unrelated, queued: prev.queued + next.queued, duplicates: prev.duplicates + next.duplicates, lastRun: new Date().toISOString() }));
       if (next.queued) toast.success(d('smsQueued', `${next.queued} payment message(s) added to your review inbox.`));
     } catch (e) {
