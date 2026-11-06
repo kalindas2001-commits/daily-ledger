@@ -1,4 +1,4 @@
-import { Fragment, useState, useMemo } from 'react';
+import { useState, useMemo } from 'react';
 import { format, startOfMonth, endOfMonth, startOfWeek, endOfWeek, subMonths, differenceInDays } from 'date-fns';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -42,22 +42,23 @@ function InsightCard({ insight }: { insight: Insight }) {
     : 'border-border bg-muted/40';
   const iconTone =
     insight.type === 'critical' ? 'bg-destructive/10 text-destructive'
-    : insight.type === 'warning' ? 'bg-accent/10 text-accent'
-    : insight.type === 'success' ? 'bg-income/10 text-income'
+    : insight.type === 'warning' ? 'bg-accent/10 text-foreground'
+    : insight.type === 'success' ? 'bg-income/10 text-foreground'
     : 'bg-primary/10 text-primary';
 
   return (
-    <div className={cn('rounded-xl border p-3 flex items-center gap-3', tone)}>
-      <div className={cn('w-9 h-9 rounded-lg flex items-center justify-center shrink-0', iconTone)}>
-        <insight.icon className="w-4 h-4" />
+    <div className={cn('min-w-0 rounded-lg border p-4 flex items-center gap-3 sm:gap-4', tone)}>
+      <div className={cn('size-10 rounded-lg flex items-center justify-center shrink-0', iconTone)}>
+        <insight.icon className="size-5" aria-hidden="true" />
       </div>
-      <div className="min-w-0 space-y-1">
-        <p className="text-sm font-semibold leading-tight text-foreground">{insight.title}</p>
-        <p className="text-xs text-muted-foreground leading-snug">{insight.text}</p>
+      <div className="min-w-0 flex-1 space-y-2 break-words">
+        <p className="text-sm font-semibold leading-5 text-foreground">{insight.title}</p>
+        <div className="trending-separator" aria-hidden="true" />
+        <p className="text-sm text-foreground leading-5">{insight.text}</p>
         {insight.suggestion && (
-          <p className="text-xs leading-snug text-foreground/90">
+          <><div className="trending-separator" aria-hidden="true" /><p className="text-sm leading-5 text-foreground">
             <span className="font-medium">Do this: </span>{insight.suggestion}
-          </p>
+          </p></>
         )}
       </div>
     </div>
@@ -302,15 +303,6 @@ export default function Dashboard() {
     return result.sort((a, b) => rank[a.type] - rank[b.type]);
   }, [txData, stats, categoryExpenseData, categoryIncomeData, chartData, budgetAlerts, loans, range]);
 
-  // Insights are shown two per row on wide screens; dashed separators divide each section.
-  const insightRows = useMemo(() => {
-    const rows: { insight: Insight; index: number }[][] = [];
-    for (let i = 0; i < insights.length; i += 2) {
-      rows.push(insights.slice(i, i + 2).map((insight, k) => ({ insight, index: i + k })));
-    }
-    return rows;
-  }, [insights]);
-
 
   const net = stats.income - stats.expense;
 
@@ -350,35 +342,19 @@ export default function Dashboard() {
 
       {/* Analytics Insights */}
       {insights.length > 0 && (
-        <Card>
+        <section className="space-y-3" aria-label="Smart Insights">
           <CardHeader className="pb-3">
-            <CardTitle className="text-sm flex items-center gap-2">
+            <CardTitle className="text-sm flex flex-wrap items-center gap-2">
               <Lightbulb className="w-4 h-4 text-accent" /> Smart Insights
-              <span className="ml-auto text-[10px] font-normal text-muted-foreground uppercase tracking-wider">
+              <span className="ml-auto text-xs font-normal text-foreground">
                 {range.label} · {insights.length} findings
               </span>
             </CardTitle>
           </CardHeader>
-          <CardContent className="space-y-3">
-            {insightRows.map((row, rowIndex) => (
-              <Fragment key={rowIndex}>
-                {rowIndex > 0 && (
-                  <div className="trending-separator hidden lg:block" aria-hidden="true" />
-                )}
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
-                  {row.map(({ insight, index }) => (
-                    <Fragment key={index}>
-                      <InsightCard insight={insight} />
-                      {index < insights.length - 1 && (
-                        <div className="trending-separator lg:hidden" aria-hidden="true" />
-                      )}
-                    </Fragment>
-                  ))}
-                </div>
-              </Fragment>
-            ))}
-          </CardContent>
-        </Card>
+          <div className="grid grid-cols-1 xl:grid-cols-2 gap-3 items-stretch">
+            {insights.map((insight, index) => <InsightCard key={index} insight={insight} />)}
+          </div>
+        </section>
       )}
 
 
